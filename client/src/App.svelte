@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Mic, MicOff, Volume2, Sparkles, Activity, Shield, Terminal, Zap, Radio } from 'lucide-svelte';
+  import { createVoice, type VoiceHandle } from './lib/voice';
 
   // Svelte 5 Runes ($state)
   let isListening = $state(false);
@@ -15,6 +16,7 @@
   let wsConnected = $state(false);
 
   let socket: WebSocket | null = null;
+  let voice: VoiceHandle | null = null;
 
   onMount(() => {
     connectWS();
@@ -29,9 +31,12 @@
       };
       socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
+        if (data.type === 'transcript') {
+          transcript = data.text || '(kosong)';
+        }
         if (data.log) logs = [...logs, data.log];
         if (data.state) status = data.state;
-        if (data.text) response = data.text;
+        if (data.text && data.type !== 'transcript') response = data.text;
       };
       socket.onclose = () => {
         wsConnected = false;
@@ -42,35 +47,38 @@
     }
   }
 
-  function toggleListening() {
+  async function toggleListening() {
     if (!isListening) {
       isListening = true;
       status = 'listening';
       transcript = "Listening for Schnee's instruction...";
-      
-      if (socket && wsConnected) {
-        socket.send(JSON.stringify({ type: 'prompt', content: 'check health' }));
-      }
-
-      setTimeout(() => {
-        status = 'processing';
-        logs = [...logs, '[STT] Processing audio buffer via Whisper...'];
-      }, 2500);
-
-      setTimeout(() => {
-        status = 'speaking';
-        transcript = "Shorekeeper, check system health and status.";
-        response = "Checking system status... All 9router nodes and local services are optimal.";
-        logs = [...logs, '[Agent] Executed tool: system_health()', '[TTS] Audio output stream 128kbps CBR'];
-      }, 4500);
-
-      setTimeout(() => {
-        status = 'idle';
+      try {
+        voice = await createVoice({
+          onSpeechStart: () => {
+            status = 'listening';
+            logs = [...logs, '[VAD] speech start'];
+          },
+          onSegment: (buf) => {
+            status = 'processing';
+            logs = [...logs, '[VAD] segment captured, sending...'];
+            if (socket && wsConnected) socket.send(buf); // binary frame ke Elysia
+          },
+          onError: (e) => {
+            logs = [...logs, `[VAD] error: ${e}`];
+          },
+        });
+        voice.start();
+        logs = [...logs, '[Mic] VAD listening active'];
+      } catch (e) {
+        logs = [...logs, `[Mic] getUserMedia gagal: ${e}`];
         isListening = false;
-      }, 7500);
+        status = 'idle';
+      }
     } else {
       isListening = false;
       status = 'idle';
+      voice?.stop();
+      voice = null;
     }
   }
 </script>

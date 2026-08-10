@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "svelte": "^5.0.0",
-    "lucide-svelte": "^0.475.0"
+    "lucide-svelte": "^0.475.0",
+    "@ricky0123/vad-web": "^0.0.24",
+    "onnxruntime-web": "^1.20.1"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
