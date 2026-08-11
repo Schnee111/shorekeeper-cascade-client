@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Mic, MicOff, Volume2, Sparkles, Activity, Shield, Terminal, Zap, Radio } from 'lucide-svelte';
+  import { startCapture } from './lib/audio-capture';
+  import { createPlayer } from './lib/audio-playback';
 
   // Svelte 5 Runes ($state)
   let isListening = $state(false);
@@ -9,12 +11,15 @@
   let response = $state('Schnee... welcome back. Shorekeeper JARVIS core is active.');
   let logs = $state<string[]>([
     '[System] Tethys Core Initialized (Bun + Elysia.js + Svelte 5)',
-    '[Network] WebSocket Bridge endpoint ws://localhost:3002/ws',
-    '[Voice] MiMo Voice Bridge Ready'
+    '[Network] WebSocket Bridge endpoint /jarvis/ws',
+    '[Voice] Gemini Live Engine Ready'
   ]);
   let wsConnected = $state(false);
+  let geminiReady = $state(false);
 
   let socket: WebSocket | null = null;
+  let stopCapture: (() => void) | null = null;
+  const player = createPlayer();
 
   onMount(() => {
     connectWS();
@@ -22,55 +27,77 @@
 
   function connectWS() {
     try {
-      socket = new WebSocket('ws://localhost:3002/ws');
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      socket = new WebSocket(`${proto}://${location.host}/jarvis/ws`);
       socket.onopen = () => {
         wsConnected = true;
-        logs = [...logs, '[WS] Connected to Elysia.js server on port 3002'];
+        logs = [...logs, '[WS] Connected to Elysia.js server (/jarvis/ws)'];
       };
       socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.log) logs = [...logs, data.log];
-        if (data.state) status = data.state;
-        if (data.text) response = data.text;
+        let data: any;
+        try {
+          data = JSON.parse(event.data);
+        } catch {
+          return; // Not JSON, ignore
+        }
+        switch (data.type) {
+          case 'audio':
+            // PCM 24kHz base64 from Gemini Live
+            player.play(data.data);
+            status = 'speaking';
+            break;
+          case 'transcript':
+            if (data.role === 'model') response = data.text;
+            else if (data.role === 'user') transcript = data.text;
+            break;
+          case 'turnComplete':
+            player.stop();
+            status = 'idle';
+            break;
+          case 'status':
+            if (data.state === 'ready') {
+              geminiReady = true;
+              if (data.log) logs = [...logs, data.log];
+            }
+            break;
+          case 'error':
+            logs = [...logs, `[Error] ${data.error}`];
+            break;
+        }
       };
       socket.onclose = () => {
         wsConnected = false;
+        geminiReady = false;
         logs = [...logs, '[WS] Disconnected from server'];
+      };
+      socket.onerror = () => {
+        logs = [...logs, '[WS] Connection error — retrying...'];
       };
     } catch (e) {
       console.error('WS Error:', e);
     }
   }
 
-  function toggleListening() {
+  async function toggleListening() {
     if (!isListening) {
-      isListening = true;
-      status = 'listening';
-      transcript = "Listening for Schnee's instruction...";
-      
-      if (socket && wsConnected) {
-        socket.send(JSON.stringify({ type: 'prompt', content: 'check health' }));
+      try {
+        stopCapture = await startCapture((base64pcm) => {
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'audio', data: base64pcm }));
+          }
+        });
+        isListening = true;
+        status = 'listening';
+        logs = [...logs, '[Mic] Capture started (PCM 16kHz → Gemini Live)'];
+      } catch (e) {
+        logs = [...logs, `[Mic] Error: ${e}`];
       }
-
-      setTimeout(() => {
-        status = 'processing';
-        logs = [...logs, '[STT] Processing audio buffer via Whisper...'];
-      }, 2500);
-
-      setTimeout(() => {
-        status = 'speaking';
-        transcript = "Shorekeeper, check system health and status.";
-        response = "Checking system status... All 9router nodes and local services are optimal.";
-        logs = [...logs, '[Agent] Executed tool: system_health()', '[TTS] Audio output stream 128kbps CBR'];
-      }, 4500);
-
-      setTimeout(() => {
-        status = 'idle';
-        isListening = false;
-      }, 7500);
     } else {
+      if (stopCapture) stopCapture();
+      stopCapture = null;
       isListening = false;
       status = 'idle';
+      logs = [...logs, '[Mic] Capture stopped'];
     }
   }
 </script>
@@ -102,8 +129,8 @@
         <span>Elysia Bridge: {wsConnected ? 'Online' : 'Connecting...'}</span>
       </div>
       <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-800 bg-slate-900/50">
-        <Shield class="w-3.5 h-3.5 text-cyan-400" />
-        <span>User: Schnee</span>
+        <Shield class={`w-3.5 h-3.5 ${geminiReady ? 'text-emerald-400' : 'text-cyan-400'}`} />
+        <span>Gemini Live: {geminiReady ? 'Ready' : 'Standby'}</span>
       </div>
     </div>
   </header>
@@ -121,7 +148,7 @@
       <div class="relative my-12 flex items-center justify-center">
         <div class={`absolute w-72 h-72 rounded-full border border-cyan-500/20 transition-all duration-700 ${status === 'listening' ? 'scale-125 border-cyan-400/50 animate-ping' : status === 'speaking' ? 'scale-110 border-blue-400/40 animate-pulse' : 'scale-100'}`}></div>
         <div class={`absolute w-60 h-60 rounded-full border border-blue-500/30 transition-all duration-500 ${status === 'processing' ? 'rotate-180 scale-105 border-dashed' : ''}`}></div>
-        
+
         <button
           onclick={toggleListening}
           class={`w-44 h-44 rounded-full flex flex-col items-center justify-center transition-all duration-500 shadow-2xl relative z-10 group/btn ${
