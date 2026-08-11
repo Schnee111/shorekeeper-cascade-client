@@ -32,6 +32,7 @@ export function createGeminiSession(
 ) {
   let ws: WebSocket | null = null;
   let setupDone = false;
+  let forwardedFirst = false;
 
   function connect() {
     const url = GEMINI_WS_URL(apiKey, model);
@@ -61,11 +62,20 @@ export function createGeminiSession(
       ws!.send(JSON.stringify(setup));
     };
 
-    ws.onmessage = (event) => {
+    ws.onmessage = async (event) => {
       try {
-        const msg = JSON.parse(
-          typeof event.data === "string" ? event.data : ""
-        );
+        const raw =
+          typeof event.data === "string"
+            ? event.data
+            : event.data instanceof Blob
+              ? await event.data.text()
+              : event.data instanceof ArrayBuffer
+                ? new TextDecoder().decode(event.data)
+                : ArrayBuffer.isView(event.data)
+                  ? new TextDecoder().decode(event.data)
+                  : String(event.data);
+        console.log(`[Gemini] RX frame type=${event.data?.constructor?.name ?? typeof event.data} bytes=${raw.length}`);
+        const msg = JSON.parse(raw);
 
         // Setup complete
         if (msg.setupComplete) {
@@ -126,15 +136,17 @@ export function createGeminiSession(
 
   function sendAudio(base64pcm: string) {
     if (!ws || ws.readyState !== WebSocket.OPEN || !setupDone) return;
+    if (!forwardedFirst) {
+      forwardedFirst = true;
+      console.log("[Gemini] First audio frame forwarded to Gemini (after setupComplete)");
+    }
     ws.send(
       JSON.stringify({
         realtimeInput: {
-          mediaChunks: [
-            {
-              mimeType: "audio/pcm;rate=16000",
-              data: base64pcm,
-            },
-          ],
+          audio: {
+            mimeType: "audio/pcm;rate=16000",
+            data: base64pcm,
+          },
         },
       })
     );
