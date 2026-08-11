@@ -9,8 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "svelte": "^5.0.0",
-    "lucide-svelte": "^0.475.0"
+    "lucide-svelte": "^0.475.0",
+    "openwakeword-web": "^0.1.0",
+    "svelte": "^5.0.0"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
