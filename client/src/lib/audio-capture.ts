@@ -23,8 +23,10 @@ function int16ToBase64(i16: Int16Array): string {
 }
 
 export async function startCapture(
-  onChunk: (base64pcm: string) => void
+  onChunk: (base64pcm: string) => void,
+  onDiagnostic: (message: string) => void = () => {}
 ): Promise<() => void> {
+  onDiagnostic("capture:start");
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
       sampleRate: 16000,
@@ -33,26 +35,43 @@ export async function startCapture(
       noiseSuppression: true,
     },
   });
+  onDiagnostic(`capture:permission-ok tracks=${stream.getAudioTracks().length}`);
 
   const ctx = new AudioContext({ sampleRate: 16000 });
+  await ctx.resume();
+  onDiagnostic(`capture:context state=${ctx.state} rate=${ctx.sampleRate}`);
   const workletUrl = `${import.meta.env.BASE_URL}pcm-worklet.js`;
   await ctx.audioWorklet.addModule(workletUrl);
+  onDiagnostic(`capture:worklet-loaded url=${workletUrl}`);
 
   const source = ctx.createMediaStreamSource(stream);
   const worklet = new AudioWorkletNode(ctx, "pcm-processor");
+  // Mobile browsers may suspend an AudioWorklet graph that has no route to
+  // destination. Connect through a muted gain so processing stays active
+  // without playing the microphone back to the user.
+  const silentGain = ctx.createGain();
+  silentGain.gain.value = 0;
 
+  let firstChunk = true;
   worklet.port.onmessage = (e: MessageEvent<Float32Array>) => {
+    if (firstChunk) {
+      firstChunk = false;
+      onDiagnostic(`capture:first-chunk samples=${e.data.length}`);
+    }
     const i16 = float32ToInt16(e.data);
     onChunk(int16ToBase64(i16));
   };
 
   source.connect(worklet);
-  // Don't connect worklet to destination (we don't want to hear our own mic)
+  worklet.connect(silentGain);
+  silentGain.connect(ctx.destination);
+  onDiagnostic("capture:graph-connected");
 
   return () => {
     try {
       source.disconnect();
       worklet.disconnect();
+      silentGain.disconnect();
       stream.getTracks().forEach((t) => t.stop());
       ctx.close();
     } catch {

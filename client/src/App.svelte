@@ -3,12 +3,17 @@
   import { Mic, MicOff, Volume2, Sparkles, Activity, Shield, Terminal, Zap, Radio } from 'lucide-svelte';
   import { startCapture } from './lib/audio-capture';
   import { createPlayer } from './lib/audio-playback';
+  import { startWakeWord } from './lib/wakeword';
 
   // Svelte 5 Runes ($state)
+  // mode = hands-free lifecycle: off (armed nothing) | standby (Porcupine listening for wake word)
+  //        | active (Gemini capturing your speech)
   let isListening = $state(false);
-  let status = $state<'idle' | 'listening' | 'processing' | 'speaking'>('idle');
+  let status = $state<'idle' | 'listening' | 'speaking' | 'error'>('idle');
   let transcript = $state('');
   let response = $state('Schnee... welcome back. Shorekeeper JARVIS core is active.');
+
+  const SILENCE_MS = 8000;
   let logs = $state<string[]>([
     '[System] Tethys Core Initialized (Bun + Elysia.js + Svelte 5)',
     '[Network] WebSocket Bridge endpoint /jarvis/ws',
@@ -18,7 +23,10 @@
   let geminiReady = $state(false);
 
   let socket: WebSocket | null = null;
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let stopCapture: (() => void) | null = null;
+  let stopWake: (() => Promise<void>) | null = null;
+  let silenceTimer: ReturnType<typeof setTimeout> | null = null;
   const player = createPlayer();
 
   onMount(() => {
@@ -52,7 +60,13 @@
             break;
           case 'turnComplete':
             player.stop();
-            status = 'idle';
+            // Hands-free: stay armed, return to listening, and re-arm silence timer.
+            if (mode === 'active') {
+              status = 'listening';
+              armSilenceTimer();
+            } else {
+              status = 'idle';
+            }
             break;
           case 'status':
             if (data.state === 'ready') {
@@ -68,7 +82,20 @@
       socket.onclose = () => {
         wsConnected = false;
         geminiReady = false;
-        logs = [...logs, '[WS] Disconnected from server'];
+        if (stopCapture) {
+          stopCapture();
+          stopCapture = null;
+        }
+        clearSilenceTimer();
+        // Drop to a safe idle; standby (Porcupine) may keep running so wake word
+        // still works while WS reconnects. If we were active, fall back to standby.
+        if (mode === 'active') {
+          mode = stopWake ? 'standby' : 'off';
+        }
+        status = 'idle';
+        logs = [...logs, '[WS] Disconnected — reconnecting in 1s...'];
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(connectWS, 1000);
       };
       socket.onerror = () => {
         logs = [...logs, '[WS] Connection error — retrying...'];
@@ -78,26 +105,113 @@
     }
   }
 
-  async function toggleListening() {
-    if (!isListening) {
-      try {
-        stopCapture = await startCapture((base64pcm) => {
+  function clearSilenceTimer() {
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      silenceTimer = null;
+    }
+  }
+
+  // After a turn, if no further speech within SILENCE_MS, drop back to standby.
+  function armSilenceTimer() {
+    clearSilenceTimer();
+    silenceTimer = setTimeout(() => {
+      if (mode === 'active') returnToStandby();
+    }, SILENCE_MS);
+  }
+
+  // Stop Gemini capture, then re-arm Porcupine. Enforces single mic consumer.
+  async function returnToStandby() {
+    clearSilenceTimer();
+    if (stopCapture) {
+      stopCapture();
+      stopCapture = null;
+    }
+    mode = 'standby';
+    status = 'idle';
+    logs = [...logs, '[Voice] Idle — kembali standby, dengar wake word'];
+    await armWakeWord();
+  }
+
+  // Arm Porcupine wake-word listener (owns mic during standby).
+  async function armWakeWord() {
+    if (stopWake) return; // already armed
+    stopWake = await startWakeWord(
+      () => onWake(),
+      (message) => {
+        logs = [...logs, `[WakeWord] ${message}`];
+      }
+    );
+    logs = [...logs, '[WakeWord] Standby — ucapkan "Jarvis" untuk mulai'];
+  }
+
+  // Wake word fired: release Porcupine mic, hand mic to Gemini capture.
+  async function onWake() {
+    if (mode !== 'standby') return;
+    logs = [...logs, '[WakeWord] Terpicu — mengaktifkan sesi suara'];
+    if (stopWake) {
+      await stopWake();
+      stopWake = null;
+    }
+    await startGeminiCapture();
+  }
+
+  async function startGeminiCapture() {
+    if (!socket || socket.readyState !== WebSocket.OPEN || !geminiReady) {
+      logs = [...logs, '[Voice] Tunggu sampai Gemini Live berstatus Ready'];
+      // Fall back to standby so wake word still works.
+      mode = 'standby';
+      await armWakeWord();
+      return;
+    }
+    try {
+      stopCapture = await startCapture(
+        (base64pcm) => {
           if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({ type: 'audio', data: base64pcm }));
           }
-        });
-        isListening = true;
-        status = 'listening';
-        logs = [...logs, '[Mic] Capture started (PCM 16kHz → Gemini Live)'];
-      } catch (e) {
-        logs = [...logs, `[Mic] Error: ${e}`];
+        },
+        (message) => {
+          logs = [...logs, `[Diag] ${message}`];
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'diagnostic', message }));
+          }
+        }
+      );
+      mode = 'active';
+      status = 'listening';
+      armSilenceTimer();
+      logs = [...logs, '[Mic] Capture started (PCM 16kHz → Gemini Live)'];
+    } catch (e) {
+      const message = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+      logs = [...logs, `[Mic] Error: ${message}`];
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'diagnostic', message: `capture:error ${message}` }));
       }
+      mode = 'standby';
+      await armWakeWord();
+    }
+  }
+
+  // Main button: toggle the whole hands-free system on/off.
+  async function toggleStandby() {
+    if (mode === 'off') {
+      await armWakeWord();
+      mode = 'standby';
     } else {
-      if (stopCapture) stopCapture();
-      stopCapture = null;
-      isListening = false;
+      // Tear everything down.
+      clearSilenceTimer();
+      if (stopCapture) {
+        stopCapture();
+        stopCapture = null;
+      }
+      if (stopWake) {
+        await stopWake();
+        stopWake = null;
+      }
+      mode = 'off';
       status = 'idle';
-      logs = [...logs, '[Mic] Capture stopped'];
+      logs = [...logs, '[Voice] Hands-free dimatikan'];
     }
   }
 </script>
@@ -150,7 +264,7 @@
         <div class={`absolute w-60 h-60 rounded-full border border-blue-500/30 transition-all duration-500 ${status === 'processing' ? 'rotate-180 scale-105 border-dashed' : ''}`}></div>
 
         <button
-          onclick={toggleListening}
+          onclick={toggleStandby}
           class={`w-44 h-44 rounded-full flex flex-col items-center justify-center transition-all duration-500 shadow-2xl relative z-10 group/btn ${
             status === 'listening'
               ? 'bg-gradient-to-br from-cyan-500 to-blue-600 shadow-cyan-500/50 scale-105'
@@ -158,6 +272,8 @@
               ? 'bg-gradient-to-br from-indigo-600 to-purple-600 shadow-purple-500/50 animate-pulse'
               : status === 'speaking'
               ? 'bg-gradient-to-br from-cyan-400 via-blue-600 to-indigo-600 shadow-blue-500/50'
+              : mode === 'standby'
+              ? 'bg-slate-900 border-2 border-cyan-500/50 shadow-cyan-500/20 animate-pulse'
               : 'bg-slate-900 border-2 border-slate-700/80 hover:border-cyan-500/80 hover:shadow-cyan-500/20'
           }`}
         >
@@ -169,7 +285,13 @@
             <MicOff class="w-12 h-12 text-slate-400 group-hover/btn:text-cyan-400 transition-colors" />
           {/if}
           <span class="text-xs font-mono mt-2 font-medium tracking-wider text-slate-200">
-            {status === 'idle' ? 'TAP TO TALK' : status.toUpperCase()}
+            {status === 'listening'
+              ? 'LISTENING'
+              : status === 'speaking'
+              ? 'SPEAKING'
+              : mode === 'standby'
+              ? 'STANDBY — "JARVIS"'
+              : 'TAP TO ARM'}
           </span>
         </button>
       </div>
