@@ -1,25 +1,35 @@
 /**
- * audio-playback.ts — Queue-based PCM 24kHz audio player.
+ * audio-playback.ts — Queue-based audio player for MP3 and PCM.
  *
- * Receives base64 PCM chunks from Gemini Live, decodes to Float32,
- * and schedules seamless playback via AudioContext.
+ * Supports:
+ * - MP3 (base64) from Fish Audio TTS
+ * - PCM 24kHz (base64) from Gemini Live (legacy/fallback)
+ *
+ * Uses AudioContext.decodeAudioData() for MP3, direct buffer for PCM.
  */
 
-function base64ToInt16(base64: string): Int16Array {
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
-  return new Int16Array(bytes.buffer);
+  return bytes.buffer;
 }
 
-function int16ToFloat32(i16: Int16Array): Float32Array {
-  const f32 = new Float32Array(i16.length);
-  for (let i = 0; i < i16.length; i++) {
-    f32[i] = i16[i] / 0x8000;
+function isLikelyMP3(base64: string): boolean {
+  // MP3 files typically start with ID3 tag or MPEG frame sync (0xFF 0xFB/0xFA/0xF3/0xF2)
+  if (base64.length < 4) return false;
+  const binary = atob(base64.slice(0, 4));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
   }
-  return f32;
+  // Check for ID3 header
+  if (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) return true; // "ID3"
+  // Check for MPEG frame sync (0xFF followed by 0xE0+)
+  if (bytes[0] === 0xFF && (bytes[1] & 0xE0) === 0xE0) return true;
+  return false;
 }
 
 export function createPlayer() {
@@ -29,7 +39,7 @@ export function createPlayer() {
 
   function ensureCtx() {
     if (!ctx || ctx.state === "closed") {
-      ctx = new AudioContext({ sampleRate: 24000 });
+      ctx = new AudioContext();
     }
     // Resume if suspended (autoplay policy)
     if (ctx.state === "suspended") {
@@ -38,24 +48,46 @@ export function createPlayer() {
     return ctx;
   }
 
-  function play(base64pcm: string) {
+  async function play(base64: string) {
     const audioCtx = ensureCtx();
-    const i16 = base64ToInt16(base64pcm);
-    const f32 = int16ToFloat32(i16);
+    
+    if (isLikelyMP3(base64)) {
+      // Decode MP3 using browser's native decoder
+      const arrayBuffer = base64ToArrayBuffer(base64);
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      
+      const source = audioCtx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioCtx.destination);
 
-    const buffer = audioCtx.createBuffer(1, f32.length, 24000);
-    buffer.copyToChannel(f32 as unknown as Float32Array<ArrayBuffer>, 0);
+      const now = audioCtx.currentTime;
+      if (nextTime < now) nextTime = now;
 
-    const source = audioCtx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioCtx.destination);
+      source.start(nextTime);
+      nextTime += audioBuffer.duration;
+      playing = true;
+    } else {
+      // Legacy PCM 24kHz playback (for Gemini Live fallback)
+      const i16 = new Int16Array(base64ToArrayBuffer(base64));
+      const f32 = new Float32Array(i16.length);
+      for (let i = 0; i < i16.length; i++) {
+        f32[i] = i16[i] / 0x8000;
+      }
 
-    const now = audioCtx.currentTime;
-    if (nextTime < now) nextTime = now;
+      const buffer = audioCtx.createBuffer(1, f32.length, 24000);
+      buffer.copyToChannel(f32 as unknown as Float32Array<ArrayBuffer>, 0);
 
-    source.start(nextTime);
-    nextTime += buffer.duration;
-    playing = true;
+      const source = audioCtx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audioCtx.destination);
+
+      const now = audioCtx.currentTime;
+      if (nextTime < now) nextTime = now;
+
+      source.start(nextTime);
+      nextTime += buffer.duration;
+      playing = true;
+    }
   }
 
   /** Stop playback immediately (barge-in) */

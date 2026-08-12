@@ -3,9 +3,11 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist",
     "start": "bun run src/index.ts"
   },
   "dependencies": {
+    "@deepgram/sdk": "^5.7.0",
     "elysia": "^1.2.0"
   }
 }

@@ -19,10 +19,11 @@
  *   /jarvis/ort/ort-wasm-simd-threaded.{mjs,wasm} — ONNX Runtime wasm
  */
 
-import { OpenWakeWord, configureOrt } from "openwakeword-web";
+import { OpenWakeWord } from "openwakeword-web";
 import { Microphone } from "openwakeword-web/microphone";
+import * as ort from "onnxruntime-web";
 
-const BASE = import.meta.env.BASE_URL; // '/jarvis/'
+const BASE = "/jarvis/";
 const MODELS_URL = `${BASE}wakeword/`;
 const ORT_WASM_URL = `${BASE}ort/`;
 const WORKLET_URL = `${BASE}wakeword/mic-worklet.js`;
@@ -45,13 +46,34 @@ export async function startWakeWord(
   let lastFired = 0;
 
   try {
-    // Single-threaded wasm: avoids needing COOP/COEP (cross-origin isolation)
-    // headers, which the /jarvis/ nginx deployment does not set.
-    configureOrt({ wasmPaths: ORT_WASM_URL, numThreads: 1 });
+    // Force asking for microphone permission FIRST before loading any WASM
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(err => {
+      onError(`Microphone permission denied: ${err.message}`);
+      throw err;
+    });
+
+    // Close the initial stream just used for permission check
+    stream.getTracks().forEach(track => track.stop());
+
+    // Configure ONNX Runtime to find the local WASM files
+    ort.env.wasm.wasmPaths = ORT_WASM_URL;
+    ort.env.wasm.numThreads = 1;
+    ort.env.wasm.simd = false;
+
+    // VERY CRITICAL: Disable JSEP explicitly to prevent the runtime from trying to load it
+    // even if hardware theoretically supports it (prevents .jsep.mjs fetching error)
+    // ort.env.wasm.wasmPaths alone is not enough to stop WebNN/JSEP probes
+    if (ort.env.wasm) {
+      // Try to prevent any JSEP/WebGPU initialization at the environment level
+      (ort.env as any).webgpu = false;
+      (ort.env as any).webgl = false;
+    }
 
     oww = await OpenWakeWord.create({
       baseUrl: MODELS_URL,
       wakewordModels: ["hey_jarvis"],
+      melspecModelPath: `${MODELS_URL}melspectrogram.onnx`,
+      embeddingModelPath: `${MODELS_URL}embedding_model.onnx`,
       threshold: 0.5,
       onDetection: () => {
         const now = Date.now();

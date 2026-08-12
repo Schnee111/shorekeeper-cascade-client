@@ -1,42 +1,59 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
 
-/build
-client/node_modules/
-/coverage
-# debug
-# dependencies
+# Testing
+coverage/
+
+# Production
+build/
+dist/
+
+# Misc
 .DS_Store
 .env
-.env*
-# env files (can opt-in for committing if needed)
-.hermes/
-# local hermes state
-# misc
-# nested workspace node_modules
-/.next/
-next-env.d.ts
-# next.js
-/node_modules
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
 npm-debug.log*
-/out/
-*.pem
-.pnp.*
-/.pnp
-.pnpm-debug.log*
-# production
-__pycache__/
-# python sidecar (M1 legacy)
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-server/node_modules/
-# testing
-*.tsbuildinfo
-# typescript
-.venv/
-# vercel
-.vercel
-.yarn/*
 yarn-debug.log*
 yarn-error.log*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+
+# Bun
+bun.lockb
+
+# Large files
+*.onnx
+*.bin
+kokoro_model/
+kokoro_samples/
+kokoro_test.wav
+test_kokoro*.py
+
+# ONNX Runtime WASM files (too large for GitHub)
+client/dist/ort/
+client/public/ort/
+
+# Server build output (can be rebuilt)
+server/dist/
+
+# Temporary files
+*.log
+*.tmp
+.cache/
