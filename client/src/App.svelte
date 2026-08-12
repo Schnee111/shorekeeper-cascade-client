@@ -14,7 +14,7 @@
   const SILENCE_MS = 8000;
 
   let isListening = $state(false);
-  let status = $state<'idle' | 'listening' | 'speaking' | 'error'>('idle');
+  let status = $state<'idle' | 'listening' | 'processing' | 'speaking' | 'error'>('idle');
   let transcript = $state('');
   let response = $state('Schnee... welcome back. Shorekeeper JARVIS core is active.');
 
@@ -80,13 +80,22 @@
         }
         switch (data.type) {
           case 'audio':
-            // PCM 24kHz base64 from Gemini Live
+            // PCM 24kHz base64 from Gemini TTS (cascade mode)
             player.play(data.data);
             status = 'speaking';
             break;
           case 'transcript':
-            if (data.role === 'model') response = data.text;
+            if (data.role === 'assistant' || data.role === 'model') response = data.text;
             else if (data.role === 'user') transcript = data.text;
+            break;
+          case 'status':
+            if (data.state === 'processing') {
+              status = 'processing';
+              logs = [...logs, '[Hermes] Processing...'];
+            } else if (data.state === 'ready') {
+              geminiReady = true;
+              if (data.log) logs = [...logs, data.log];
+            }
             break;
           case 'turnComplete':
             player.stop();
@@ -96,12 +105,6 @@
               armSilenceTimer();
             } else {
               status = 'idle';
-            }
-            break;
-          case 'status':
-            if (data.state === 'ready') {
-              geminiReady = true;
-              if (data.log) logs = [...logs, data.log];
             }
             break;
           case 'error':
