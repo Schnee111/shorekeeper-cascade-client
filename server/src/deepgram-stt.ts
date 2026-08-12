@@ -19,10 +19,12 @@ export interface DeepgramSession {
   isReady: () => boolean;
   sendAudio: (base64Data: string) => void;
   close: () => void;
+  onFinalTranscript?: (text: string) => void;
 }
 
 export async function createDeepgramSession(
-  clientWs: ServerWebSocket<any>
+  clientWs: ServerWebSocket<any>,
+  onFinalTranscript?: (text: string) => void
 ): Promise<DeepgramSession> {
   if (!DEEPGRAM_API_KEY) {
     console.error("[Deepgram] DEEPGRAM_API_KEY not set — STT disabled");
@@ -90,6 +92,10 @@ export async function createDeepgramSession(
 
         if (data.is_final) {
           console.log(`[Deepgram] User (Final): "${transcript}"`);
+          // Trigger Hermes pipeline with final transcript
+          if (onFinalTranscript) {
+            onFinalTranscript(transcript.trim());
+          }
         }
       }
     } catch {

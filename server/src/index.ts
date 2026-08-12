@@ -1,31 +1,29 @@
 import { Elysia } from "elysia";
 import { createGeminiSession, type GeminiSession } from "./gemini-live";
 import { createDeepgramSession, type DeepgramSession } from "./deepgram-stt";
+import { createHermesBridge, type HermesBridge } from "./hermes-bridge";
+import { createTTSSession, type TTSSession } from "./gemini-tts";
+import { createSentenceAccumulator } from "./sentence-detector";
 
 const API_KEY = process.env.GEMINI_API_KEY || "";
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-live-preview";
 const VOICE = process.env.GEMINI_VOICE || "Aoede";
 
 /**
- * Elysia (verified in elysia@1.4.29 dist/adapter/bun/index.js) constructs a NEW
- * ElysiaWS wrapper object for every lifecycle event (open/message/drain/close).
- * Properties attached to the `ws` argument therefore do NOT persist between
- * callbacks — the chunk counter attached to the wrapper reset to 0 on every
- * frame, logging "chunk #1" repeatedly.
- *
- * The stable per-connection objects across all events are:
- *   - `ws.raw` — the raw Bun ServerWebSocket (same instance for the whole
- *     connection; each wrapper only re-wraps it)
- *   - `ws.data` — the per-connection data object created once at upgrade
- *
- * Keep ALL per-connection state in a WeakMap keyed by the raw socket so it
- * survives across callbacks and is garbage-collected with the socket.
+ * Connection state per WebSocket client.
+ * Kept in WeakMap keyed by raw socket (Elysia creates new wrappers per event).
  */
 type ConnState = {
   gemini?: GeminiSession;
   deepgram?: DeepgramSession;
+  hermes: HermesBridge;
+  tts: TTSSession;
   audioChunks: number;
   loggedClientFrame: boolean;
+  // Hermes pipeline state
+  hermesSessionId?: string;
+  isProcessing: boolean;
+  abortController?: AbortController;
 };
 const conns = new WeakMap<object, ConnState>();
 const socketKey = (ws: any): object => ws.raw ?? ws;
@@ -35,31 +33,134 @@ if (!API_KEY) {
   process.exit(1);
 }
 
+/**
+ * Process Hermes response: stream tokens → sentence detection → TTS → audio to client.
+ * Handles barge-in via abortController.
+ */
+async function processHermesResponse(
+  ws: any,
+  state: ConnState,
+  userText: string,
+  voice: string
+) {
+  // Abort any previous Hermes query
+  if (state.abortController) {
+    state.abortController.abort();
+  }
+  const abortController = new AbortController();
+  state.abortController = abortController;
+  state.isProcessing = true;
+
+  const acc = createSentenceAccumulator();
+  let fullResponse = "";
+
+  try {
+    // Stream from Hermes
+    for await (const chunk of state.hermes.query(userText, state.hermesSessionId)) {
+      if (abortController.signal.aborted) {
+        console.log("[Hermes] Aborted by barge-in");
+        break;
+      }
+
+      fullResponse += chunk + " ";
+      // Send partial transcript to client
+      ws.send(JSON.stringify({
+        type: "transcript",
+        role: "assistant",
+        text: fullResponse.trim(),
+        isFinal: false,
+      }));
+
+      // Check for complete sentences
+      const sentences = acc.feed(chunk + " ");
+      for (const sentence of sentences) {
+        if (abortController.signal.aborted) break;
+
+        console.log(`[TTS] Synthesizing: "${sentence}"`);
+        try {
+          const audio = await state.tts.synthesize(sentence, voice);
+          if (abortController.signal.aborted) break;
+
+          // Send audio to client
+          ws.send(JSON.stringify({
+            type: "audio",
+            data: audio.toString("base64"),
+          }));
+        } catch (e) {
+          console.error("[TTS] Synthesis error:", e);
+        }
+      }
+    }
+
+    // Flush remaining buffer
+    if (!abortController.signal.aborted) {
+      const remaining = acc.flush();
+      for (const sentence of remaining) {
+        console.log(`[TTS] Synthesizing (flush): "${sentence}"`);
+        try {
+          const audio = await state.tts.synthesize(sentence, voice);
+          ws.send(JSON.stringify({
+            type: "audio",
+            data: audio.toString("base64"),
+          }));
+        } catch (e) {
+          console.error("[TTS] Synthesis error:", e);
+        }
+      }
+    }
+
+    // Send final transcript
+    ws.send(JSON.stringify({
+      type: "transcript",
+      role: "assistant",
+      text: fullResponse.trim(),
+      isFinal: true,
+    }));
+
+    // Send turn complete
+    ws.send(JSON.stringify({ type: "turnComplete" }));
+  } catch (e) {
+    console.error("[Hermes] Query error:", e);
+    ws.send(JSON.stringify({ type: "error", error: "Hermes query failed" }));
+  } finally {
+    state.isProcessing = false;
+    state.abortController = undefined;
+  }
+}
+
 const app = new Elysia()
   .ws("/ws", {
     async open(ws) {
-      console.log("[WS] Client connected — opening Gemini Live + Deepgram STT...");
+      console.log("[WS] Client connected — opening Gemini Live + Deepgram STT + Hermes Bridge...");
 
       const state: ConnState = {
         audioChunks: 0,
         loggedClientFrame: false,
+        hermes: createHermesBridge(),
+        tts: createTTSSession(API_KEY),
+        isProcessing: false,
         gemini: createGeminiSession(API_KEY, MODEL, VOICE, {
           onAudio: (base64pcm) => {
-            ws.send(JSON.stringify({ type: "audio", data: base64pcm }));
+            // In M3 cascaded mode, we don't use Gemini Live audio output
+            // (Gemini Live is only for STT now). TTS comes from gemini-tts.ts.
+            // But we keep this for backward compatibility / fallback.
+            // ws.send(JSON.stringify({ type: "audio", data: base64pcm }));
           },
           onTranscript: (text, role) => {
-            ws.send(JSON.stringify({ type: "transcript", text, role }));
+            // Gemini Live transcript (for STT fallback)
+            ws.send(JSON.stringify({ type: "transcript", text, role, source: "gemini" }));
           },
           onTurnComplete: () => {
-            ws.send(JSON.stringify({ type: "turnComplete" }));
+            // Gemini Live turn complete — not used in cascaded mode
+            // (we use Deepgram final transcript instead)
           },
           onError: (error) => {
             console.error("[Gemini] Error:", error);
             ws.send(JSON.stringify({ type: "error", error }));
           },
           onConnected: () => {
-            console.log("[Gemini] Session ready — voice:", VOICE);
-            ws.send(JSON.stringify({ type: "status", state: "ready", log: `[Gemini] Connected (${MODEL}, ${VOICE})` }));
+            console.log("[Gemini] Session ready (STT only) — voice:", VOICE);
+            ws.send(JSON.stringify({ type: "status", state: "ready", log: `[Gemini] STT Connected (${MODEL})` }));
           },
           onDisconnected: () => {
             console.log("[Gemini] Session disconnected");
@@ -68,9 +169,22 @@ const app = new Elysia()
         }),
       };
 
-      // Deepgram createSession is async (SDK v5) — await it, don't block Gemini
+      // Deepgram createSession is async — wire up final transcript → Hermes pipeline
       try {
-        state.deepgram = await createDeepgramSession(ws.raw as any);
+        state.deepgram = await createDeepgramSession(
+          ws.raw as any,
+          (finalText) => {
+            // Deepgram final transcript → trigger Hermes query
+            console.log(`[Pipeline] Deepgram final → Hermes: "${finalText}"`);
+            if (!state.isProcessing) {
+              ws.send(JSON.stringify({ type: "status", state: "processing" }));
+              processHermesResponse(ws, state, finalText, VOICE);
+            } else {
+              console.log("[Pipeline] Hermes busy, queuing...");
+              // TODO: queue or interrupt current response
+            }
+          }
+        );
       } catch (e) {
         console.error("[Deepgram] Failed to create session:", e);
         ws.send(JSON.stringify({ type: "error", error: "Deepgram init failed" }));
@@ -78,6 +192,17 @@ const app = new Elysia()
 
       if (state.gemini) state.gemini.connect();
       conns.set(socketKey(ws), state);
+
+      ws.send(JSON.stringify({
+        type: "status",
+        state: "ready",
+        log: "[Hermes] Bridge ready (CLI mode)",
+      }));
+      ws.send(JSON.stringify({
+        type: "status",
+        state: "ready",
+        log: `[TTS] Gemini TTS ready (voice: ${VOICE})`,
+      }));
     },
 
     async message(ws, message: any) {
@@ -109,7 +234,7 @@ const app = new Elysia()
           if (count === 1 || count % 100 === 0) {
             console.log(`[Audio] Browser chunk #${count}, base64 bytes=${msg.data.length}, deepgramReady=${state.deepgram?.isReady() ?? false}`);
           }
-          // PCM base64 audio from browser
+          // Send audio to both STT engines
           if (state.deepgram?.isReady()) {
             state.deepgram.sendAudio(msg.data);
           }
@@ -124,15 +249,11 @@ const app = new Elysia()
           if (state.gemini) state.gemini.close();
           // Create new one with selected voice
           state.gemini = createGeminiSession(API_KEY, MODEL, msg.voice, {
-            onAudio: (base64pcm) => {
-              ws.send(JSON.stringify({ type: "audio", data: base64pcm }));
-            },
+            onAudio: () => {}, // Cascaded mode: no Gemini Live audio
             onTranscript: (text, role) => {
-              ws.send(JSON.stringify({ type: "transcript", text, role }));
+              ws.send(JSON.stringify({ type: "transcript", text, role, source: "gemini" }));
             },
-            onTurnComplete: () => {
-              ws.send(JSON.stringify({ type: "turnComplete" }));
-            },
+            onTurnComplete: () => {},
             onError: (error) => {
               console.error("[Gemini] Error:", error);
               ws.send(JSON.stringify({ type: "error", error }));
@@ -148,9 +269,17 @@ const app = new Elysia()
           });
           state.gemini.connect();
         } else if (msg.type === "text" && msg.text) {
+          // Text input (for testing or fallback)
           if (state.gemini?.isReady()) {
             state.gemini.sendText(msg.text);
           }
+        } else if (msg.type === "hermesQuery" && msg.text) {
+          // Direct Hermes query (cascaded mode)
+          console.log(`[Hermes] Query: "${msg.text}"`);
+          ws.send(JSON.stringify({ type: "status", state: "processing" }));
+
+          // Process in background
+          processHermesResponse(ws, state, msg.text, msg.voice || VOICE);
         }
       } catch {
         // Not JSON or malformed, ignore
@@ -158,11 +287,13 @@ const app = new Elysia()
     },
 
     close(ws) {
-      console.log("[WS] Client disconnected — closing Gemini session");
+      console.log("[WS] Client disconnected — cleaning up");
       const state = conns.get(socketKey(ws));
       if (state) {
         if (state.gemini) state.gemini.close();
         if (state.deepgram) state.deepgram.close();
+        if (state.tts) state.tts.close();
+        if (state.hermes) state.hermes.abort();
         conns.delete(socketKey(ws));
       }
     },
@@ -170,4 +301,5 @@ const app = new Elysia()
   .listen(3002);
 
 console.log(`[Shorekeeper JARVIS] Running on http://${app.server?.hostname}:${app.server?.port}`);
-console.log(`[Shorekeeper JARVIS] Engine: Gemini Live (${MODEL}), Voice: ${VOICE}`);
+console.log(`[Shorekeeper JARVIS] Engine: Cascaded (Deepgram STT → Hermes → Gemini TTS)`);
+console.log(`[Shorekeeper JARVIS] TTS Voice: ${VOICE} | Gemini Live: ${MODEL} (STT fallback)`);
