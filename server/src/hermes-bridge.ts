@@ -9,10 +9,9 @@
  * The CLI is battle-tested, has full tool/memory/skill access, and
  * the Shorekeeper persona is already configured in SOUL.md.
  *
- * Trade-offs:
- * - ~1-2s cold start per invocation (acceptable for voice)
- * - No true token streaming — we read stdout line-by-line instead
- * - Session continuity via --resume flag
+ * Session ID: `--pass-session-id` outputs the session ID to **stderr**
+ * as the last line (e.g., "SESSION:abc123def"). We capture stderr in
+ * parallel with stdout streaming.
  */
 
 import { type Subprocess } from "bun";
@@ -20,7 +19,7 @@ import { type Subprocess } from "bun";
 export interface HermesBridge {
   /** Send user text, get streaming response. Returns full text when done. */
   query(text: string, sessionId?: string): AsyncIterable<string>;
-  /** Send user text, get full response as string. */
+  /** Send user text, get full response + session ID. */
   queryFull(text: string, sessionId?: string): Promise<{ text: string; sessionId: string }>;
   /** Kill any running subprocess. */
   abort(): void;
@@ -30,6 +29,7 @@ const HERMES_BIN = process.env.HERMES_BIN || "hermes";
 
 export function createHermesBridge(): HermesBridge {
   let currentProc: Subprocess | null = null;
+  let lastSessionId: string | undefined;
 
   function abort() {
     if (currentProc) {
@@ -61,6 +61,33 @@ export function createHermesBridge(): HermesBridge {
     });
     currentProc = proc;
 
+    // Read stderr in background to capture session ID
+    // --pass-session-id outputs "SESSION:<id>" to stderr
+    const stderrReader = proc.stderr.getReader();
+    let stderrBuf = "";
+    const stderrPromise = (async () => {
+      const dec = new TextDecoder();
+      try {
+        while (true) {
+          const { done, value } = await stderrReader.read();
+          if (done) break;
+          stderrBuf += dec.decode(value, { stream: true });
+        }
+      } catch {
+        // reader closed
+      }
+      stderrReader.releaseLock();
+      // Extract session ID from stderr — last line matching "SESSION:..."
+      const lines = stderrBuf.trim().split("\n");
+      for (const line of lines.reverse()) {
+        const match = line.match(/SESSION:(\S+)/);
+        if (match) {
+          lastSessionId = match[1];
+          break;
+        }
+      }
+    })();
+
     const reader = proc.stdout.getReader();
     const decoder = new TextDecoder();
     let lineBuffer = "";
@@ -89,7 +116,8 @@ export function createHermesBridge(): HermesBridge {
       }
     } finally {
       reader.releaseLock();
-      // Drain stderr to avoid broken pipe
+      // Wait for stderr to finish draining
+      await stderrPromise;
       await proc.exited.catch(() => {});
       currentProc = null;
     }
@@ -100,13 +128,9 @@ export function createHermesBridge(): HermesBridge {
     for await (const chunk of query(text, sessionId)) {
       chunks.push(chunk);
     }
-    // Hermes --pass-session-id appends session ID as last line prefixed with "SESSION:"
-    // or returns it in the exit. For now, we generate a simple ID from timestamp.
-    // TODO: parse actual session ID from hermes output when available.
-    const fullText = chunks.join("\n");
     return {
-      text: fullText,
-      sessionId: sessionId ?? `jarvis-${Date.now()}`,
+      text: chunks.join("\n"),
+      sessionId: lastSessionId ?? sessionId ?? `jarvis-${Date.now()}`,
     };
   }
 

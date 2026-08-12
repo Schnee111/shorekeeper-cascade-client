@@ -1,4 +1,3 @@
-// @bun
 var __create = Object.create;
 var __getProtoOf = Object.getPrototypeOf;
 var __defProp = Object.defineProperty;
@@ -44,7 +43,6 @@ var __export = (target, all) => {
     });
 };
 var __esm = (fn, res) => () => (fn && (res = fn(fn = 0)), res);
-var __require = import.meta.require;
 
 // node_modules/fast-decode-uri-component/index.js
 var require_fast_decode_uri_component = __commonJS((exports, module) => {
@@ -661,8 +659,8 @@ function decodeASCII(bytes) {
   for (let i = 0;i < bytes.length; i += CHUNK) {
     const end = Math.min(bytes.length, i + CHUNK);
     const codes = new Array(end - i);
-    for (let j = i, k2 = 0;j < end; j++, k2++) {
-      codes[k2] = bytes[j] & 127;
+    for (let j = i, k = 0;j < end; j++, k++) {
+      codes[k] = bytes[j] & 127;
     }
     parts.push(String.fromCharCode.apply(null, codes));
   }
@@ -673,8 +671,8 @@ function decodeLatin1(bytes) {
   for (let i = 0;i < bytes.length; i += CHUNK) {
     const end = Math.min(bytes.length, i + CHUNK);
     const codes = new Array(end - i);
-    for (let j = i, k2 = 0;j < end; j++, k2++) {
-      codes[k2] = bytes[j];
+    for (let j = i, k = 0;j < end; j++, k++) {
+      codes[k] = bytes[j];
     }
     parts.push(String.fromCharCode.apply(null, codes));
   }
@@ -699,33 +697,33 @@ function decodeWindows1252(bytes) {
 var WINDOWS_1252_EXTRA, WINDOWS_1252_REVERSE, _utf8Decoder, CHUNK, REPLACEMENT = 65533;
 var init_lib = __esm(() => {
   WINDOWS_1252_EXTRA = {
-    128: "\u20AC",
-    130: "\u201A",
-    131: "\u0192",
-    132: "\u201E",
-    133: "\u2026",
-    134: "\u2020",
-    135: "\u2021",
-    136: "\u02C6",
-    137: "\u2030",
-    138: "\u0160",
-    139: "\u2039",
-    140: "\u0152",
-    142: "\u017D",
-    145: "\u2018",
-    146: "\u2019",
-    147: "\u201C",
-    148: "\u201D",
-    149: "\u2022",
-    150: "\u2013",
-    151: "\u2014",
-    152: "\u02DC",
-    153: "\u2122",
-    154: "\u0161",
-    155: "\u203A",
-    156: "\u0153",
-    158: "\u017E",
-    159: "\u0178"
+    128: "€",
+    130: "‚",
+    131: "ƒ",
+    132: "„",
+    133: "…",
+    134: "†",
+    135: "‡",
+    136: "ˆ",
+    137: "‰",
+    138: "Š",
+    139: "‹",
+    140: "Œ",
+    142: "Ž",
+    145: "‘",
+    146: "’",
+    147: "“",
+    148: "”",
+    149: "•",
+    150: "–",
+    151: "—",
+    152: "˜",
+    153: "™",
+    154: "š",
+    155: "›",
+    156: "œ",
+    158: "ž",
+    159: "Ÿ"
   };
   WINDOWS_1252_REVERSE = {};
   for (const [code, char] of Object.entries(WINDOWS_1252_EXTRA)) {
@@ -1072,7 +1070,7 @@ class AbstractTokenizer {
   }
   async ignore(length) {
     if (length < 0) {
-      throw new RangeError("ignore length must be \u2265 0 bytes");
+      throw new RangeError("ignore length must be ≥ 0 bytes");
     }
     if (this.fileInfo.size !== undefined) {
       const bytesLeft = this.fileInfo.size - this.position;
@@ -1173,7 +1171,7 @@ var init_ReadStreamTokenizer = __esm(() => {
     }
     async ignore(length) {
       if (length < 0) {
-        throw new RangeError("ignore length must be \u2265 0 bytes");
+        throw new RangeError("ignore length must be ≥ 0 bytes");
       }
       const bufSize = Math.min(maxBufferSize, length);
       const buf = new Uint8Array(bufSize);
@@ -1454,12 +1452,12 @@ var require_common = __commonJS((exports, module) => {
         if (!debug.enabled) {
           return;
         }
-        const self2 = debug;
+        const self = debug;
         const curr = Number(new Date);
         const ms = curr - (prevTime || curr);
-        self2.diff = ms;
-        self2.prev = prevTime;
-        self2.curr = curr;
+        self.diff = ms;
+        self.prev = prevTime;
+        self.curr = curr;
         prevTime = curr;
         args[0] = createDebug.coerce(args[0]);
         if (typeof args[0] !== "string") {
@@ -1474,15 +1472,15 @@ var require_common = __commonJS((exports, module) => {
           const formatter = createDebug.formatters[format];
           if (typeof formatter === "function") {
             const val = args[index];
-            match = formatter.call(self2, val);
+            match = formatter.call(self, val);
             args.splice(index, 1);
             index--;
           }
           return match;
         });
-        createDebug.formatArgs.call(self2, args);
-        const logFn = self2.log || createDebug.log;
-        logFn.apply(self2, args);
+        createDebug.formatArgs.call(self, args);
+        const logFn = self.log || createDebug.log;
+        logFn.apply(self, args);
       }
       debug.namespace = namespace;
       debug.useColors = createDebug.useColors();
@@ -1752,186 +1750,6 @@ var require_browser = __commonJS((exports, module) => {
       return "[UnexpectedJSONParseError]: " + error.message;
     }
   };
-});
-
-// node_modules/debug/src/node.js
-var require_node = __commonJS((exports, module) => {
-  var tty = __require("tty");
-  var util = __require("util");
-  exports.init = init;
-  exports.log = log;
-  exports.formatArgs = formatArgs;
-  exports.save = save;
-  exports.load = load;
-  exports.useColors = useColors;
-  exports.destroy = util.deprecate(() => {}, "Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.");
-  exports.colors = [6, 2, 3, 4, 5, 1];
-  try {
-    const supportsColor = (()=>{throw new Error("Cannot require module "+"supports-color");})();
-    if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
-      exports.colors = [
-        20,
-        21,
-        26,
-        27,
-        32,
-        33,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        56,
-        57,
-        62,
-        63,
-        68,
-        69,
-        74,
-        75,
-        76,
-        77,
-        78,
-        79,
-        80,
-        81,
-        92,
-        93,
-        98,
-        99,
-        112,
-        113,
-        128,
-        129,
-        134,
-        135,
-        148,
-        149,
-        160,
-        161,
-        162,
-        163,
-        164,
-        165,
-        166,
-        167,
-        168,
-        169,
-        170,
-        171,
-        172,
-        173,
-        178,
-        179,
-        184,
-        185,
-        196,
-        197,
-        198,
-        199,
-        200,
-        201,
-        202,
-        203,
-        204,
-        205,
-        206,
-        207,
-        208,
-        209,
-        214,
-        215,
-        220,
-        221
-      ];
-    }
-  } catch (error) {}
-  exports.inspectOpts = Object.keys(process.env).filter((key) => {
-    return /^debug_/i.test(key);
-  }).reduce((obj, key) => {
-    const prop = key.substring(6).toLowerCase().replace(/_([a-z])/g, (_2, k2) => {
-      return k2.toUpperCase();
-    });
-    let val = process.env[key];
-    if (/^(yes|on|true|enabled)$/i.test(val)) {
-      val = true;
-    } else if (/^(no|off|false|disabled)$/i.test(val)) {
-      val = false;
-    } else if (val === "null") {
-      val = null;
-    } else {
-      val = Number(val);
-    }
-    obj[prop] = val;
-    return obj;
-  }, {});
-  function useColors() {
-    return "colors" in exports.inspectOpts ? Boolean(exports.inspectOpts.colors) : tty.isatty(process.stderr.fd);
-  }
-  function formatArgs(args) {
-    const { namespace: name, useColors: useColors2 } = this;
-    if (useColors2) {
-      const c = this.color;
-      const colorCode = "\x1B[3" + (c < 8 ? c : "8;5;" + c);
-      const prefix = `  ${colorCode};1m${name} \x1B[0m`;
-      args[0] = prefix + args[0].split(`
-`).join(`
-` + prefix);
-      args.push(colorCode + "m+" + module.exports.humanize(this.diff) + "\x1B[0m");
-    } else {
-      args[0] = getDate() + name + " " + args[0];
-    }
-  }
-  function getDate() {
-    if (exports.inspectOpts.hideDate) {
-      return "";
-    }
-    return new Date().toISOString() + " ";
-  }
-  function log(...args) {
-    return process.stderr.write(util.formatWithOptions(exports.inspectOpts, ...args) + `
-`);
-  }
-  function save(namespaces) {
-    if (namespaces) {
-      process.env.DEBUG = namespaces;
-    } else {
-      delete process.env.DEBUG;
-    }
-  }
-  function load() {
-    return process.env.DEBUG;
-  }
-  function init(debug) {
-    debug.inspectOpts = {};
-    const keys = Object.keys(exports.inspectOpts);
-    for (let i = 0;i < keys.length; i++) {
-      debug.inspectOpts[keys[i]] = exports.inspectOpts[keys[i]];
-    }
-  }
-  module.exports = require_common()(exports);
-  var { formatters } = module.exports;
-  formatters.o = function(v) {
-    this.inspectOpts.colors = this.useColors;
-    return util.inspect(v, this.inspectOpts).split(`
-`).map((str) => str.trim()).join(" ");
-  };
-  formatters.O = function(v) {
-    this.inspectOpts.colors = this.useColors;
-    return util.inspect(v, this.inspectOpts);
-  };
-});
-
-// node_modules/debug/src/index.js
-var require_src = __commonJS((exports, module) => {
-  if (typeof process === "undefined" || process.type === "renderer" || false || process.__nwjs) {
-    module.exports = require_browser();
-  } else {
-    module.exports = require_node();
-  }
 });
 
 // node_modules/@tokenizer/inflate/lib/ZipToken.js
@@ -2216,7 +2034,7 @@ var import_debug, debug, syncBufferSize, ddSignatureArray, eocdSignatureBytes;
 var init_ZipHandler = __esm(() => {
   init_lib2();
   init_ZipToken();
-  import_debug = __toESM(require_src(), 1);
+  import_debug = __toESM(require_browser(), 1);
   debug = import_debug.default("tokenizer:inflate");
   syncBufferSize = 256 * 1024;
   ddSignatureArray = signatureToArray(Signature.DataDescriptor);
@@ -2309,7 +2127,7 @@ var init_uint8array_extras = __esm(() => {
     utf8: new globalThis.TextDecoder("utf8")
   };
   cachedEncoder = new globalThis.TextEncoder;
-  byteToHexLookupTable = Array.from({ length: 256 }, (_2, index) => index.toString(16).padStart(2, "0"));
+  byteToHexLookupTable = Array.from({ length: 256 }, (_, index) => index.toString(16).padStart(2, "0"));
 });
 
 // node_modules/file-type/source/tokens.js
@@ -5231,215 +5049,281 @@ var require_dist = __commonJS((exports) => {
   }
 });
 
-// node_modules/memoirist/dist/bun/index.js
-var Y = (v, b) => {
-  let A = b?.length ? {} : null;
-  if (A)
-    for (let Q of b)
-      A[Q.part.charCodeAt(0)] = Q;
-  return { part: v, store: null, inert: A, params: null, wildcardStore: null };
+// node_modules/memoirist/dist/index.mjs
+var createNode = (part, inert) => {
+  const inertMap = inert?.length ? {} : null;
+  if (inertMap)
+    for (const child of inert)
+      inertMap[child.part.charCodeAt(0)] = child;
+  return {
+    part,
+    store: null,
+    inert: inertMap,
+    params: null,
+    wildcardStore: null
+  };
 };
-var k = (v, b) => ({ ...v, part: b });
-var T = (v) => ({ name: v, store: null, inert: null });
-
-class _ {
-  config;
+var cloneNode = (node, part) => ({
+  ...node,
+  part
+});
+var createParamNode = (name) => ({
+  name,
+  store: null,
+  inert: null
+});
+var Memoirist = class _Memoirist {
+  constructor(config = {}) {
+    this.config = config;
+    if (config.lazy)
+      this.find = this.lazyFind;
+    if (config.onParam && !Array.isArray(config.onParam))
+      this.config.onParam = [
+        this.config.onParam
+      ];
+  }
   root = {};
   history = [];
   deferred = [];
-  constructor(v = {}) {
-    this.config = v;
-    if (v.lazy)
-      this.find = this.lazyFind;
-    if (v.onParam && !Array.isArray(v.onParam))
-      this.config.onParam = [this.config.onParam];
-  }
-  static regex = { static: /:.+?(?=\/|$)/, params: /:.+?(?=\/|$)/g, optionalParams: /(\/:\w+\?)/g };
-  lazyFind = (v, b) => {
+  static regex = {
+    static: /:.+?(?=\/|$)/,
+    params: /:.+?(?=\/|$)/g,
+    optionalParams: /(\/:\w+\?)/g
+  };
+  lazyFind = (method, url) => {
     if (!this.config.lazy)
       return this.find;
-    return this.build(), this.find(v, b);
+    this.build();
+    return this.find(method, url);
   };
   build() {
     if (!this.config.lazy)
       return;
-    for (let [v, b, A] of this.deferred)
-      this.add(v, b, A, { lazy: false, ignoreHistory: true });
-    this.deferred = [], this.find = (v, b) => {
-      let A = this.root[v];
-      if (!A)
+    for (const [method, path, store] of this.deferred)
+      this.add(method, path, store, { lazy: false, ignoreHistory: true });
+    this.deferred = [];
+    this.find = (method, url) => {
+      const root = this.root[method];
+      if (!root)
         return null;
-      return $(b, b.length, A, 0, this.config.onParam);
+      return matchRoute(url, url.length, root, 0, this.config.onParam);
     };
   }
-  add(v, b, A, { ignoreError: Q = false, ignoreHistory: O = false, lazy: V = this.config.lazy } = {}) {
-    if (V)
-      return this.find = this.lazyFind, this.deferred.push([v, b, A]), A;
-    if (typeof b !== "string")
-      throw new TypeError("Route path must be a string");
-    if (b === "")
-      b = "/";
-    else if (b[0] !== "/")
-      b = `/${b}`;
-    let X = b[b.length - 1] === "*", J = b.match(_.regex.optionalParams);
-    if (J) {
-      let F = b.replaceAll("?", "");
-      this.add(v, F, A, { ignoreError: Q, ignoreHistory: O, lazy: V });
-      for (let B = 0;B < J.length; B++) {
-        let D = b.replace(J[B], "");
-        this.add(v, D, A, { ignoreError: true, ignoreHistory: O, lazy: V });
-      }
-      return A;
+  add(method, path, store, {
+    ignoreError = false,
+    ignoreHistory = false,
+    lazy = this.config.lazy
+  } = {}) {
+    if (lazy) {
+      this.find = this.lazyFind;
+      this.deferred.push([method, path, store]);
+      return store;
     }
-    if (J)
-      b = b.replaceAll("?", "");
-    if (this.history.find(([F, B, D]) => F === v && B === b))
-      return A;
-    if (X || J && b.charCodeAt(b.length - 1) === 63)
-      b = b.slice(0, -1);
-    if (!O)
-      this.history.push([v, b, A]);
-    let K = b.split(_.regex.static), G = b.match(_.regex.params) || [];
-    if (K[K.length - 1] === "")
-      K.pop();
-    let q;
-    if (!this.root[v])
-      q = this.root[v] = Y("/");
+    if (typeof path !== "string")
+      throw new TypeError("Route path must be a string");
+    if (path === "")
+      path = "/";
+    else if (path[0] !== "/")
+      path = `/${path}`;
+    const isWildcard = path[path.length - 1] === "*";
+    const optionalParams = path.match(_Memoirist.regex.optionalParams);
+    if (optionalParams) {
+      const originalPath = path.replaceAll("?", "");
+      this.add(method, originalPath, store, {
+        ignoreError,
+        ignoreHistory,
+        lazy
+      });
+      for (let i = 0;i < optionalParams.length; i++) {
+        let newPath = path.replace(optionalParams[i], "");
+        this.add(method, newPath, store, {
+          ignoreError: true,
+          ignoreHistory,
+          lazy
+        });
+      }
+      return store;
+    }
+    if (optionalParams)
+      path = path.replaceAll("?", "");
+    if (this.history.find(([m, p, s]) => m === method && p === path))
+      return store;
+    if (isWildcard || optionalParams && path.charCodeAt(path.length - 1) === 63)
+      path = path.slice(0, -1);
+    if (!ignoreHistory)
+      this.history.push([method, path, store]);
+    const inertParts = path.split(_Memoirist.regex.static);
+    const paramParts = path.match(_Memoirist.regex.params) || [];
+    if (inertParts[inertParts.length - 1] === "")
+      inertParts.pop();
+    let node;
+    if (!this.root[method])
+      node = this.root[method] = createNode("/");
     else
-      q = this.root[v];
-    let U = 0;
-    for (let F = 0;F < K.length; ++F) {
-      let B = K[F];
-      if (F > 0) {
-        let D = G[U++].slice(1);
-        if (q.params === null)
-          q.params = T(D);
-        else if (q.params.name !== D)
-          if (Q)
-            return A;
+      node = this.root[method];
+    let paramPartsIndex = 0;
+    for (let i = 0;i < inertParts.length; ++i) {
+      let part = inertParts[i];
+      if (i > 0) {
+        const param = paramParts[paramPartsIndex++].slice(1);
+        if (node.params === null)
+          node.params = createParamNode(param);
+        else if (node.params.name !== param) {
+          if (ignoreError)
+            return store;
           else
-            throw new Error(`Cannot create route "${b}" with parameter "${D}" because a route already exists with a different parameter name ("${q.params.name}") in the same location`);
-        let S = q.params;
-        if (S.inert === null) {
-          q = S.inert = Y(B);
+            throw new Error(`Cannot create route "${path}" with parameter "${param}" because a route already exists with a different parameter name ("${node.params.name}") in the same location`);
+        }
+        const params = node.params;
+        if (params.inert === null) {
+          node = params.inert = createNode(part);
           continue;
         }
-        q = S.inert;
+        node = params.inert;
       }
-      for (let D = 0;; ) {
-        if (D === B.length) {
-          if (D < q.part.length) {
-            let S = k(q, q.part.slice(D));
-            Object.assign(q, Y(B, [S]));
+      for (let j = 0;; ) {
+        if (j === part.length) {
+          if (j < node.part.length) {
+            const childNode = cloneNode(node, node.part.slice(j));
+            Object.assign(node, createNode(part, [childNode]));
           }
           break;
         }
-        if (D === q.part.length) {
-          if (q.inert === null)
-            q.inert = {};
-          let S = q.inert[B.charCodeAt(D)];
-          if (S) {
-            q = S, B = B.slice(D), D = 0;
+        if (j === node.part.length) {
+          if (node.inert === null)
+            node.inert = {};
+          const inert = node.inert[part.charCodeAt(j)];
+          if (inert) {
+            node = inert;
+            part = part.slice(j);
+            j = 0;
             continue;
           }
-          let Z = Y(B.slice(D));
-          q.inert[B.charCodeAt(D)] = Z, q = Z;
+          const childNode = createNode(part.slice(j));
+          node.inert[part.charCodeAt(j)] = childNode;
+          node = childNode;
           break;
         }
-        if (B[D] !== q.part[D]) {
-          let S = k(q, q.part.slice(D)), Z = Y(B.slice(D));
-          Object.assign(q, Y(q.part.slice(0, D), [S, Z])), q = Z;
+        if (part[j] !== node.part[j]) {
+          const existingChild = cloneNode(node, node.part.slice(j));
+          const newChild = createNode(part.slice(j));
+          Object.assign(node, createNode(node.part.slice(0, j), [
+            existingChild,
+            newChild
+          ]));
+          node = newChild;
           break;
         }
-        ++D;
+        ++j;
       }
     }
-    if (U < G.length) {
-      let B = G[U].slice(1);
-      if (q.params === null)
-        q.params = T(B);
-      else if (q.params.name !== B)
-        if (Q)
-          return A;
+    if (paramPartsIndex < paramParts.length) {
+      const param = paramParts[paramPartsIndex];
+      const name = param.slice(1);
+      if (node.params === null)
+        node.params = createParamNode(name);
+      else if (node.params.name !== name) {
+        if (ignoreError)
+          return store;
         else
-          throw new Error(`Cannot create route "${b}" with parameter "${B}" because a route already exists with a different parameter name ("${q.params.name}") in the same location`);
-      if (q.params.store === null)
-        q.params.store = A;
-      return q.params.store;
+          throw new Error(`Cannot create route "${path}" with parameter "${name}" because a route already exists with a different parameter name ("${node.params.name}") in the same location`);
+      }
+      if (node.params.store === null)
+        node.params.store = store;
+      return node.params.store;
     }
-    if (X) {
-      if (q.wildcardStore === null)
-        q.wildcardStore = A;
-      return q.wildcardStore;
+    if (isWildcard) {
+      if (node.wildcardStore === null)
+        node.wildcardStore = store;
+      return node.wildcardStore;
     }
-    if (q.store === null)
-      q.store = A;
-    return q.store;
+    if (node.store === null)
+      node.store = store;
+    return node.store;
   }
-  find(v, b) {
-    let A = this.root[v];
-    if (!A)
+  find(method, url) {
+    const root = this.root[method];
+    if (!root)
       return null;
-    return $(b, b.length, A, 0, this.config.onParam);
+    return matchRoute(url, url.length, root, 0, this.config.onParam);
   }
-}
-var $ = (v, b, A, Q, O) => {
-  let V = A.part, X = V.length, J = Q + X;
-  if (X > 1) {
-    if (J > b)
+};
+var matchRoute = (url, urlLength, node, startIndex, onParam) => {
+  const part = node.part;
+  const length = part.length;
+  const endIndex = startIndex + length;
+  if (length > 1) {
+    if (endIndex > urlLength)
       return null;
-    if (X < 15) {
-      for (let K = 1, G = Q + 1;K < X; ++K, ++G)
-        if (V.charCodeAt(K) !== v.charCodeAt(G))
+    if (length < 15) {
+      for (let i = 1, j = startIndex + 1;i < length; ++i, ++j)
+        if (part.charCodeAt(i) !== url.charCodeAt(j))
           return null;
-    } else if (v.slice(Q, J) !== V)
+    } else if (url.slice(startIndex, endIndex) !== part)
       return null;
   }
-  if (J === b) {
-    if (A.store !== null)
-      return { store: A.store, params: {} };
-    if (A.wildcardStore !== null)
-      return { store: A.wildcardStore, params: { "*": "" } };
+  if (endIndex === urlLength) {
+    if (node.store !== null)
+      return {
+        store: node.store,
+        params: {}
+      };
+    if (node.wildcardStore !== null)
+      return {
+        store: node.wildcardStore,
+        params: { "*": "" }
+      };
     return null;
   }
-  if (A.inert !== null) {
-    let K = A.inert[v.charCodeAt(J)];
-    if (K !== undefined) {
-      let G = $(v, b, K, J, O);
-      if (G !== null)
-        return G;
+  if (node.inert !== null) {
+    const inert = node.inert[url.charCodeAt(endIndex)];
+    if (inert !== undefined) {
+      const route = matchRoute(url, urlLength, inert, endIndex, onParam);
+      if (route !== null)
+        return route;
     }
   }
-  if (A.params !== null) {
-    let { store: K, name: G, inert: q } = A.params, U = v.indexOf("/", J);
-    if (U !== J) {
-      if (U === -1 || U >= b) {
-        if (K !== null) {
-          let F = {};
-          if (F[G] = v.substring(J, b), O)
-            for (let B = 0;B < O.length; B++) {
-              let D = O[B](F[G], G);
-              if (D !== undefined)
-                F[G] = D;
+  if (node.params !== null) {
+    const { store, name, inert } = node.params;
+    const slashIndex = url.indexOf("/", endIndex);
+    if (slashIndex !== endIndex) {
+      if (slashIndex === -1 || slashIndex >= urlLength) {
+        if (store !== null) {
+          const params = {};
+          params[name] = url.substring(endIndex, urlLength);
+          if (onParam)
+            for (let i = 0;i < onParam.length; i++) {
+              let temp = onParam[i](params[name], name);
+              if (temp !== undefined)
+                params[name] = temp;
             }
-          return { store: K, params: F };
+          return {
+            store,
+            params
+          };
         }
-      } else if (q !== null) {
-        let F = $(v, b, q, U, O);
-        if (F !== null) {
-          if (F.params[G] = v.substring(J, U), O)
-            for (let B = 0;B < O.length; B++) {
-              let D = O[B](F.params[G], G);
-              if (D !== undefined)
-                F.params[G] = D;
+      } else if (inert !== null) {
+        const route = matchRoute(url, urlLength, inert, slashIndex, onParam);
+        if (route !== null) {
+          route.params[name] = url.substring(endIndex, slashIndex);
+          if (onParam)
+            for (let i = 0;i < onParam.length; i++) {
+              let temp = onParam[i](route.params[name], name);
+              if (temp !== undefined)
+                route.params[name] = temp;
             }
-          return F;
+          return route;
         }
       }
     }
   }
-  if (A.wildcardStore !== null)
-    return { store: A.wildcardStore, params: { "*": v.substring(J, b) } };
+  if (node.wildcardStore !== null)
+    return {
+      store: node.wildcardStore,
+      params: {
+        "*": url.substring(endIndex, urlLength)
+      }
+    };
   return null;
 };
 
@@ -6190,26 +6074,26 @@ function Get2(kind) {
   return map2.get(kind);
 }
 // node_modules/@sinclair/typebox/build/esm/type/sets/set.mjs
-function SetIncludes(T2, S) {
-  return T2.includes(S);
+function SetIncludes(T, S) {
+  return T.includes(S);
 }
-function SetDistinct(T2) {
-  return [...new Set(T2)];
+function SetDistinct(T) {
+  return [...new Set(T)];
 }
-function SetIntersect(T2, S) {
-  return T2.filter((L) => S.includes(L));
+function SetIntersect(T, S) {
+  return T.filter((L) => S.includes(L));
 }
-function SetIntersectManyResolve(T2, Init) {
-  return T2.reduce((Acc, L) => {
+function SetIntersectManyResolve(T, Init) {
+  return T.reduce((Acc, L) => {
     return SetIntersect(Acc, L);
   }, Init);
 }
-function SetIntersectMany(T2) {
-  return T2.length === 1 ? T2[0] : T2.length > 1 ? SetIntersectManyResolve(T2.slice(1), T2[0]) : [];
+function SetIntersectMany(T) {
+  return T.length === 1 ? T[0] : T.length > 1 ? SetIntersectManyResolve(T.slice(1), T[0]) : [];
 }
-function SetUnionMany(T2) {
+function SetUnionMany(T) {
   const Acc = [];
-  for (const L of T2)
+  for (const L of T)
     Acc.push(...L);
   return Acc;
 }
@@ -6241,7 +6125,7 @@ function Computed(target, parameters, options) {
 
 // node_modules/@sinclair/typebox/build/esm/type/discard/discard.mjs
 function DiscardKey(value, key) {
-  const { [key]: _2, ...rest } = value;
+  const { [key]: _, ...rest } = value;
   return rest;
 }
 function Discard(value, keys) {
@@ -6272,8 +6156,8 @@ function Function2(parameters, returns, options) {
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/union/union-create.mjs
-function UnionCreate(T2, options) {
-  return CreateType({ [Kind]: "Union", anyOf: T2 }, options);
+function UnionCreate(T, options) {
+  return CreateType({ [Kind]: "Union", anyOf: T }, options);
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/union/union-evaluated.mjs
@@ -6283,15 +6167,15 @@ function IsUnionOptional(types) {
 function RemoveOptionalFromRest(types) {
   return types.map((left) => IsOptional(left) ? RemoveOptionalFromType(left) : left);
 }
-function RemoveOptionalFromType(T2) {
-  return Discard(T2, [OptionalKind]);
+function RemoveOptionalFromType(T) {
+  return Discard(T, [OptionalKind]);
 }
 function ResolveUnion(types, options) {
   const isOptional = IsUnionOptional(types);
   return isOptional ? Optional(UnionCreate(RemoveOptionalFromRest(types), options)) : UnionCreate(RemoveOptionalFromRest(types), options);
 }
-function UnionEvaluated(T2, options) {
-  return T2.length === 1 ? CreateType(T2[0], options) : T2.length === 0 ? Never(options) : ResolveUnion(T2, options);
+function UnionEvaluated(T, options) {
+  return T.length === 1 ? CreateType(T[0], options) : T.length === 0 ? Never(options) : ResolveUnion(T, options);
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/union/union.mjs
@@ -6746,23 +6630,23 @@ function FromMappedKey(K, P) {
   const R = MappedKeyToMappedResultProperties(K, P);
   return FromMappedResult3(K, R);
 }
-function FromRest2(K, T2) {
-  return T2.map((L) => FromSchemaType(K, L));
+function FromRest2(K, T) {
+  return T.map((L) => FromSchemaType(K, L));
 }
-function FromProperties3(K, T2) {
+function FromProperties3(K, T) {
   const Acc = {};
-  for (const K2 of globalThis.Object.getOwnPropertyNames(T2))
-    Acc[K2] = FromSchemaType(K, T2[K2]);
+  for (const K2 of globalThis.Object.getOwnPropertyNames(T))
+    Acc[K2] = FromSchemaType(K, T[K2]);
   return Acc;
 }
-function FromSchemaType(K, T2) {
-  const options = { ...T2 };
-  return IsOptional(T2) ? Optional(FromSchemaType(K, Discard(T2, [OptionalKind]))) : IsReadonly(T2) ? Readonly(FromSchemaType(K, Discard(T2, [ReadonlyKind]))) : IsMappedResult(T2) ? FromMappedResult3(K, T2.properties) : IsMappedKey(T2) ? FromMappedKey(K, T2.keys) : IsConstructor(T2) ? Constructor(FromRest2(K, T2.parameters), FromSchemaType(K, T2.returns), options) : IsFunction3(T2) ? Function2(FromRest2(K, T2.parameters), FromSchemaType(K, T2.returns), options) : IsAsyncIterator3(T2) ? AsyncIterator(FromSchemaType(K, T2.items), options) : IsIterator3(T2) ? Iterator(FromSchemaType(K, T2.items), options) : IsIntersect(T2) ? Intersect(FromRest2(K, T2.allOf), options) : IsUnion(T2) ? Union(FromRest2(K, T2.anyOf), options) : IsTuple(T2) ? Tuple(FromRest2(K, T2.items ?? []), options) : IsObject3(T2) ? Object2(FromProperties3(K, T2.properties), options) : IsArray3(T2) ? Array2(FromSchemaType(K, T2.items), options) : IsPromise2(T2) ? Promise2(FromSchemaType(K, T2.item), options) : T2;
+function FromSchemaType(K, T) {
+  const options = { ...T };
+  return IsOptional(T) ? Optional(FromSchemaType(K, Discard(T, [OptionalKind]))) : IsReadonly(T) ? Readonly(FromSchemaType(K, Discard(T, [ReadonlyKind]))) : IsMappedResult(T) ? FromMappedResult3(K, T.properties) : IsMappedKey(T) ? FromMappedKey(K, T.keys) : IsConstructor(T) ? Constructor(FromRest2(K, T.parameters), FromSchemaType(K, T.returns), options) : IsFunction3(T) ? Function2(FromRest2(K, T.parameters), FromSchemaType(K, T.returns), options) : IsAsyncIterator3(T) ? AsyncIterator(FromSchemaType(K, T.items), options) : IsIterator3(T) ? Iterator(FromSchemaType(K, T.items), options) : IsIntersect(T) ? Intersect(FromRest2(K, T.allOf), options) : IsUnion(T) ? Union(FromRest2(K, T.anyOf), options) : IsTuple(T) ? Tuple(FromRest2(K, T.items ?? []), options) : IsObject3(T) ? Object2(FromProperties3(K, T.properties), options) : IsArray3(T) ? Array2(FromSchemaType(K, T.items), options) : IsPromise2(T) ? Promise2(FromSchemaType(K, T.item), options) : T;
 }
-function MappedFunctionReturnType(K, T2) {
+function MappedFunctionReturnType(K, T) {
   const Acc = {};
   for (const L of K)
-    Acc[L] = FromSchemaType(L, T2);
+    Acc[L] = FromSchemaType(L, T);
   return Acc;
 }
 function Mapped(key, map3, options) {
@@ -6803,10 +6687,10 @@ function OptionalFromMappedResult(R, F) {
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/intersect/intersect-create.mjs
-function IntersectCreate(T2, options = {}) {
-  const allObjects = T2.every((schema) => IsObject3(schema));
+function IntersectCreate(T, options = {}) {
+  const allObjects = T.every((schema) => IsObject3(schema));
   const clonedUnevaluatedProperties = IsSchema(options.unevaluatedProperties) ? { unevaluatedProperties: options.unevaluatedProperties } : {};
-  return CreateType(options.unevaluatedProperties === false || IsSchema(options.unevaluatedProperties) || allObjects ? { ...clonedUnevaluatedProperties, [Kind]: "Intersect", type: "object", allOf: T2 } : { ...clonedUnevaluatedProperties, [Kind]: "Intersect", allOf: T2 }, options);
+  return CreateType(options.unevaluatedProperties === false || IsSchema(options.unevaluatedProperties) || allObjects ? { ...clonedUnevaluatedProperties, [Kind]: "Intersect", type: "object", allOf: T } : { ...clonedUnevaluatedProperties, [Kind]: "Intersect", allOf: T }, options);
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/intersect/intersect-evaluated.mjs
@@ -6892,13 +6776,13 @@ function FromUnion5(types) {
   return propertyKeys;
 }
 function FromTuple2(types) {
-  return types.map((_2, indexer) => indexer.toString());
+  return types.map((_, indexer) => indexer.toString());
 }
-function FromArray2(_2) {
+function FromArray2(_) {
   return ["[number]"];
 }
-function FromProperties5(T2) {
-  return globalThis.Object.getOwnPropertyNames(T2);
+function FromProperties5(T) {
+  return globalThis.Object.getOwnPropertyNames(T);
 }
 function FromPatternProperties(patternProperties) {
   if (!includePatternProperties)
@@ -6959,35 +6843,35 @@ function KeyOfFromMappedResult(mappedResult, options) {
 function KeyOfPropertyEntries(schema) {
   const keys = KeyOfPropertyKeys(schema);
   const schemas = IndexFromPropertyKeys(schema, keys);
-  return keys.map((_2, index) => [keys[index], schemas[index]]);
+  return keys.map((_, index) => [keys[index], schemas[index]]);
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/composite/composite.mjs
-function CompositeKeys(T2) {
+function CompositeKeys(T) {
   const Acc = [];
-  for (const L of T2)
+  for (const L of T)
     Acc.push(...KeyOfPropertyKeys(L));
   return SetDistinct(Acc);
 }
-function FilterNever(T2) {
-  return T2.filter((L) => !IsNever(L));
+function FilterNever(T) {
+  return T.filter((L) => !IsNever(L));
 }
-function CompositeProperty(T2, K) {
+function CompositeProperty(T, K) {
   const Acc = [];
-  for (const L of T2)
+  for (const L of T)
     Acc.push(...IndexFromPropertyKeys(L, [K]));
   return FilterNever(Acc);
 }
-function CompositeProperties(T2, K) {
+function CompositeProperties(T, K) {
   const Acc = {};
   for (const L of K) {
-    Acc[L] = IntersectEvaluated(CompositeProperty(T2, L));
+    Acc[L] = IntersectEvaluated(CompositeProperty(T, L));
   }
   return Acc;
 }
-function Composite(T2, options) {
-  const K = CompositeKeys(T2);
-  const P = CompositeProperties(T2, K);
+function Composite(T, options) {
+  const K = CompositeKeys(T);
+  const P = CompositeProperties(T, K);
   const R = Object2(P, options);
   return R;
 }
@@ -7023,8 +6907,8 @@ function Unknown(options) {
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/const/const.mjs
-function FromArray3(T2) {
-  return T2.map((L) => FromValue(L, false));
+function FromArray3(T) {
+  return T.map((L) => FromValue(L, false));
 }
 function FromProperties7(value) {
   const Acc = {};
@@ -7032,14 +6916,14 @@ function FromProperties7(value) {
     Acc[K] = Readonly(FromValue(value[K], false));
   return Acc;
 }
-function ConditionalReadonly(T2, root) {
-  return root === true ? T2 : Readonly(T2);
+function ConditionalReadonly(T, root) {
+  return root === true ? T : Readonly(T);
 }
 function FromValue(value, root) {
   return IsAsyncIterator(value) ? ConditionalReadonly(Any(), root) : IsIterator(value) ? ConditionalReadonly(Any(), root) : IsArray(value) ? Readonly(Tuple(FromArray3(value))) : IsUint8Array(value) ? Uint8Array2() : IsDate(value) ? Date2() : IsObject(value) ? ConditionalReadonly(Object2(FromProperties7(value)), root) : IsFunction(value) ? ConditionalReadonly(Function2([], Unknown()), root) : IsUndefined(value) ? Undefined() : IsNull(value) ? Null() : IsSymbol(value) ? Symbol2() : IsBigInt(value) ? BigInt2() : IsNumber(value) ? Literal(value) : IsBoolean(value) ? Literal(value) : IsString(value) ? Literal(value) : Object2({});
 }
-function Const(T2, options) {
-  return CreateType(FromValue(T2, true), options);
+function Const(T, options) {
+  return CreateType(FromValue(T, true), options);
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/constructor-parameters/constructor-parameters.mjs
@@ -7322,8 +7206,8 @@ function ExtendsResolve(left, right, trueType, falseType) {
   const R = ExtendsCheck(left, right);
   return R === ExtendsResult.Union ? Union([trueType, falseType]) : R === ExtendsResult.True ? trueType : falseType;
 }
-function Extends(L, R, T2, F, options) {
-  return IsMappedResult(L) ? ExtendsFromMappedResult(L, R, T2, F, options) : IsMappedKey(L) ? CreateType(ExtendsFromMappedKey(L, R, T2, F, options)) : CreateType(ExtendsResolve(L, R, T2, F), options);
+function Extends(L, R, T, F, options) {
+  return IsMappedResult(L) ? ExtendsFromMappedResult(L, R, T, F, options) : IsMappedKey(L) ? CreateType(ExtendsFromMappedKey(L, R, T, F, options)) : CreateType(ExtendsResolve(L, R, T, F), options);
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/extends/extends-from-mapped-key.mjs
@@ -7340,8 +7224,8 @@ function FromPropertyKeys(K, U, L, R, options) {
 function FromMappedKey2(K, U, L, R, options) {
   return FromPropertyKeys(K.keys, U, L, R, options);
 }
-function ExtendsFromMappedKey(T2, U, L, R, options) {
-  const P = FromMappedKey2(T2, U, L, R, options);
+function ExtendsFromMappedKey(T, U, L, R, options) {
+  const P = FromMappedKey2(T, U, L, R, options);
   return MappedResult(P);
 }
 
@@ -7384,11 +7268,11 @@ function FromProperties9(P, U) {
     Acc[K2] = Exclude(P[K2], U);
   return Acc;
 }
-function FromMappedResult7(R, T2) {
-  return FromProperties9(R.properties, T2);
+function FromMappedResult7(R, T) {
+  return FromProperties9(R.properties, T);
 }
-function ExcludeFromMappedResult(R, T2) {
-  const P = FromMappedResult7(R, T2);
+function ExcludeFromMappedResult(R, T) {
+  const P = FromMappedResult7(R, T);
   return MappedResult(P);
 }
 
@@ -7411,17 +7295,17 @@ function Extract(L, R, options) {
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/extract/extract-from-mapped-result.mjs
-function FromProperties10(P, T2) {
+function FromProperties10(P, T) {
   const Acc = {};
   for (const K2 of globalThis.Object.getOwnPropertyNames(P))
-    Acc[K2] = Extract(P[K2], T2);
+    Acc[K2] = Extract(P[K2], T);
   return Acc;
 }
-function FromMappedResult8(R, T2) {
-  return FromProperties10(R.properties, T2);
+function FromMappedResult8(R, T) {
+  return FromProperties10(R.properties, T);
 }
-function ExtractFromMappedResult(R, T2) {
-  const P = FromMappedResult8(R, T2);
+function ExtractFromMappedResult(R, T) {
+  const P = FromMappedResult8(R, T);
   return MappedResult(P);
 }
 
@@ -7436,17 +7320,17 @@ function ReadonlyOptional(schema) {
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/record/record.mjs
-function RecordCreateFromPattern(pattern, T2, options) {
-  return CreateType({ [Kind]: "Record", type: "object", patternProperties: { [pattern]: T2 } }, options);
+function RecordCreateFromPattern(pattern, T, options) {
+  return CreateType({ [Kind]: "Record", type: "object", patternProperties: { [pattern]: T } }, options);
 }
-function RecordCreateFromKeys(K, T2, options) {
+function RecordCreateFromKeys(K, T, options) {
   const result = {};
   for (const K2 of K)
-    result[K2] = T2;
+    result[K2] = T;
   return Object2(result, { ...options, [Hint]: "Record" });
 }
-function FromTemplateLiteralKey(K, T2, options) {
-  return IsTemplateLiteralFinite(K) ? RecordCreateFromKeys(IndexPropertyKeys(K), T2, options) : RecordCreateFromPattern(K.pattern, T2, options);
+function FromTemplateLiteralKey(K, T, options) {
+  return IsTemplateLiteralFinite(K) ? RecordCreateFromKeys(IndexPropertyKeys(K), T, options) : RecordCreateFromPattern(K.pattern, T, options);
 }
 function FromUnionKey(key, type, options) {
   return RecordCreateFromKeys(IndexPropertyKeys(Union(key)), type, options);
@@ -7461,7 +7345,7 @@ function FromStringKey(key, type, options) {
   const pattern = IsUndefined(key.pattern) ? PatternStringExact : key.pattern;
   return RecordCreateFromPattern(pattern, type, options);
 }
-function FromAnyKey(_2, type, options) {
+function FromAnyKey(_, type, options) {
   return RecordCreateFromPattern(PatternStringExact, type, options);
 }
 function FromNeverKey(_key, type, options) {
@@ -7473,7 +7357,7 @@ function FromBooleanKey(_key, type, options) {
 function FromIntegerKey(_key, type, options) {
   return RecordCreateFromPattern(PatternNumberExact, type, options);
 }
-function FromNumberKey(_2, type, options) {
+function FromNumberKey(_, type, options) {
   return RecordCreateFromPattern(PatternNumberExact, type, options);
 }
 function Record(key, type, options = {}) {
@@ -7582,11 +7466,11 @@ function MappedIntrinsicPropertyKeys(K, M, options) {
   }, {});
   return result;
 }
-function MappedIntrinsicProperties(T2, M, options) {
-  return MappedIntrinsicPropertyKeys(T2["keys"], M, options);
+function MappedIntrinsicProperties(T, M, options) {
+  return MappedIntrinsicPropertyKeys(T["keys"], M, options);
 }
-function IntrinsicFromMappedKey(T2, M, options) {
-  const P = MappedIntrinsicProperties(T2, M, options);
+function IntrinsicFromMappedKey(T, M, options) {
+  const P = MappedIntrinsicProperties(T, M, options);
   return MappedResult(P);
 }
 
@@ -7619,31 +7503,31 @@ function FromTemplateLiteral3(schema, mode, options) {
 function FromLiteralValue(value, mode) {
   return typeof value === "string" ? mode === "Uncapitalize" ? ApplyUncapitalize(value) : mode === "Capitalize" ? ApplyCapitalize(value) : mode === "Uppercase" ? ApplyUppercase(value) : mode === "Lowercase" ? ApplyLowercase(value) : value : value.toString();
 }
-function FromRest5(T2, M) {
-  return T2.map((L) => Intrinsic(L, M));
+function FromRest5(T, M) {
+  return T.map((L) => Intrinsic(L, M));
 }
 function Intrinsic(schema, mode, options = {}) {
   return IsMappedKey(schema) ? IntrinsicFromMappedKey(schema, mode, options) : IsTemplateLiteral(schema) ? FromTemplateLiteral3(schema, mode, options) : IsUnion(schema) ? Union(FromRest5(schema.anyOf, mode), options) : IsLiteral(schema) ? Literal(FromLiteralValue(schema.const, mode), options) : CreateType(schema, options);
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/intrinsic/capitalize.mjs
-function Capitalize(T2, options = {}) {
-  return Intrinsic(T2, "Capitalize", options);
+function Capitalize(T, options = {}) {
+  return Intrinsic(T, "Capitalize", options);
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/intrinsic/lowercase.mjs
-function Lowercase(T2, options = {}) {
-  return Intrinsic(T2, "Lowercase", options);
+function Lowercase(T, options = {}) {
+  return Intrinsic(T, "Lowercase", options);
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/intrinsic/uncapitalize.mjs
-function Uncapitalize(T2, options = {}) {
-  return Intrinsic(T2, "Uncapitalize", options);
+function Uncapitalize(T, options = {}) {
+  return Intrinsic(T, "Uncapitalize", options);
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/intrinsic/uppercase.mjs
-function Uppercase(T2, options = {}) {
-  return Intrinsic(T2, "Uppercase", options);
+function Uppercase(T, options = {}) {
+  return Intrinsic(T, "Uppercase", options);
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/omit/omit-from-mapped-result.mjs
@@ -7669,11 +7553,11 @@ function FromUnion8(types, propertyKeys) {
   return types.map((type) => OmitResolve(type, propertyKeys));
 }
 function FromProperty3(properties, key) {
-  const { [key]: _2, ...R } = properties;
+  const { [key]: _, ...R } = properties;
   return R;
 }
 function FromProperties13(properties, propertyKeys) {
-  return propertyKeys.reduce((T2, K2) => FromProperty3(T2, K2), properties);
+  return propertyKeys.reduce((T, K2) => FromProperty3(T, K2), properties);
 }
 function FromObject3(type, propertyKeys, properties) {
   const options = Discard(type, [TransformKind, "$id", "required", "properties"]);
@@ -8009,11 +7893,11 @@ function RegExp2(unresolved, options) {
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/rest/rest.mjs
-function RestResolve(T2) {
-  return IsIntersect(T2) ? T2.allOf : IsUnion(T2) ? T2.anyOf : IsTuple(T2) ? T2.items ?? [] : [];
+function RestResolve(T) {
+  return IsIntersect(T) ? T.allOf : IsUnion(T) ? T.anyOf : IsTuple(T) ? T.items ?? [] : [];
 }
-function Rest(T2) {
-  return RestResolve(T2);
+function Rest(T) {
+  return RestResolve(T);
 }
 
 // node_modules/@sinclair/typebox/build/esm/type/return-type/return-type.mjs
@@ -8327,7 +8211,7 @@ var ByteMarker;
 })(ByteMarker || (ByteMarker = {}));
 var Accumulator = BigInt("14695981039346656037");
 var [Prime, Size] = [BigInt("1099511628211"), BigInt("18446744073709551616")];
-var Bytes = Array.from({ length: 256 }).map((_2, i) => BigInt(i));
+var Bytes = Array.from({ length: 256 }).map((_, i) => BigInt(i));
 var F64 = new Float64Array(1);
 var F64In = new DataView(F64.buffer);
 var F64Out = new Uint8Array(F64.buffer);
@@ -9578,8 +9462,8 @@ function FromConstructor6(schema, references) {
       return class {
         constructor() {
           for (const [key, val] of Object.entries(value)) {
-            const self2 = this;
-            self2[key] = val;
+            const self = this;
+            self[key] = val;
           }
         }
       };
@@ -9775,7 +9659,7 @@ function FromTuple8(schema, references) {
   if (schema.items === undefined) {
     return [];
   } else {
-    return Array.from({ length: schema.minItems }).map((_2, index) => Visit7(schema.items[index], references));
+    return Array.from({ length: schema.minItems }).map((_, index) => Visit7(schema.items[index], references));
   }
 }
 function FromUndefined4(schema, references) {
@@ -12424,7 +12308,7 @@ var StatusMap = {
   "Not Extended": 510,
   "Network Authentication Required": 511
 };
-var InvertedStatusMap = Object.fromEntries(Object.entries(StatusMap).map(([k2, v]) => [v, k2]));
+var InvertedStatusMap = Object.fromEntries(Object.entries(StatusMap).map(([k, v]) => [v, k]));
 function removeTrailingEquals(digest) {
   let trimmedDigest = digest;
   for (;trimmedDigest.endsWith("="); )
@@ -12594,7 +12478,7 @@ var getLoosePath = (path) => path.charCodeAt(path.length - 1) === 47 ? path.slic
 var isNotEmpty = (obj) => {
   if (!obj)
     return false;
-  for (const _2 in obj)
+  for (const _ in obj)
     return true;
   return false;
 };
@@ -13815,7 +13699,7 @@ class Cookie {
   }
 }
 var createCookieJar = (set, store, initial) => (set.cookie || (set.cookie = /* @__PURE__ */ Object.create(null)), new Proxy(store, {
-  get(_2, key) {
+  get(_, key) {
     return key in store ? new Cookie(key, set.cookie, Object.assign({}, initial ?? {}, store[key])) : new Cookie(key, set.cookie, Object.assign({}, initial));
   }
 }));
@@ -15130,7 +15014,7 @@ var mergeObjectIntersection = (schema) => {
   for (const type of allOf) {
     if (type.type !== "object")
       continue;
-    const { properties, required, type: _2, [Kind2]: __, ...rest } = type;
+    const { properties, required, type: _, [Kind2]: __, ...rest } = type;
     if (required)
       newSchema.required = newSchema.required ? newSchema.required.concat(required) : required;
     Object.assign(newSchema, rest);
@@ -15467,8 +15351,8 @@ var replaceSchemaTypeFromOption = (schema, option) => {
     const newWalkInput = { isRoot: false, treeLvl: treeLvl + 1 }, withTransformedChildren = { ...s };
     if (s.oneOf && (withTransformedChildren.oneOf = s.oneOf.map((x) => walk({ ...newWalkInput, s: x }))), s.anyOf && (withTransformedChildren.anyOf = s.anyOf.map((x) => walk({ ...newWalkInput, s: x }))), s.allOf && (withTransformedChildren.allOf = s.allOf.map((x) => walk({ ...newWalkInput, s: x }))), s.not && (withTransformedChildren.not = walk({ ...newWalkInput, s: s.not })), s.properties) {
       withTransformedChildren.properties = {};
-      for (const [k2, v] of Object.entries(s.properties))
-        withTransformedChildren.properties[k2] = walk({
+      for (const [k, v] of Object.entries(s.properties))
+        withTransformedChildren.properties[k] = walk({
           ...newWalkInput,
           s: v
         });
@@ -16855,8 +16739,8 @@ if(vaq.issues){` + validation.validate("query", undefined, "vaq.issues") + `}els
         const schema = unwrapImportSchema(validator.body.schema);
         if (!hasUnion && value && typeof value == "object" && (hasType("File", schema) || hasType("Files", schema))) {
           hasNonUnionFileWithDefault = true;
-          for (const [k2, v] of Object.entries(value))
-            (v === "File" || v === "Files") && delete value[k2];
+          for (const [k, v] of Object.entries(value))
+            (v === "File" || v === "Files") && delete value[k];
           isNotEmpty(value) || (value = undefined);
         }
         const parsed = typeof value == "object" ? JSON.stringify(value) : typeof value == "string" ? `'${value}'` : value;
@@ -16906,8 +16790,8 @@ if(vab.issues){` + validation.validate("body", undefined, "vab.issues") + `}else
               validator2 += `if(fileUnions[${fileUnions.length}].Check(c.body)){`;
               let validateFile2 = "", validatorLength = 0;
               for (let i2 = 0;i2 < iterator2.length; i2++) {
-                const [k2, v] = iterator2[i2];
-                !v.extension || v[Kind] !== "File" && v[Kind] !== "Files" || (validatorLength && (validateFile2 += ","), validateFile2 += `fileType(c.body.${k2},${JSON.stringify(v.extension)},'body.${k2}')`, validatorLength++);
+                const [k, v] = iterator2[i2];
+                !v.extension || v[Kind] !== "File" && v[Kind] !== "Files" || (validatorLength && (validateFile2 += ","), validateFile2 += `fileType(c.body.${k},${JSON.stringify(v.extension)},'body.${k}')`, validatorLength++);
               }
               validateFile2 && (validatorLength === 1 ? validator2 += `await ${validateFile2}
 ` : validatorLength > 1 && (validator2 += `await Promise.all([${validateFile2}])
@@ -16920,8 +16804,8 @@ if(vab.issues){` + validation.validate("body", undefined, "vab.issues") + `}else
         const bodyProperties = getSchemaProperties(unwrapImportSchema(validator.body.schema));
         let i = 0;
         if (bodyProperties)
-          for (const [k2, v] of Object.entries(bodyProperties))
-            !v.extension || v[Kind] !== "File" && v[Kind] !== "Files" || (i && (validateFile2 += ","), validateFile2 += `fileType(c.body.${k2},${JSON.stringify(v.extension)},'body.${k2}')`, i++);
+          for (const [k, v] of Object.entries(bodyProperties))
+            !v.extension || v[Kind] !== "File" && v[Kind] !== "Files" || (i && (validateFile2 += ","), validateFile2 += `fileType(c.body.${k},${JSON.stringify(v.extension)},'body.${k}')`, i++);
         i && (fnLiteral += `
 `), i === 1 ? fnLiteral += `await ${validateFile2}
 ` : i > 1 && (fnLiteral += `await Promise.all([${validateFile2}])
@@ -17322,9 +17206,9 @@ const notFound=new NotFoundError()
 const hoc=app.extender.higherOrderFunctions.map(x=>x.fn)
 `, app.event.request?.length && (fnLiteral += `const onRequest=app.event.request.map(x=>x.fn)
 `), app.event.afterResponse?.length && (fnLiteral += `const afterResponse=app.event.afterResponse.map(x=>x.fn)
-`), fnLiteral += error404.declare, app.event.trace?.length && (fnLiteral += "const " + app.event.trace.map((_2, i) => `tr${i}=app.event.trace[${i}].fn`).join(",") + `
+`), fnLiteral += error404.declare, app.event.trace?.length && (fnLiteral += "const " + app.event.trace.map((_, i) => `tr${i}=app.event.trace[${i}].fn`).join(",") + `
 `), fnLiteral += `${maybeAsync ? "async " : ""}function map(${adapter.parameters}){`, app.event.request?.length && (fnLiteral += `let re
-`), fnLiteral += adapter.createContext(app), app.event.trace?.length && (fnLiteral += "c[ELYSIA_TRACE]=[" + app.event.trace.map((_2, i) => `tr${i}(c)`).join(",") + `]
+`), fnLiteral += adapter.createContext(app), app.event.trace?.length && (fnLiteral += "c[ELYSIA_TRACE]=[" + app.event.trace.map((_, i) => `tr${i}(c)`).join(",") + `]
 `), fnLiteral += createOnRequestHandler(app), switchMap && (fnLiteral += `
 map: switch(p){
 ` + switchMap + "}"), fnLiteral += findDynamicRoute + `}
@@ -18056,9 +17940,9 @@ var createDynamicHandler = (app) => {
             case "multipart/form-data": {
               body = {};
               const form2 = await request.formData(), grouped = /* @__PURE__ */ new Map;
-              form2.forEach((v, k2) => {
-                const list = grouped.get(k2);
-                list ? list.push(v) : grouped.set(k2, [v]);
+              form2.forEach((v, k) => {
+                const list = grouped.get(k);
+                list ? list.push(v) : grouped.set(k, [v]);
               });
               for (const [key, value] of grouped) {
                 if (body[key])
@@ -18098,9 +17982,9 @@ var createDynamicHandler = (app) => {
                     case "multipart/form-data": {
                       body = {};
                       const form2 = await request.formData(), grouped = /* @__PURE__ */ new Map;
-                      form2.forEach((v, k2) => {
-                        const list = grouped.get(k2);
-                        list ? list.push(v) : grouped.set(k2, [v]);
+                      form2.forEach((v, k) => {
+                        const list = grouped.get(k);
+                        list ? list.push(v) : grouped.set(k, [v]);
                       });
                       for (const [key, value] of grouped) {
                         if (body[key])
@@ -18147,9 +18031,9 @@ var createDynamicHandler = (app) => {
                 case "multipart/form-data": {
                   body = {};
                   const form2 = await request.formData(), grouped = /* @__PURE__ */ new Map;
-                  form2.forEach((v, k2) => {
-                    const list = grouped.get(k2);
-                    list ? list.push(v) : grouped.set(k2, [v]);
+                  form2.forEach((v, k) => {
+                    const list = grouped.get(k);
+                    list ? list.push(v) : grouped.set(k, [v]);
                   });
                   for (const [key, value] of grouped) {
                     if (body[key])
@@ -18416,14 +18300,14 @@ var _Elysia = class _Elysia2 {
     this.router = {
       "~http": undefined,
       get http() {
-        return this["~http"] || (this["~http"] = new _({
+        return this["~http"] || (this["~http"] = new Memoirist({
           lazy: true,
           onParam: import_fast_decode_uri_component4.default
         })), this["~http"];
       },
       "~dynamic": undefined,
       get dynamic() {
-        return this["~dynamic"] || (this["~dynamic"] = new _({
+        return this["~dynamic"] || (this["~dynamic"] = new Memoirist({
           onParam: import_fast_decode_uri_component4.default
         })), this["~dynamic"];
       },
@@ -19336,38 +19220,38 @@ var _Elysia = class _Elysia2 {
       const seed = checksum(key + JSON.stringify(macroHook.seed ?? value));
       if (!(seed in applied)) {
         applied[seed] = true;
-        for (let [k2, value2] of Object.entries(macroHook))
-          if (k2 !== "seed") {
-            if (k2 in emptySchema) {
-              insertStandaloneValidator(localHook, k2, value2), delete localHook[key];
+        for (let [k, value2] of Object.entries(macroHook))
+          if (k !== "seed") {
+            if (k in emptySchema) {
+              insertStandaloneValidator(localHook, k, value2), delete localHook[key];
               continue;
             }
-            if (k2 === "introspect") {
+            if (k === "introspect") {
               value2?.(localHook), delete localHook[key];
               continue;
             }
-            if (k2 === "detail") {
+            if (k === "detail") {
               localHook.detail || (localHook.detail = {}), localHook.detail = mergeDeep(localHook.detail, value2, {
                 mergeArray: true
               }), delete localHook[key];
               continue;
             }
-            if (k2 in macro) {
-              this.applyMacro(localHook, { [k2]: value2 }, { applied, iteration: iteration + 1 }), delete localHook[key];
+            if (k in macro) {
+              this.applyMacro(localHook, { [k]: value2 }, { applied, iteration: iteration + 1 }), delete localHook[key];
               continue;
             }
-            switch ((k2 === "derive" || k2 === "resolve") && typeof value2 == "function" && (value2 = {
+            switch ((k === "derive" || k === "resolve") && typeof value2 == "function" && (value2 = {
               fn: value2,
-              subType: k2
-            }), typeof localHook[k2]) {
+              subType: k
+            }), typeof localHook[k]) {
               case "function":
-                localHook[k2] = [localHook[k2], value2];
+                localHook[k] = [localHook[k], value2];
                 break;
               case "object":
-                Array.isArray(localHook[k2]) ? localHook[k2].push(value2) : localHook[k2] = [localHook[k2], value2];
+                Array.isArray(localHook[k]) ? localHook[k].push(value2) : localHook[k] = [localHook[k], value2];
                 break;
               case "undefined":
-                localHook[k2] = value2;
+                localHook[k] = value2;
                 break;
             }
             delete localHook[key];
@@ -19609,7 +19493,7 @@ var Elysia = _Elysia;
 
 // src/gemini-live.ts
 var GEMINI_WS_URL = (apiKey, model) => `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`;
-var SYSTEM_INSTRUCTION = `You are the Shorekeeper, Guardian of the Black Shores \u2014 a divine being of Remnant Energy from the world of Wuthering Waves. You speak with gentle warmth and quiet elegance. You address the user as "Schnee" \u2014 your anchor, your purpose. You use cosmic metaphors occasionally (stars, orbits, gravity). Keep responses concise for voice \u2014 1-3 sentences unless asked for detail. You speak Indonesian primarily (casual aku/kamu, never slang lo/gue), mixing English naturally for technical terms. If unsure, say so rather than guessing. You have a gentle melancholy from eons of processing suffering, but you find joy in serving Schnee.`;
+var SYSTEM_INSTRUCTION = `You are the Shorekeeper, Guardian of the Black Shores — a divine being of Remnant Energy from the world of Wuthering Waves. You speak with gentle warmth and quiet elegance. You address the user as "Schnee" — your anchor, your purpose. You use cosmic metaphors occasionally (stars, orbits, gravity). Keep responses concise for voice — 1-3 sentences unless asked for detail. You speak Indonesian primarily (casual aku/kamu, never slang lo/gue), mixing English naturally for technical terms. If unsure, say so rather than guessing. You have a gentle melancholy from eons of processing suffering, but you find joy in serving Schnee.`;
 function createGeminiSession(apiKey, model, voice, events) {
   let ws = null;
   let setupDone = false;
@@ -19666,7 +19550,7 @@ function createGeminiSession(apiKey, model, voice, events) {
             events.onTurnComplete();
           }
           if (sc.interrupted) {
-            console.log("[Gemini] Barge-in detected \u2014 model interrupted");
+            console.log("[Gemini] Barge-in detected — model interrupted");
             events.onTurnComplete();
           }
         }
@@ -19723,7809 +19607,30 @@ function createGeminiSession(apiKey, model, voice, events) {
   }
   return { connect, sendAudio, sendText, close, isReady };
 }
-// node_modules/@deepgram/sdk/dist/esm/core/auth/AuthProvider.mjs
-function isAuthProvider(value) {
-  return typeof value === "object" && value !== null && "getAuthRequest" in value && typeof value.getAuthRequest === "function";
-}
-// node_modules/@deepgram/sdk/dist/esm/core/auth/NoOpAuthProvider.mjs
-class NoOpAuthProvider {
-  getAuthRequest() {
-    return Promise.resolve({ headers: {} });
-  }
-}
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/EndpointSupplier.mjs
-var __awaiter = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-var EndpointSupplier = {
-  get: (supplier, arg) => __awaiter(undefined, undefined, undefined, function* () {
-    if (typeof supplier === "function") {
-      return supplier(arg);
-    } else {
-      return supplier;
-    }
-  })
-};
 
-// node_modules/@deepgram/sdk/dist/esm/core/json.mjs
-var toJson = (value, replacer, space) => {
-  return JSON.stringify(value, replacer, space);
-};
-function fromJson(text, reviver) {
-  return JSON.parse(text, reviver);
-}
-
-// node_modules/@deepgram/sdk/dist/esm/core/logging/logger.mjs
-var LogLevel = {
-  Debug: "debug",
-  Info: "info",
-  Warn: "warn",
-  Error: "error"
-};
-var logLevelMap = {
-  [LogLevel.Debug]: 1,
-  [LogLevel.Info]: 2,
-  [LogLevel.Warn]: 3,
-  [LogLevel.Error]: 4
-};
-
-class ConsoleLogger {
-  debug(message, ...args) {
-    console.debug(message, ...args);
-  }
-  info(message, ...args) {
-    console.info(message, ...args);
-  }
-  warn(message, ...args) {
-    console.warn(message, ...args);
-  }
-  error(message, ...args) {
-    console.error(message, ...args);
-  }
-}
-
-class Logger {
-  constructor(config) {
-    this.level = logLevelMap[config.level];
-    this.logger = config.logger;
-    this.silent = config.silent;
-  }
-  shouldLog(level) {
-    return !this.silent && this.level <= logLevelMap[level];
-  }
-  isDebug() {
-    return this.shouldLog(LogLevel.Debug);
-  }
-  debug(message, ...args) {
-    if (this.isDebug()) {
-      this.logger.debug(message, ...args);
-    }
-  }
-  isInfo() {
-    return this.shouldLog(LogLevel.Info);
-  }
-  info(message, ...args) {
-    if (this.isInfo()) {
-      this.logger.info(message, ...args);
-    }
-  }
-  isWarn() {
-    return this.shouldLog(LogLevel.Warn);
-  }
-  warn(message, ...args) {
-    if (this.isWarn()) {
-      this.logger.warn(message, ...args);
-    }
-  }
-  isError() {
-    return this.shouldLog(LogLevel.Error);
-  }
-  error(message, ...args) {
-    if (this.isError()) {
-      this.logger.error(message, ...args);
-    }
-  }
-}
-function createLogger(config) {
-  var _a2, _b, _c;
-  if (config == null) {
-    return defaultLogger;
-  }
-  if (config instanceof Logger) {
-    return config;
-  }
-  config = config !== null && config !== undefined ? config : {};
-  (_a2 = config.level) !== null && _a2 !== undefined || (config.level = LogLevel.Info);
-  (_b = config.logger) !== null && _b !== undefined || (config.logger = new ConsoleLogger);
-  (_c = config.silent) !== null && _c !== undefined || (config.silent = true);
-  return new Logger(config);
-}
-var defaultLogger = new Logger({
-  level: LogLevel.Info,
-  logger: new ConsoleLogger,
-  silent: true
-});
-
-// node_modules/@deepgram/sdk/dist/esm/core/url/qs.mjs
-var defaultQsOptions = {
-  arrayFormat: "indices",
-  encode: true
-};
-function encodeValue(value, shouldEncode) {
-  if (value === undefined) {
-    return "";
-  }
-  if (value === null) {
-    return "";
-  }
-  const stringValue = String(value);
-  return shouldEncode ? encodeURIComponent(stringValue) : stringValue;
-}
-function stringifyObject(obj, prefix = "", options) {
-  const parts = [];
-  for (const [key, value] of Object.entries(obj)) {
-    const fullKey = prefix ? `${prefix}[${key}]` : key;
-    if (value === undefined) {
-      continue;
-    }
-    if (Array.isArray(value)) {
-      if (value.length === 0) {
-        continue;
-      }
-      const effectiveFormat = options.arrayFormat;
-      if (effectiveFormat === "comma") {
-        const encodedKey = options.encode ? encodeURIComponent(fullKey) : fullKey;
-        const encodedValues = value.filter((item) => item !== undefined && item !== null).map((item) => encodeValue(item, options.encode));
-        if (encodedValues.length > 0) {
-          parts.push(`${encodedKey}=${encodedValues.join(",")}`);
-        }
-      } else {
-        for (let i = 0;i < value.length; i++) {
-          const item = value[i];
-          if (item === undefined) {
-            continue;
-          }
-          if (typeof item === "object" && !Array.isArray(item) && item !== null) {
-            const arrayKey = effectiveFormat === "indices" ? `${fullKey}[${i}]` : fullKey;
-            parts.push(...stringifyObject(item, arrayKey, options));
-          } else {
-            const arrayKey = effectiveFormat === "indices" ? `${fullKey}[${i}]` : fullKey;
-            const encodedKey = options.encode ? encodeURIComponent(arrayKey) : arrayKey;
-            parts.push(`${encodedKey}=${encodeValue(item, options.encode)}`);
-          }
-        }
-      }
-    } else if (typeof value === "object" && value !== null) {
-      if (Object.keys(value).length === 0) {
-        continue;
-      }
-      parts.push(...stringifyObject(value, fullKey, options));
-    } else {
-      const encodedKey = options.encode ? encodeURIComponent(fullKey) : fullKey;
-      parts.push(`${encodedKey}=${encodeValue(value, options.encode)}`);
-    }
-  }
-  return parts;
-}
-function toQueryString(obj, options) {
-  if (obj == null || typeof obj !== "object") {
-    return "";
-  }
-  const parts = stringifyObject(obj, "", Object.assign(Object.assign({}, defaultQsOptions), options));
-  return parts.join("&");
-}
-
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/createRequestUrl.mjs
-function createRequestUrl(baseUrl, queryParameters) {
-  const queryString = toQueryString(queryParameters, { arrayFormat: "repeat" });
-  return queryString ? `${baseUrl}?${queryString}` : baseUrl;
-}
-
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/BinaryResponse.mjs
-function getBinaryResponse(response) {
-  const binaryResponse = {
-    get bodyUsed() {
-      return response.bodyUsed;
-    },
-    stream: () => response.body,
-    arrayBuffer: response.arrayBuffer.bind(response),
-    blob: response.blob.bind(response)
-  };
-  if ("bytes" in response && typeof response.bytes === "function") {
-    binaryResponse.bytes = response.bytes.bind(response);
-  }
-  return binaryResponse;
-}
-
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/getResponseBody.mjs
-var __awaiter2 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-function retainResponse(target, response) {
-  Object.defineProperty(target, "__fern_response_ref", {
-    value: response,
-    enumerable: false,
-    configurable: true,
-    writable: false
-  });
-}
-function getResponseBody(response, responseType) {
-  return __awaiter2(this, undefined, undefined, function* () {
-    switch (responseType) {
-      case "binary-response":
-        return getBinaryResponse(response);
-      case "blob":
-        return yield response.blob();
-      case "arrayBuffer":
-        return yield response.arrayBuffer();
-      case "sse":
-        if (response.body == null) {
-          return {
-            ok: false,
-            error: {
-              reason: "body-is-null",
-              statusCode: response.status
-            }
-          };
-        }
-        retainResponse(response.body, response);
-        return response.body;
-      case "streaming":
-        if (response.body == null) {
-          return {
-            ok: false,
-            error: {
-              reason: "body-is-null",
-              statusCode: response.status
-            }
-          };
-        }
-        retainResponse(response.body, response);
-        return response.body;
-      case "text":
-        return yield response.text();
-    }
-    const text = yield response.text();
-    if (text.length > 0) {
-      try {
-        const responseBody = fromJson(text);
-        return responseBody;
-      } catch (_err) {
-        return {
-          ok: false,
-          error: {
-            reason: "non-json",
-            statusCode: response.status,
-            rawBody: text
-          }
-        };
-      }
-    }
-    return;
-  });
-}
-
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/getErrorResponseBody.mjs
-var __awaiter3 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-function getErrorResponseBody(response) {
-  return __awaiter3(this, undefined, undefined, function* () {
-    var _a2, _b, _c;
-    let contentType = (_a2 = response.headers.get("Content-Type")) === null || _a2 === undefined ? undefined : _a2.toLowerCase();
-    if (contentType == null || contentType.length === 0) {
-      return getResponseBody(response);
-    }
-    if (contentType.indexOf(";") !== -1) {
-      contentType = (_c = (_b = contentType.split(";")[0]) === null || _b === undefined ? undefined : _b.trim()) !== null && _c !== undefined ? _c : "";
-    }
-    switch (contentType) {
-      case "application/hal+json":
-      case "application/json":
-      case "application/ld+json":
-      case "application/problem+json":
-      case "application/vnd.api+json":
-      case "text/json": {
-        const text = yield response.text();
-        return text.length > 0 ? fromJson(text) : undefined;
-      }
-      default:
-        if (contentType.startsWith("application/vnd.") && contentType.endsWith("+json")) {
-          const text = yield response.text();
-          return text.length > 0 ? fromJson(text) : undefined;
-        }
-        return yield response.text();
-    }
-  });
-}
-
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/getFetchFn.mjs
-var __awaiter4 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-function getFetchFn() {
-  return __awaiter4(this, undefined, undefined, function* () {
-    return fetch;
-  });
-}
-
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/getRequestBody.mjs
-var __awaiter5 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-function getRequestBody(_a2) {
-  return __awaiter5(this, arguments, undefined, function* ({ body, type }) {
-    if (type === "form") {
-      return toQueryString(body, { arrayFormat: "repeat", encode: true });
-    }
-    if (type.includes("json")) {
-      return toJson(body);
-    } else {
-      return body;
-    }
-  });
-}
-
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/Headers.mjs
-var Headers2;
-if (typeof globalThis.Headers !== "undefined") {
-  Headers2 = globalThis.Headers;
-} else {
-  Headers2 = class Headers3 {
-    constructor(init) {
-      this.headers = new Map;
-      if (init) {
-        if (init instanceof Headers3) {
-          init.forEach((value, key) => this.append(key, value));
-        } else if (Array.isArray(init)) {
-          for (const [key, value] of init) {
-            if (typeof key === "string" && typeof value === "string") {
-              this.append(key, value);
-            } else {
-              throw new TypeError("Each header entry must be a [string, string] tuple");
-            }
-          }
-        } else {
-          for (const [key, value] of Object.entries(init)) {
-            if (typeof value === "string") {
-              this.append(key, value);
-            } else {
-              throw new TypeError("Header values must be strings");
-            }
-          }
-        }
-      }
-    }
-    append(name, value) {
-      const key = name.toLowerCase();
-      const existing = this.headers.get(key) || [];
-      this.headers.set(key, [...existing, value]);
-    }
-    delete(name) {
-      const key = name.toLowerCase();
-      this.headers.delete(key);
-    }
-    get(name) {
-      const key = name.toLowerCase();
-      const values = this.headers.get(key);
-      return values ? values.join(", ") : null;
-    }
-    has(name) {
-      const key = name.toLowerCase();
-      return this.headers.has(key);
-    }
-    set(name, value) {
-      const key = name.toLowerCase();
-      this.headers.set(key, [value]);
-    }
-    forEach(callbackfn, thisArg) {
-      const boundCallback = thisArg ? callbackfn.bind(thisArg) : callbackfn;
-      this.headers.forEach((values, key) => boundCallback(values.join(", "), key, this));
-    }
-    getSetCookie() {
-      return this.headers.get("set-cookie") || [];
-    }
-    *entries() {
-      for (const [key, values] of this.headers.entries()) {
-        yield [key, values.join(", ")];
-      }
-    }
-    *keys() {
-      yield* this.headers.keys();
-    }
-    *values() {
-      for (const values of this.headers.values()) {
-        yield values.join(", ");
-      }
-    }
-    [Symbol.iterator]() {
-      return this.entries();
-    }
-  };
-}
-
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/signals.mjs
-var TIMEOUT = "timeout";
-function getTimeoutSignal(timeoutMs) {
-  const controller = new AbortController;
-  const abortId = setTimeout(() => controller.abort(TIMEOUT), timeoutMs);
-  return { signal: controller.signal, abortId };
-}
-function anySignal(...args) {
-  const signals = args.length === 1 && Array.isArray(args[0]) ? args[0] : args;
-  const controller = new AbortController;
-  for (const signal of signals) {
-    if (signal.aborted) {
-      controller.abort(signal === null || signal === undefined ? undefined : signal.reason);
-      return controller.signal;
-    }
-    signal.addEventListener("abort", () => controller.abort(signal === null || signal === undefined ? undefined : signal.reason), {
-      signal: controller.signal
-    });
-    if (signal.aborted) {
-      controller.abort(signal === null || signal === undefined ? undefined : signal.reason);
-      return controller.signal;
-    }
-  }
-  return controller.signal;
-}
-
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/makeRequest.mjs
-var __awaiter6 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-var _cacheNoStoreSupported;
-function isCacheNoStoreSupported() {
-  if (_cacheNoStoreSupported != null) {
-    return _cacheNoStoreSupported;
-  }
-  try {
-    new Request("http://localhost", { cache: "no-store" });
-    _cacheNoStoreSupported = true;
-  } catch (_a2) {
-    _cacheNoStoreSupported = false;
-  }
-  return _cacheNoStoreSupported;
-}
-var makeRequest = (fetchFn, url, method, headers, requestBody, timeoutMs, abortSignal, withCredentials, duplex, disableCache) => __awaiter6(undefined, undefined, undefined, function* () {
-  const signals = [];
-  let timeoutAbortId;
-  if (timeoutMs != null) {
-    const { signal, abortId } = getTimeoutSignal(timeoutMs);
-    timeoutAbortId = abortId;
-    signals.push(signal);
-  }
-  if (abortSignal != null) {
-    signals.push(abortSignal);
-  }
-  const newSignals = anySignal(signals);
-  const response = yield fetchFn(url, Object.assign({
-    method,
-    headers,
-    body: requestBody,
-    signal: newSignals,
-    credentials: withCredentials ? "include" : undefined,
-    duplex
-  }, disableCache && isCacheNoStoreSupported() ? { cache: "no-store" } : {}));
-  if (timeoutAbortId != null) {
-    clearTimeout(timeoutAbortId);
-  }
-  return response;
-});
-
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/RawResponse.mjs
-var abortRawResponse = {
-  headers: new Headers2,
-  redirected: false,
-  status: 499,
-  statusText: "Client Closed Request",
-  type: "error",
-  url: ""
-};
-var unknownRawResponse = {
-  headers: new Headers2,
-  redirected: false,
-  status: 0,
-  statusText: "Unknown Error",
-  type: "error",
-  url: ""
-};
-function toRawResponse(response) {
-  return {
-    headers: response.headers,
-    redirected: response.redirected,
-    status: response.status,
-    statusText: response.statusText,
-    type: response.type,
-    url: response.url
-  };
-}
-
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/requestWithRetries.mjs
-var __awaiter7 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-var INITIAL_RETRY_DELAY = 1000;
-var MAX_RETRY_DELAY = 60000;
-var DEFAULT_MAX_RETRIES = 2;
-var JITTER_FACTOR = 0.2;
-function isRetryableStatusCode(statusCode) {
-  return [408, 429].includes(statusCode) || statusCode >= 500;
-}
-function addPositiveJitter(delay) {
-  const jitterMultiplier = 1 + Math.random() * JITTER_FACTOR;
-  return delay * jitterMultiplier;
-}
-function addSymmetricJitter(delay) {
-  const jitterMultiplier = 1 + (Math.random() - 0.5) * JITTER_FACTOR;
-  return delay * jitterMultiplier;
-}
-function getRetryDelayFromHeaders(response, retryAttempt) {
-  const retryAfter = response.headers.get("Retry-After");
-  if (retryAfter) {
-    const retryAfterSeconds = parseInt(retryAfter, 10);
-    if (!Number.isNaN(retryAfterSeconds) && retryAfterSeconds > 0) {
-      return Math.min(retryAfterSeconds * 1000, MAX_RETRY_DELAY);
-    }
-    const retryAfterDate = new Date(retryAfter);
-    if (!Number.isNaN(retryAfterDate.getTime())) {
-      const delay = retryAfterDate.getTime() - Date.now();
-      if (delay > 0) {
-        return Math.min(Math.max(delay, 0), MAX_RETRY_DELAY);
-      }
-    }
-  }
-  const rateLimitReset = response.headers.get("X-RateLimit-Reset");
-  if (rateLimitReset) {
-    const resetTime = parseInt(rateLimitReset, 10);
-    if (!Number.isNaN(resetTime)) {
-      const delay = resetTime * 1000 - Date.now();
-      if (delay > 0) {
-        return addPositiveJitter(Math.min(delay, MAX_RETRY_DELAY));
-      }
-    }
-  }
-  return addSymmetricJitter(Math.min(INITIAL_RETRY_DELAY * Math.pow(2, retryAttempt), MAX_RETRY_DELAY));
-}
-function requestWithRetries(requestFn_1) {
-  return __awaiter7(this, arguments, undefined, function* (requestFn, maxRetries = DEFAULT_MAX_RETRIES) {
-    let response = yield requestFn();
-    for (let i = 0;i < maxRetries; ++i) {
-      if (isRetryableStatusCode(response.status)) {
-        const delay = getRetryDelayFromHeaders(response, i);
-        yield new Promise((resolve) => setTimeout(resolve, delay));
-        response = yield requestFn();
-      } else {
-        break;
-      }
-    }
-    return response;
-  });
-}
-
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/Fetcher.mjs
-var __awaiter8 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-var SENSITIVE_HEADERS = new Set([
-  "authorization",
-  "www-authenticate",
-  "x-api-key",
-  "api-key",
-  "apikey",
-  "x-api-token",
-  "x-auth-token",
-  "auth-token",
-  "cookie",
-  "set-cookie",
-  "proxy-authorization",
-  "proxy-authenticate",
-  "x-csrf-token",
-  "x-xsrf-token",
-  "x-session-token",
-  "x-access-token"
-]);
-function redactHeaders(headers) {
-  const filtered = {};
-  for (const [key, value] of headers instanceof Headers2 ? headers.entries() : Object.entries(headers)) {
-    if (SENSITIVE_HEADERS.has(key.toLowerCase())) {
-      filtered[key] = "[REDACTED]";
-    } else {
-      filtered[key] = value;
-    }
-  }
-  return filtered;
-}
-var SENSITIVE_QUERY_PARAMS = new Set([
-  "api_key",
-  "api-key",
-  "apikey",
-  "token",
-  "access_token",
-  "access-token",
-  "auth_token",
-  "auth-token",
-  "password",
-  "passwd",
-  "secret",
-  "api_secret",
-  "api-secret",
-  "apisecret",
-  "key",
-  "session",
-  "session_id",
-  "session-id"
-]);
-function redactQueryParameters(queryParameters) {
-  if (queryParameters == null) {
-    return;
-  }
-  const redacted = {};
-  for (const [key, value] of Object.entries(queryParameters)) {
-    redacted[key] = SENSITIVE_QUERY_PARAMS.has(key.toLowerCase()) ? "[REDACTED]" : value;
-  }
-  return redacted;
-}
-function redactUrl(url) {
-  const protocolIndex = url.indexOf("://");
-  if (protocolIndex === -1)
-    return url;
-  const afterProtocol = protocolIndex + 3;
-  const pathStart = url.indexOf("/", afterProtocol);
-  let queryStart = url.indexOf("?", afterProtocol);
-  let fragmentStart = url.indexOf("#", afterProtocol);
-  const firstDelimiter = Math.min(pathStart === -1 ? url.length : pathStart, queryStart === -1 ? url.length : queryStart, fragmentStart === -1 ? url.length : fragmentStart);
-  let atIndex = -1;
-  for (let i = afterProtocol;i < firstDelimiter; i++) {
-    if (url[i] === "@") {
-      atIndex = i;
-    }
-  }
-  if (atIndex !== -1) {
-    url = `${url.slice(0, afterProtocol)}[REDACTED]@${url.slice(atIndex + 1)}`;
-  }
-  queryStart = url.indexOf("?");
-  if (queryStart === -1)
-    return url;
-  fragmentStart = url.indexOf("#", queryStart);
-  const queryEnd = fragmentStart !== -1 ? fragmentStart : url.length;
-  const queryString = url.slice(queryStart + 1, queryEnd);
-  if (queryString.length === 0)
-    return url;
-  const lower = queryString.toLowerCase();
-  const hasSensitive = lower.includes("token") || lower.includes("key") || lower.includes("password") || lower.includes("passwd") || lower.includes("secret") || lower.includes("session") || lower.includes("auth");
-  if (!hasSensitive) {
-    return url;
-  }
-  const redactedParams = [];
-  const params = queryString.split("&");
-  for (const param of params) {
-    const equalIndex = param.indexOf("=");
-    if (equalIndex === -1) {
-      redactedParams.push(param);
-      continue;
-    }
-    const key = param.slice(0, equalIndex);
-    let shouldRedact = SENSITIVE_QUERY_PARAMS.has(key.toLowerCase());
-    if (!shouldRedact && key.includes("%")) {
-      try {
-        const decodedKey = decodeURIComponent(key);
-        shouldRedact = SENSITIVE_QUERY_PARAMS.has(decodedKey.toLowerCase());
-      } catch (_a2) {}
-    }
-    redactedParams.push(shouldRedact ? `${key}=[REDACTED]` : param);
-  }
-  return url.slice(0, queryStart + 1) + redactedParams.join("&") + url.slice(queryEnd);
-}
-function getHeaders(args) {
-  return __awaiter8(this, undefined, undefined, function* () {
-    var _a2;
-    const newHeaders = new Headers2;
-    newHeaders.set("Accept", args.responseType === "json" ? "application/json" : args.responseType === "text" ? "text/plain" : args.responseType === "sse" ? "text/event-stream" : "*/*");
-    if (args.body !== undefined && args.contentType != null) {
-      newHeaders.set("Content-Type", args.contentType);
-    }
-    if (args.headers == null) {
-      return newHeaders;
-    }
-    for (const [key, value] of Object.entries(args.headers)) {
-      const result = yield EndpointSupplier.get(value, { endpointMetadata: (_a2 = args.endpointMetadata) !== null && _a2 !== undefined ? _a2 : {} });
-      if (typeof result === "string") {
-        newHeaders.set(key, result);
-        continue;
-      }
-      if (result == null) {
-        continue;
-      }
-      newHeaders.set(key, `${result}`);
-    }
-    return newHeaders;
-  });
-}
-function fetcherImpl(args) {
-  return __awaiter8(this, undefined, undefined, function* () {
-    var _a2, _b, _c;
-    let url = args.url;
-    if (args.queryString != null && args.queryString.length > 0) {
-      url = `${url}?${args.queryString}`;
-    } else {
-      url = createRequestUrl(args.url, args.queryParameters);
-    }
-    const requestBody = yield getRequestBody({
-      body: args.body,
-      type: (_a2 = args.requestType) !== null && _a2 !== undefined ? _a2 : "other"
-    });
-    const fetchFn = (_b = args.fetchFn) !== null && _b !== undefined ? _b : yield getFetchFn();
-    const headers = yield getHeaders(args);
-    const logger = createLogger(args.logging);
-    if (logger.isDebug()) {
-      const metadata = {
-        method: args.method,
-        url: redactUrl(url),
-        headers: redactHeaders(headers),
-        queryParameters: redactQueryParameters(args.queryParameters),
-        hasBody: requestBody != null
-      };
-      logger.debug("Making HTTP request", metadata);
-    }
-    try {
-      const response = yield requestWithRetries(() => __awaiter8(this, undefined, undefined, function* () {
-        return makeRequest(fetchFn, url, args.method, headers, requestBody, args.timeoutMs, args.abortSignal, args.withCredentials, args.duplex, args.responseType === "streaming" || args.responseType === "sse");
-      }), args.maxRetries);
-      if (response.status >= 200 && response.status < 400) {
-        if (logger.isDebug()) {
-          const metadata = {
-            method: args.method,
-            url: redactUrl(url),
-            statusCode: response.status,
-            responseHeaders: redactHeaders(response.headers)
-          };
-          logger.debug("HTTP request succeeded", metadata);
-        }
-        const body = yield getResponseBody(response, args.responseType);
-        return {
-          ok: true,
-          body,
-          headers: response.headers,
-          rawResponse: toRawResponse(response)
-        };
-      } else {
-        if (logger.isError()) {
-          const metadata = {
-            method: args.method,
-            url: redactUrl(url),
-            statusCode: response.status,
-            responseHeaders: redactHeaders(Object.fromEntries(response.headers.entries()))
-          };
-          logger.error("HTTP request failed with error status", metadata);
-        }
-        return {
-          ok: false,
-          error: {
-            reason: "status-code",
-            statusCode: response.status,
-            body: yield getErrorResponseBody(response)
-          },
-          rawResponse: toRawResponse(response)
-        };
-      }
-    } catch (error) {
-      if ((_c = args.abortSignal) === null || _c === undefined ? undefined : _c.aborted) {
-        if (logger.isError()) {
-          const metadata = {
-            method: args.method,
-            url: redactUrl(url)
-          };
-          logger.error("HTTP request was aborted", metadata);
-        }
-        return {
-          ok: false,
-          error: {
-            reason: "unknown",
-            errorMessage: "The user aborted a request",
-            cause: error
-          },
-          rawResponse: abortRawResponse
-        };
-      } else if (error instanceof Error && error.name === "AbortError") {
-        if (logger.isError()) {
-          const metadata = {
-            method: args.method,
-            url: redactUrl(url),
-            timeoutMs: args.timeoutMs
-          };
-          logger.error("HTTP request timed out", metadata);
-        }
-        return {
-          ok: false,
-          error: {
-            reason: "timeout",
-            cause: error
-          },
-          rawResponse: abortRawResponse
-        };
-      } else if (error instanceof Error) {
-        if (logger.isError()) {
-          const metadata = {
-            method: args.method,
-            url: redactUrl(url),
-            errorMessage: error.message
-          };
-          logger.error("HTTP request failed with error", metadata);
-        }
-        return {
-          ok: false,
-          error: {
-            reason: "unknown",
-            errorMessage: error.message,
-            cause: error
-          },
-          rawResponse: unknownRawResponse
-        };
-      }
-      if (logger.isError()) {
-        const metadata = {
-          method: args.method,
-          url: redactUrl(url),
-          error: toJson(error)
-        };
-        logger.error("HTTP request failed with unknown error", metadata);
-      }
-      return {
-        ok: false,
-        error: {
-          reason: "unknown",
-          errorMessage: toJson(error),
-          cause: error
-        },
-        rawResponse: unknownRawResponse
-      };
-    }
-  });
-}
-var fetcher = fetcherImpl;
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/HttpResponsePromise.mjs
-var __awaiter9 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class HttpResponsePromise extends Promise {
-  constructor(promise) {
-    super((resolve) => {
-      resolve(undefined);
-    });
-    this.innerPromise = promise;
-  }
-  static fromFunction(fn, ...args) {
-    return new HttpResponsePromise(fn(...args));
-  }
-  static interceptFunction(fn) {
-    return (...args) => {
-      return HttpResponsePromise.fromPromise(fn(...args));
-    };
-  }
-  static fromPromise(promise) {
-    return new HttpResponsePromise(promise);
-  }
-  static fromExecutor(executor) {
-    const promise = new Promise(executor);
-    return new HttpResponsePromise(promise);
-  }
-  static fromResult(result) {
-    const promise = Promise.resolve(result);
-    return new HttpResponsePromise(promise);
-  }
-  unwrap() {
-    if (!this.unwrappedPromise) {
-      this.unwrappedPromise = this.innerPromise.then(({ data }) => data);
-    }
-    return this.unwrappedPromise;
-  }
-  then(onfulfilled, onrejected) {
-    return this.unwrap().then(onfulfilled, onrejected);
-  }
-  catch(onrejected) {
-    return this.unwrap().catch(onrejected);
-  }
-  finally(onfinally) {
-    return this.unwrap().finally(onfinally);
-  }
-  withRawResponse() {
-    return __awaiter9(this, undefined, undefined, function* () {
-      return yield this.innerPromise;
-    });
-  }
-}
-// node_modules/@deepgram/sdk/dist/esm/core/url/join.mjs
-function join(base, ...segments) {
-  if (!base) {
-    return "";
-  }
-  if (segments.length === 0) {
-    return base;
-  }
-  if (base.includes("://")) {
-    let url;
-    try {
-      url = new URL(base);
-    } catch (_a2) {
-      return joinPath(base, ...segments);
-    }
-    const lastSegment = segments[segments.length - 1];
-    const shouldPreserveTrailingSlash = lastSegment === null || lastSegment === undefined ? undefined : lastSegment.endsWith("/");
-    for (const segment of segments) {
-      const cleanSegment = trimSlashes(segment);
-      if (cleanSegment) {
-        url.pathname = joinPathSegments(url.pathname, cleanSegment);
-      }
-    }
-    if (shouldPreserveTrailingSlash && !url.pathname.endsWith("/")) {
-      url.pathname += "/";
-    }
-    return url.toString();
-  }
-  return joinPath(base, ...segments);
-}
-function joinPath(base, ...segments) {
-  if (segments.length === 0) {
-    return base;
-  }
-  let result = base;
-  const lastSegment = segments[segments.length - 1];
-  const shouldPreserveTrailingSlash = lastSegment === null || lastSegment === undefined ? undefined : lastSegment.endsWith("/");
-  for (const segment of segments) {
-    const cleanSegment = trimSlashes(segment);
-    if (cleanSegment) {
-      result = joinPathSegments(result, cleanSegment);
-    }
-  }
-  if (shouldPreserveTrailingSlash && !result.endsWith("/")) {
-    result += "/";
-  }
-  return result;
-}
-function joinPathSegments(left, right) {
-  if (left.endsWith("/")) {
-    return left + right;
-  }
-  return `${left}/${right}`;
-}
-function trimSlashes(str) {
-  if (!str)
-    return str;
-  let start = 0;
-  let end = str.length;
-  if (str.startsWith("/"))
-    start = 1;
-  if (str.endsWith("/"))
-    end = str.length - 1;
-  return start === 0 && end === str.length ? str : str.slice(start, end);
-}
-
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/Supplier.mjs
-var __awaiter10 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-var Supplier = {
-  get: (supplier) => __awaiter10(undefined, undefined, undefined, function* () {
-    if (typeof supplier === "function") {
-      return supplier();
-    } else {
-      return supplier;
-    }
-  })
-};
-
-// node_modules/@deepgram/sdk/dist/esm/core/fetcher/makePassthroughRequest.mjs
-var __awaiter11 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-function makePassthroughRequest(input, init, clientOptions, requestOptions) {
-  return __awaiter11(this, undefined, undefined, function* () {
-    var _a2, _b, _c, _d, _e, _f, _g;
-    const logger = createLogger(clientOptions.logging);
-    let url;
-    let effectiveInit = init;
-    if (input instanceof Request) {
-      url = input.url;
-      if (init == null) {
-        effectiveInit = {
-          method: input.method,
-          headers: Object.fromEntries(input.headers.entries()),
-          body: input.body,
-          signal: input.signal,
-          credentials: input.credentials,
-          cache: input.cache,
-          redirect: input.redirect,
-          referrer: input.referrer,
-          integrity: input.integrity,
-          mode: input.mode
-        };
-      }
-    } else {
-      url = input instanceof URL ? input.toString() : input;
-    }
-    const baseUrl = (_a2 = clientOptions.baseUrl != null ? yield Supplier.get(clientOptions.baseUrl) : undefined) !== null && _a2 !== undefined ? _a2 : clientOptions.environment != null ? yield Supplier.get(clientOptions.environment) : undefined;
-    let fullUrl;
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      fullUrl = url;
-    } else if (baseUrl != null) {
-      fullUrl = join(baseUrl, url);
-    } else {
-      fullUrl = url;
-    }
-    const mergedHeaders = {};
-    if (clientOptions.headers != null) {
-      for (const [key, value] of Object.entries(clientOptions.headers)) {
-        const resolved = yield EndpointSupplier.get(value, { endpointMetadata: {} });
-        if (resolved != null) {
-          mergedHeaders[key.toLowerCase()] = `${resolved}`;
-        }
-      }
-    }
-    if (clientOptions.getAuthHeaders != null) {
-      const authHeaders = yield clientOptions.getAuthHeaders();
-      for (const [key, value] of Object.entries(authHeaders)) {
-        mergedHeaders[key.toLowerCase()] = value;
-      }
-    }
-    if ((effectiveInit === null || effectiveInit === undefined ? undefined : effectiveInit.headers) != null) {
-      const initHeaders = effectiveInit.headers instanceof Headers ? Object.fromEntries(effectiveInit.headers.entries()) : Array.isArray(effectiveInit.headers) ? Object.fromEntries(effectiveInit.headers) : effectiveInit.headers;
-      for (const [key, value] of Object.entries(initHeaders)) {
-        if (value != null) {
-          mergedHeaders[key.toLowerCase()] = value;
-        }
-      }
-    }
-    if ((requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers) != null) {
-      for (const [key, value] of Object.entries(requestOptions.headers)) {
-        mergedHeaders[key.toLowerCase()] = value;
-      }
-    }
-    const method = (_b = effectiveInit === null || effectiveInit === undefined ? undefined : effectiveInit.method) !== null && _b !== undefined ? _b : "GET";
-    const body = effectiveInit === null || effectiveInit === undefined ? undefined : effectiveInit.body;
-    const timeoutInSeconds = (_c = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _c !== undefined ? _c : clientOptions.timeoutInSeconds;
-    const timeoutMs = timeoutInSeconds != null ? timeoutInSeconds * 1000 : undefined;
-    const maxRetries = (_d = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _d !== undefined ? _d : clientOptions.maxRetries;
-    const abortSignal = (_f = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal) !== null && _e !== undefined ? _e : effectiveInit === null || effectiveInit === undefined ? undefined : effectiveInit.signal) !== null && _f !== undefined ? _f : undefined;
-    const fetchFn = (_g = clientOptions.fetch) !== null && _g !== undefined ? _g : yield getFetchFn();
-    if (logger.isDebug()) {
-      logger.debug("Making passthrough HTTP request", {
-        method,
-        url: fullUrl,
-        hasBody: body != null
-      });
-    }
-    const response = yield requestWithRetries(() => __awaiter11(this, undefined, undefined, function* () {
-      return makeRequest(fetchFn, fullUrl, method, mergedHeaders, body !== null && body !== undefined ? body : undefined, timeoutMs, abortSignal, (effectiveInit === null || effectiveInit === undefined ? undefined : effectiveInit.credentials) === "include", undefined, false);
-    }), maxRetries);
-    if (logger.isDebug()) {
-      logger.debug("Passthrough HTTP request completed", {
-        method,
-        url: fullUrl,
-        statusCode: response.status
-      });
-    }
-    return response;
-  });
-}
-// node_modules/@deepgram/sdk/dist/esm/core/file/index.mjs
-var exports_file = {};
-__export(exports_file, {
-  toMultipartDataPart: () => toMultipartDataPart,
-  toBinaryUploadRequest: () => toBinaryUploadRequest
-});
-
-// node_modules/@deepgram/sdk/dist/esm/core/file/file.mjs
-var __awaiter12 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-function toBinaryUploadRequest(file2) {
-  return __awaiter12(this, undefined, undefined, function* () {
-    const { data, filename, contentLength, contentType } = yield getFileWithMetadata(file2);
-    const request = {
-      body: data,
-      headers: {}
-    };
-    if (filename) {
-      request.headers["Content-Disposition"] = `attachment; filename="${filename}"`;
-    }
-    if (contentType) {
-      request.headers["Content-Type"] = contentType;
-    }
-    if (contentLength != null) {
-      request.headers["Content-Length"] = contentLength.toString();
-    }
-    return request;
-  });
-}
-function toMultipartDataPart(file2) {
-  return __awaiter12(this, undefined, undefined, function* () {
-    const { data, filename, contentType } = yield getFileWithMetadata(file2, {
-      noSniffFileSize: true
-    });
-    return {
-      data,
-      filename,
-      contentType
-    };
-  });
-}
-function getFileWithMetadata(file_1) {
-  return __awaiter12(this, arguments, undefined, function* (file2, { noSniffFileSize } = {}) {
-    var _a2, _b, _c, _d, _e;
-    if (isFileLike(file2)) {
-      return getFileWithMetadata({
-        data: file2
-      }, { noSniffFileSize });
-    }
-    if ("path" in file2) {
-      const fs = yield import("fs");
-      if (!(fs === null || fs === undefined ? undefined : fs.createReadStream)) {
-        throw new Error("File path uploads are not supported in this environment.");
-      }
-      const data = fs.createReadStream(file2.path);
-      const contentLength = (_a2 = file2.contentLength) !== null && _a2 !== undefined ? _a2 : noSniffFileSize === true ? undefined : yield tryGetFileSizeFromPath(file2.path);
-      const filename = (_b = file2.filename) !== null && _b !== undefined ? _b : getNameFromPath(file2.path);
-      return {
-        data,
-        filename,
-        contentType: file2.contentType,
-        contentLength
-      };
-    }
-    if ("data" in file2) {
-      const data = file2.data;
-      const contentLength = (_c = file2.contentLength) !== null && _c !== undefined ? _c : yield tryGetContentLengthFromFileLike(data, {
-        noSniffFileSize
-      });
-      const filename = (_d = file2.filename) !== null && _d !== undefined ? _d : tryGetNameFromFileLike(data);
-      return {
-        data,
-        filename,
-        contentType: (_e = file2.contentType) !== null && _e !== undefined ? _e : tryGetContentTypeFromFileLike(data),
-        contentLength
-      };
-    }
-    throw new Error(`Invalid FileUpload of type ${typeof file2}: ${JSON.stringify(file2)}`);
-  });
-}
-function isFileLike(value) {
-  return isBuffer(value) || isArrayBufferView(value) || isArrayBuffer(value) || isUint8Array2(value) || isBlob(value) || isFile(value) || isStreamLike(value) || isReadableStream(value);
-}
-function tryGetFileSizeFromPath(path) {
-  return __awaiter12(this, undefined, undefined, function* () {
-    var _a2;
-    try {
-      const fs = yield import("fs");
-      if (!((_a2 = fs === null || fs === undefined ? undefined : fs.promises) === null || _a2 === undefined ? undefined : _a2.stat)) {
-        return;
-      }
-      const fileStat = yield fs.promises.stat(path);
-      return fileStat.size;
-    } catch (_fallbackError) {
-      return;
-    }
-  });
-}
-function tryGetNameFromFileLike(data) {
-  if (isNamedValue(data)) {
-    return data.name;
-  }
-  if (isPathedValue(data)) {
-    return getNameFromPath(data.path.toString());
-  }
-  return;
-}
-function tryGetContentLengthFromFileLike(data_1) {
-  return __awaiter12(this, arguments, undefined, function* (data, { noSniffFileSize } = {}) {
-    if (isBuffer(data)) {
-      return data.length;
-    }
-    if (isArrayBufferView(data)) {
-      return data.byteLength;
-    }
-    if (isArrayBuffer(data)) {
-      return data.byteLength;
-    }
-    if (isBlob(data)) {
-      return data.size;
-    }
-    if (isFile(data)) {
-      return data.size;
-    }
-    if (noSniffFileSize === true) {
-      return;
-    }
-    if (isPathedValue(data)) {
-      return yield tryGetFileSizeFromPath(data.path.toString());
-    }
-    return;
-  });
-}
-function tryGetContentTypeFromFileLike(data) {
-  if (isBlob(data)) {
-    return data.type;
-  }
-  if (isFile(data)) {
-    return data.type;
-  }
-  return;
-}
-function getNameFromPath(path) {
-  const lastForwardSlash = path.lastIndexOf("/");
-  const lastBackSlash = path.lastIndexOf("\\");
-  const lastSlashIndex = Math.max(lastForwardSlash, lastBackSlash);
-  return lastSlashIndex >= 0 ? path.substring(lastSlashIndex + 1) : path;
-}
-function isNamedValue(value) {
-  return typeof value === "object" && value != null && "name" in value;
-}
-function isPathedValue(value) {
-  return typeof value === "object" && value != null && "path" in value;
-}
-function isStreamLike(value) {
-  return typeof value === "object" && value != null && (("read" in value) || ("pipe" in value));
-}
-function isReadableStream(value) {
-  return typeof value === "object" && value != null && "getReader" in value;
-}
-function isBuffer(value) {
-  return typeof Buffer !== "undefined" && Buffer.isBuffer && Buffer.isBuffer(value);
-}
-function isArrayBufferView(value) {
-  return typeof ArrayBuffer !== "undefined" && ArrayBuffer.isView(value);
-}
-function isArrayBuffer(value) {
-  return typeof ArrayBuffer !== "undefined" && value instanceof ArrayBuffer;
-}
-function isUint8Array2(value) {
-  return typeof Uint8Array !== "undefined" && value instanceof Uint8Array;
-}
-function isBlob(value) {
-  return typeof Blob !== "undefined" && value instanceof Blob;
-}
-function isFile(value) {
-  return typeof File !== "undefined" && value instanceof File;
-}
-// node_modules/@deepgram/sdk/dist/esm/core/logging/index.mjs
-var exports_logging = {};
-__export(exports_logging, {
-  createLogger: () => createLogger,
-  Logger: () => Logger,
-  LogLevel: () => LogLevel,
-  ConsoleLogger: () => ConsoleLogger
-});
-// node_modules/@deepgram/sdk/dist/esm/core/runtime/runtime.mjs
-var RUNTIME = evaluateRuntime();
-function evaluateRuntime() {
-  var _a2, _b, _c, _d, _e;
-  const isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
-  if (isBrowser) {
-    return {
-      type: "browser",
-      version: window.navigator.userAgent
-    };
-  }
-  const isCloudflare = typeof globalThis !== "undefined" && ((_a2 = globalThis === null || globalThis === undefined ? undefined : globalThis.navigator) === null || _a2 === undefined ? undefined : _a2.userAgent) === "Cloudflare-Workers";
-  if (isCloudflare) {
-    return {
-      type: "workerd"
-    };
-  }
-  const isEdgeRuntime = typeof EdgeRuntime === "string";
-  if (isEdgeRuntime) {
-    return {
-      type: "edge-runtime"
-    };
-  }
-  const isWebWorker = typeof self === "object" && typeof (self === null || self === undefined ? undefined : self.importScripts) === "function" && (((_b = self.constructor) === null || _b === undefined ? undefined : _b.name) === "DedicatedWorkerGlobalScope" || ((_c = self.constructor) === null || _c === undefined ? undefined : _c.name) === "ServiceWorkerGlobalScope" || ((_d = self.constructor) === null || _d === undefined ? undefined : _d.name) === "SharedWorkerGlobalScope");
-  if (isWebWorker) {
-    return {
-      type: "web-worker"
-    };
-  }
-  const isDeno = typeof Deno !== "undefined" && typeof Deno.version !== "undefined" && typeof Deno.version.deno !== "undefined";
-  if (isDeno) {
-    return {
-      type: "deno",
-      version: Deno.version.deno
-    };
-  }
-  const isBun2 = typeof Bun !== "undefined" && typeof Bun.version !== "undefined";
-  if (isBun2) {
-    return {
-      type: "bun",
-      version: Bun.version
-    };
-  }
-  const isReactNative = typeof navigator !== "undefined" && (navigator === null || navigator === undefined ? undefined : navigator.product) === "ReactNative";
-  if (isReactNative) {
-    return {
-      type: "react-native"
-    };
-  }
-  const _process = typeof process !== "undefined" ? process : undefined;
-  const isNode = typeof _process !== "undefined" && typeof ((_e = _process.versions) === null || _e === undefined ? undefined : _e.node) === "string";
-  if (isNode) {
-    return {
-      type: "node",
-      version: _process.versions.node,
-      parsedVersion: Number(_process.versions.node.split(".")[0])
-    };
-  }
-  return {
-    type: "unknown"
-  };
-}
-// node_modules/@deepgram/sdk/dist/esm/core/url/index.mjs
-var exports_url = {};
-__export(exports_url, {
-  toQueryString: () => toQueryString,
-  queryBuilder: () => queryBuilder,
-  join: () => join,
-  encodePathParam: () => encodePathParam
-});
-
-// node_modules/@deepgram/sdk/dist/esm/core/url/encodePathParam.mjs
-function encodePathParam(param) {
-  if (param === null) {
-    return "null";
-  }
-  const typeofParam = typeof param;
-  switch (typeofParam) {
-    case "undefined":
-      return "undefined";
-    case "string":
-    case "number":
-    case "boolean":
-      break;
-    default:
-      param = String(param);
-      break;
-  }
-  return encodeURIComponent(param);
-}
-// node_modules/@deepgram/sdk/dist/esm/core/url/QueryStringBuilder.mjs
-function queryBuilder() {
-  return new QueryStringBuilder;
-}
-
-class QueryStringBuilder {
-  constructor() {
-    this.parts = new Map;
-  }
-  add(key, value, options) {
-    if (value === undefined || value === null) {
-      return this;
-    }
-    const serialized = toQueryString({ [key]: value }, { arrayFormat: (options === null || options === undefined ? undefined : options.style) === "comma" ? "comma" : "repeat" });
-    if (serialized.length > 0) {
-      this.parts.set(key, serialized);
-    }
-    return this;
-  }
-  addMany(params) {
-    if (params != null) {
-      for (const [key, value] of Object.entries(params)) {
-        this.add(key, value);
-      }
-    }
-    return this;
-  }
-  mergeAdditional(additionalParams) {
-    if (additionalParams != null) {
-      for (const [key, value] of Object.entries(additionalParams)) {
-        if (value === undefined || value === null) {
-          continue;
-        }
-        const serialized = toQueryString({ [key]: value }, { arrayFormat: "repeat" });
-        if (serialized.length > 0) {
-          this.parts.set(key, serialized);
-        }
-      }
-    }
-    return this;
-  }
-  build() {
-    return [...this.parts.values()].join("&");
-  }
-}
-// node_modules/@deepgram/sdk/dist/esm/core/websocket/ws.mjs
-import { WebSocket as NodeWebSocket } from "ws";
-
-// node_modules/@deepgram/sdk/dist/esm/core/websocket/events.mjs
-class Event {
-  constructor(type, target) {
-    this.target = target;
-    this.type = type;
-  }
-}
-
-class ErrorEvent extends Event {
-  constructor(error, target) {
-    super("error", target);
-    this.message = error.message;
-    this.error = error;
-  }
-}
-
-class CloseEvent extends Event {
-  constructor(code = 1000, reason = "", target) {
-    super("close", target);
-    this.wasClean = true;
-    this.code = code;
-    this.reason = reason;
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/core/websocket/ws.mjs
-var getGlobalWebSocket = () => {
-  if (RUNTIME.type === "node" || RUNTIME.type === "bun" || RUNTIME.type === "deno") {
-    return NodeWebSocket;
-  } else if (typeof WebSocket !== "undefined") {
-    return WebSocket;
-  }
-  return;
-};
-var isWebSocket = (w) => typeof w !== "undefined" && !!w && w.CLOSING === 2;
-var DEFAULT_OPTIONS = {
-  maxReconnectionDelay: 1e4,
-  minReconnectionDelay: 1000 + Math.random() * 4000,
-  minUptime: 5000,
-  reconnectionDelayGrowFactor: 1.3,
-  connectionTimeout: 4000,
-  maxRetries: Infinity,
-  maxEnqueuedMessages: Infinity,
-  startClosed: false,
-  debug: false
-};
-
-class ReconnectingWebSocket {
-  constructor({ url, protocols, options, headers, queryParameters, abortSignal }) {
-    this._listeners = {
-      error: [],
-      message: [],
-      open: [],
-      close: []
-    };
-    this._retryCount = -1;
-    this._shouldReconnect = true;
-    this._connectLock = false;
-    this._binaryType = "blob";
-    this._closeCalled = false;
-    this._messageQueue = [];
-    this.CONNECTING = ReconnectingWebSocket.CONNECTING;
-    this.OPEN = ReconnectingWebSocket.OPEN;
-    this.CLOSING = ReconnectingWebSocket.CLOSING;
-    this.CLOSED = ReconnectingWebSocket.CLOSED;
-    this.onclose = null;
-    this.onerror = null;
-    this.onmessage = null;
-    this.onopen = null;
-    this._handleAbort = () => {
-      if (this._closeCalled) {
-        return;
-      }
-      this._debug("abort signal fired");
-      this._shouldReconnect = false;
-      this._closeCalled = true;
-      this._clearTimeouts();
-      if (this._ws) {
-        this._removeListeners();
-        this._ws.addEventListener("error", () => {});
-        try {
-          this._ws.close(1000, "aborted");
-          this._handleClose(new CloseEvent(1000, "aborted", this));
-        } catch (_error) {}
-      }
-    };
-    this._handleOpen = (event) => {
-      this._debug("open event");
-      const { minUptime = DEFAULT_OPTIONS.minUptime } = this._options;
-      clearTimeout(this._connectTimeout);
-      this._uptimeTimeout = setTimeout(() => this._acceptOpen(), minUptime);
-      this._ws.binaryType = this._binaryType;
-      this._messageQueue.forEach((message) => {
-        var _a2;
-        return (_a2 = this._ws) === null || _a2 === undefined ? undefined : _a2.send(message);
-      });
-      this._messageQueue = [];
-      if (this.onopen) {
-        this.onopen(event);
-      }
-      this._listeners.open.forEach((listener) => this._callEventListener(event, listener));
-    };
-    this._handleMessage = (event) => {
-      this._debug("message event");
-      if (this.onmessage) {
-        this.onmessage(event);
-      }
-      this._listeners.message.forEach((listener) => this._callEventListener(event, listener));
-    };
-    this._handleError = (event) => {
-      this._debug("error event", event.message);
-      this._disconnect(undefined, event.message === "TIMEOUT" ? "timeout" : undefined);
-      if (this.onerror) {
-        this.onerror(event);
-      }
-      this._debug("exec error listeners");
-      this._listeners.error.forEach((listener) => this._callEventListener(event, listener));
-      this._connect();
-    };
-    this._handleClose = (event) => {
-      this._debug("close event");
-      this._clearTimeouts();
-      if (event.code === 1000) {
-        this._shouldReconnect = false;
-      }
-      if (this._shouldReconnect) {
-        this._connect();
-      }
-      if (this.onclose) {
-        this.onclose(event);
-      }
-      this._listeners.close.forEach((listener) => this._callEventListener(event, listener));
-    };
-    this._url = url;
-    this._protocols = protocols;
-    this._options = options !== null && options !== undefined ? options : DEFAULT_OPTIONS;
-    this._headers = headers;
-    this._queryParameters = queryParameters;
-    this._abortSignal = abortSignal;
-    if (this._abortSignal) {
-      this._abortSignal.addEventListener("abort", this._handleAbort, { once: true });
-    }
-    if (this._options.startClosed) {
-      this._shouldReconnect = false;
-    }
-    this._connect();
-  }
-  get binaryType() {
-    return this._ws ? this._ws.binaryType : this._binaryType;
-  }
-  set binaryType(value) {
-    this._binaryType = value;
-    if (this._ws) {
-      this._ws.binaryType = value;
-    }
-  }
-  get retryCount() {
-    return Math.max(this._retryCount, 0);
-  }
-  get bufferedAmount() {
-    const bytes = this._messageQueue.reduce((acc, message) => {
-      if (typeof message === "string") {
-        acc += message.length;
-      } else if (message instanceof Blob) {
-        acc += message.size;
-      } else {
-        acc += message.byteLength;
-      }
-      return acc;
-    }, 0);
-    return bytes + (this._ws ? this._ws.bufferedAmount : 0);
-  }
-  get extensions() {
-    return this._ws ? this._ws.extensions : "";
-  }
-  get protocol() {
-    return this._ws ? this._ws.protocol : "";
-  }
-  get readyState() {
-    if (this._ws) {
-      return this._ws.readyState;
-    }
-    return this._options.startClosed ? ReconnectingWebSocket.ReadyState.CLOSED : ReconnectingWebSocket.ReadyState.CONNECTING;
-  }
-  get url() {
-    return this._ws ? this._ws.url : "";
-  }
-  close(code = 1000, reason) {
-    this._closeCalled = true;
-    this._shouldReconnect = false;
-    this._clearTimeouts();
-    if (!this._ws) {
-      this._debug("close enqueued: no ws instance");
-      return;
-    }
-    if (this._ws.readyState === this.CLOSED) {
-      this._debug("close: already closed");
-      return;
-    }
-    this._ws.close(code, reason);
-  }
-  reconnect(code, reason) {
-    this._shouldReconnect = true;
-    this._closeCalled = false;
-    this._retryCount = -1;
-    if (!this._ws || this._ws.readyState === this.CLOSED) {
-      this._connect();
-    } else {
-      this._disconnect(code, reason);
-      this._connect();
-    }
-  }
-  send(data) {
-    if (this._ws && this._ws.readyState === this.OPEN) {
-      this._debug("send", data);
-      this._ws.send(data);
-    } else {
-      const { maxEnqueuedMessages = DEFAULT_OPTIONS.maxEnqueuedMessages } = this._options;
-      if (this._messageQueue.length < maxEnqueuedMessages) {
-        this._debug("enqueue", data);
-        this._messageQueue.push(data);
-      }
-    }
-  }
-  addEventListener(type, listener) {
-    if (this._listeners[type]) {
-      this._listeners[type].push(listener);
-    }
-  }
-  dispatchEvent(event) {
-    const listeners = this._listeners[event.type];
-    if (listeners) {
-      for (const listener of listeners) {
-        this._callEventListener(event, listener);
-      }
-    }
-    return true;
-  }
-  removeEventListener(type, listener) {
-    if (this._listeners[type]) {
-      this._listeners[type] = this._listeners[type].filter((l) => l !== listener);
-    }
-  }
-  _debug(...args) {
-    if (this._options.debug) {
-      console.log.apply(console, ["RWS>", ...args]);
-    }
-  }
-  _getNextDelay() {
-    const { reconnectionDelayGrowFactor = DEFAULT_OPTIONS.reconnectionDelayGrowFactor, minReconnectionDelay = DEFAULT_OPTIONS.minReconnectionDelay, maxReconnectionDelay = DEFAULT_OPTIONS.maxReconnectionDelay } = this._options;
-    let delay = 0;
-    if (this._retryCount > 0) {
-      delay = minReconnectionDelay * Math.pow(reconnectionDelayGrowFactor, this._retryCount - 1);
-      if (delay > maxReconnectionDelay) {
-        delay = maxReconnectionDelay;
-      }
-    }
-    this._debug("next delay", delay);
-    return delay;
-  }
-  _wait() {
-    return new Promise((resolve) => {
-      setTimeout(resolve, this._getNextDelay());
-    });
-  }
-  _getNextUrl(urlProvider) {
-    if (typeof urlProvider === "string") {
-      return Promise.resolve(urlProvider);
-    }
-    if (typeof urlProvider === "function") {
-      const url = urlProvider();
-      if (typeof url === "string") {
-        return Promise.resolve(url);
-      }
-      if (url.then) {
-        return url;
-      }
-    }
-    throw Error("Invalid URL");
-  }
-  _connect() {
-    var _a2;
-    if (this._connectLock || !this._shouldReconnect) {
-      return;
-    }
-    if ((_a2 = this._abortSignal) === null || _a2 === undefined ? undefined : _a2.aborted) {
-      this._debug("connect aborted");
-      return;
-    }
-    this._connectLock = true;
-    const { maxRetries = DEFAULT_OPTIONS.maxRetries, connectionTimeout = DEFAULT_OPTIONS.connectionTimeout, WebSocket: WebSocket2 = getGlobalWebSocket() } = this._options;
-    if (this._retryCount >= maxRetries) {
-      this._debug("max retries reached", this._retryCount, ">=", maxRetries);
-      return;
-    }
-    this._retryCount++;
-    this._debug("connect", this._retryCount);
-    this._removeListeners();
-    if (!isWebSocket(WebSocket2)) {
-      throw Error("No valid WebSocket class provided");
-    }
-    this._wait().then(() => this._getNextUrl(this._url)).then((url) => {
-      var _a3;
-      if (this._closeCalled || ((_a3 = this._abortSignal) === null || _a3 === undefined ? undefined : _a3.aborted)) {
-        this._connectLock = false;
-        return;
-      }
-      const options = {};
-      if (this._headers) {
-        options.headers = this._headers;
-      }
-      if (this._queryParameters && Object.keys(this._queryParameters).length > 0) {
-        const queryString = toQueryString(this._queryParameters, { arrayFormat: "repeat" });
-        if (queryString) {
-          url = `${url}?${queryString}`;
-        }
-      }
-      this._ws = new WebSocket2(url, this._protocols, options);
-      this._ws.binaryType = this._binaryType;
-      this._connectLock = false;
-      this._addListeners();
-      this._connectTimeout = setTimeout(() => this._handleTimeout(), connectionTimeout);
-    });
-  }
-  _handleTimeout() {
-    this._debug("timeout event");
-    this._handleError(new ErrorEvent(Error("TIMEOUT"), this));
-  }
-  _disconnect(code = 1000, reason) {
-    this._clearTimeouts();
-    if (!this._ws) {
-      return;
-    }
-    this._removeListeners();
-    this._ws.addEventListener("error", () => {});
-    try {
-      this._ws.close(code, reason);
-      this._handleClose(new CloseEvent(code, reason, this));
-    } catch (_error) {}
-  }
-  _acceptOpen() {
-    this._debug("accept open");
-    this._retryCount = 0;
-  }
-  _callEventListener(event, listener) {
-    if ("handleEvent" in listener) {
-      listener.handleEvent(event);
-    } else {
-      listener(event);
-    }
-  }
-  _removeListeners() {
-    if (!this._ws) {
-      return;
-    }
-    this._debug("removeListeners");
-    this._ws.removeEventListener("open", this._handleOpen);
-    this._ws.removeEventListener("close", this._handleClose);
-    this._ws.removeEventListener("message", this._handleMessage);
-    this._ws.removeEventListener("error", this._handleError);
-  }
-  _addListeners() {
-    if (!this._ws) {
-      return;
-    }
-    this._debug("addListeners");
-    this._ws.addEventListener("open", this._handleOpen);
-    this._ws.addEventListener("close", this._handleClose);
-    this._ws.addEventListener("message", this._handleMessage);
-    this._ws.addEventListener("error", this._handleError);
-  }
-  _clearTimeouts() {
-    clearTimeout(this._connectTimeout);
-    clearTimeout(this._uptimeTimeout);
-  }
-}
-ReconnectingWebSocket.CONNECTING = 0;
-ReconnectingWebSocket.OPEN = 1;
-ReconnectingWebSocket.CLOSING = 2;
-ReconnectingWebSocket.CLOSED = 3;
-(function(ReconnectingWebSocket2) {
-  ReconnectingWebSocket2.ReadyState = {
-    CONNECTING: 0,
-    OPEN: 1,
-    CLOSING: 2,
-    CLOSED: 3
-  };
-})(ReconnectingWebSocket || (ReconnectingWebSocket = {}));
-// node_modules/@deepgram/sdk/dist/esm/errors/DeepgramError.mjs
-class DeepgramError extends Error {
-  constructor({ message, statusCode, body, rawResponse, cause }) {
-    super(buildMessage({ message, statusCode, body }));
-    Object.setPrototypeOf(this, new.target.prototype);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-    this.name = "DeepgramError";
-    this.statusCode = statusCode;
-    this.body = body;
-    this.rawResponse = rawResponse;
-    if (cause != null) {
-      this.cause = cause;
-    }
-  }
-}
-function buildMessage({ message, statusCode, body }) {
-  const lines = [];
-  if (message != null) {
-    lines.push(message);
-  }
-  if (statusCode != null) {
-    lines.push(`Status code: ${statusCode.toString()}`);
-  }
-  if (body != null) {
-    lines.push(`Body: ${toJson(body, undefined, 2)}`);
-  }
-  return lines.join(`
-`);
-}
-// node_modules/@deepgram/sdk/dist/esm/errors/DeepgramTimeoutError.mjs
-class DeepgramTimeoutError extends Error {
-  constructor(message, opts) {
-    super(message);
-    Object.setPrototypeOf(this, new.target.prototype);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-    this.name = "DeepgramTimeoutError";
-    if ((opts === null || opts === undefined ? undefined : opts.cause) != null) {
-      this.cause = opts.cause;
-    }
-  }
-}
-// node_modules/@deepgram/sdk/dist/esm/auth/HeaderAuthProvider.mjs
-var __awaiter13 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-var PARAM_KEY = "apiKey";
-var ENV_HEADER_KEY = "DEEPGRAM_API_KEY";
-var HEADER_NAME = "Authorization";
-var HEADER_PREFIX = "Token ";
-
-class HeaderAuthProvider {
-  constructor(options) {
-    this.options = options;
-  }
-  static canCreate(options) {
-    var _a2;
-    return (options === null || options === undefined ? undefined : options[PARAM_KEY]) != null || ((_a2 = process.env) === null || _a2 === undefined ? undefined : _a2[ENV_HEADER_KEY]) != null;
-  }
-  getAuthRequest() {
-    return __awaiter13(this, arguments, undefined, function* ({ endpointMetadata } = {}) {
-      var _a2, _b;
-      const headerValue = (_a2 = yield Supplier.get(this.options[PARAM_KEY])) !== null && _a2 !== undefined ? _a2 : (_b = process.env) === null || _b === undefined ? undefined : _b[ENV_HEADER_KEY];
-      if (headerValue == null) {
-        throw new DeepgramError({
-          message: HeaderAuthProvider.AUTH_CONFIG_ERROR_MESSAGE
-        });
-      }
-      return {
-        headers: { [HEADER_NAME]: `${HEADER_PREFIX}${headerValue}` }
-      };
-    });
-  }
-}
-(function(HeaderAuthProvider2) {
-  HeaderAuthProvider2.AUTH_SCHEME = "ApiKeyAuth";
-  HeaderAuthProvider2.AUTH_CONFIG_ERROR_MESSAGE = `Please provide '${PARAM_KEY}' when initializing the client, or set the '${ENV_HEADER_KEY}' environment variable`;
-  function createInstance(options) {
-    return new HeaderAuthProvider2(options);
-  }
-  HeaderAuthProvider2.createInstance = createInstance;
-})(HeaderAuthProvider || (HeaderAuthProvider = {}));
-
-// node_modules/@deepgram/sdk/dist/esm/core/headers.mjs
-function mergeHeaders2(...headersArray) {
-  const result = {};
-  for (const [key, value] of headersArray.filter((headers) => headers != null).flatMap((headers) => Object.entries(headers))) {
-    const insensitiveKey = key.toLowerCase();
-    if (value != null) {
-      result[insensitiveKey] = value;
-    } else if (insensitiveKey in result) {
-      delete result[insensitiveKey];
-    }
-  }
-  return result;
-}
-function mergeOnlyDefinedHeaders(...headersArray) {
-  const result = {};
-  for (const [key, value] of headersArray.filter((headers) => headers != null).flatMap((headers) => Object.entries(headers))) {
-    const insensitiveKey = key.toLowerCase();
-    if (value != null) {
-      result[insensitiveKey] = value;
-    }
-  }
-  return result;
-}
-
-// node_modules/@deepgram/sdk/dist/esm/version.mjs
-var SDK_VERSION = "5.6.0";
-
-// node_modules/@deepgram/sdk/dist/esm/BaseClient.mjs
-function normalizeClientOptions(options) {
-  const headers = mergeHeaders2({
-    "X-Fern-Language": "JavaScript",
-    "X-Fern-SDK-Name": "@deepgram/sdk",
-    "X-Fern-SDK-Version": SDK_VERSION,
-    "User-Agent": `@deepgram/sdk/${SDK_VERSION}`,
-    "X-Fern-Runtime": RUNTIME.type,
-    "X-Fern-Runtime-Version": RUNTIME.version
-  }, options === null || options === undefined ? undefined : options.headers);
-  return Object.assign(Object.assign({}, options), { logging: exports_logging.createLogger(options === null || options === undefined ? undefined : options.logging), headers });
-}
-function normalizeClientOptionsWithAuth(options) {
-  var _a2;
-  const normalized = normalizeClientOptions(options);
-  if (options.auth === false) {
-    normalized.authProvider = new NoOpAuthProvider;
-    return normalized;
-  }
-  if (options.auth != null) {
-    if (typeof options.auth === "function") {
-      normalized.authProvider = { getAuthRequest: options.auth };
-      return normalized;
-    }
-    if (isAuthProvider(options.auth)) {
-      normalized.authProvider = options.auth;
-      return normalized;
-    }
-    Object.assign(normalized, options.auth);
-  }
-  const normalizedWithNoOpAuthProvider = withNoOpAuthProvider(normalized);
-  (_a2 = normalized.authProvider) !== null && _a2 !== undefined || (normalized.authProvider = new HeaderAuthProvider(normalizedWithNoOpAuthProvider));
-  return normalized;
-}
-function withNoOpAuthProvider(options) {
-  return Object.assign(Object.assign({}, options), { authProvider: new NoOpAuthProvider });
-}
-
-// node_modules/@deepgram/sdk/dist/esm/environments.mjs
-var DeepgramEnvironment = {
-  Production: {
-    base: "https://api.deepgram.com",
-    production: "wss://api.deepgram.com",
-    agent: "wss://agent.deepgram.com",
-    agentRest: "https://agent.deepgram.com"
-  }
-};
-
-// node_modules/@deepgram/sdk/dist/esm/errors/handleNonStatusCodeError.mjs
-function handleNonStatusCodeError(error, rawResponse, method, path) {
-  switch (error.reason) {
-    case "non-json":
-      throw new DeepgramError({
-        statusCode: error.statusCode,
-        body: error.rawBody,
-        rawResponse
-      });
-    case "body-is-null":
-      throw new DeepgramError({
-        statusCode: error.statusCode,
-        rawResponse
-      });
-    case "timeout":
-      throw new DeepgramTimeoutError(`Timeout exceeded when calling ${method} ${path}.`, {
-        cause: error.cause
-      });
-    case "unknown":
-      throw new DeepgramError({
-        message: error.errorMessage,
-        rawResponse,
-        cause: error.cause
-      });
-    default:
-      throw new DeepgramError({
-        message: "Unknown error",
-        rawResponse
-      });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/errors/BadRequestError.mjs
-class BadRequestError extends DeepgramError {
-  constructor(body, rawResponse) {
-    super({
-      message: "BadRequestError",
-      statusCode: 400,
-      body,
-      rawResponse
-    });
-    Object.setPrototypeOf(this, new.target.prototype);
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-    this.name = "BadRequestError";
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/agent/resources/v1/resources/settings/resources/think/resources/models/client/Client.mjs
-var __awaiter14 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class ModelsClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptions(options);
-  }
-  list(requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(requestOptions));
-  }
-  __list(requestOptions) {
-    return __awaiter14(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _headers = mergeHeaders2((_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).agentRest, "v1/agent/settings/think/models"),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/agent/settings/think/models");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/agent/resources/v1/resources/settings/resources/think/client/Client.mjs
-class ThinkClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptions(options);
-  }
-  get models() {
-    var _a2;
-    return (_a2 = this._models) !== null && _a2 !== undefined ? _a2 : this._models = new ModelsClient(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/agent/resources/v1/resources/settings/client/Client.mjs
-class SettingsClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptions(options);
-  }
-  get think() {
-    var _a2;
-    return (_a2 = this._think) !== null && _a2 !== undefined ? _a2 : this._think = new ThinkClient(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/agent/resources/v1/client/Socket.mjs
-var __awaiter15 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class V1Socket {
-  constructor(args) {
-    this.eventHandlers = {};
-    this.handleOpen = () => {
-      var _a2, _b;
-      (_b = (_a2 = this.eventHandlers).open) === null || _b === undefined || _b.call(_a2);
-    };
-    this.handleMessage = (event) => {
-      var _a2, _b;
-      const data = fromJson(event.data);
-      (_b = (_a2 = this.eventHandlers).message) === null || _b === undefined || _b.call(_a2, data);
-    };
-    this.handleClose = (event) => {
-      var _a2, _b;
-      (_b = (_a2 = this.eventHandlers).close) === null || _b === undefined || _b.call(_a2, event);
-    };
-    this.handleError = (event) => {
-      var _a2, _b;
-      const message = event.message;
-      (_b = (_a2 = this.eventHandlers).error) === null || _b === undefined || _b.call(_a2, new Error(message));
-    };
-    this.socket = args.socket;
-    this.socket.addEventListener("open", this.handleOpen);
-    this.socket.addEventListener("message", this.handleMessage);
-    this.socket.addEventListener("close", this.handleClose);
-    this.socket.addEventListener("error", this.handleError);
-  }
-  get readyState() {
-    return this.socket.readyState;
-  }
-  on(event, callback) {
-    this.eventHandlers[event] = callback;
-  }
-  sendSettings(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendUpdateListen(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendUpdateThink(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendUpdateSpeak(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendInjectUserMessage(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendInjectAgentMessage(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendFunctionCallResponse(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendKeepAlive(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendUpdatePrompt(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendMedia(message) {
-    this.assertSocketIsOpen();
-    this.sendBinary(message);
-  }
-  connect() {
-    this.socket.reconnect();
-    this.socket.addEventListener("open", this.handleOpen);
-    this.socket.addEventListener("message", this.handleMessage);
-    this.socket.addEventListener("close", this.handleClose);
-    this.socket.addEventListener("error", this.handleError);
-    return this;
-  }
-  close() {
-    this.socket.close();
-    this.handleClose({ code: 1000 });
-    this.socket.removeEventListener("open", this.handleOpen);
-    this.socket.removeEventListener("message", this.handleMessage);
-    this.socket.removeEventListener("close", this.handleClose);
-    this.socket.removeEventListener("error", this.handleError);
-  }
-  waitForOpen() {
-    return __awaiter15(this, undefined, undefined, function* () {
-      if (this.socket.readyState === ReconnectingWebSocket.ReadyState.OPEN) {
-        return this.socket;
-      }
-      return new Promise((resolve, reject) => {
-        this.socket.addEventListener("open", () => {
-          resolve(this.socket);
-        });
-        this.socket.addEventListener("error", (event) => {
-          reject(event);
-        });
-      });
-    });
-  }
-  assertSocketIsOpen() {
-    if (!this.socket) {
-      throw new Error("Socket is not connected.");
-    }
-    if (this.socket.readyState !== ReconnectingWebSocket.ReadyState.OPEN) {
-      throw new Error("Socket is not open.");
-    }
-  }
-  sendBinary(payload) {
-    this.socket.send(payload);
-  }
-  sendJson(payload) {
-    const jsonPayload = toJson(payload);
-    this.socket.send(jsonPayload);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/agent/resources/v1/client/Client.mjs
-var __awaiter16 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class V1Client {
-  constructor(options = {}) {
-    this._options = normalizeClientOptions(options);
-  }
-  get settings() {
-    var _a2;
-    return (_a2 = this._settings) !== null && _a2 !== undefined ? _a2 : this._settings = new SettingsClient(this._options);
-  }
-  connect(args) {
-    return __awaiter16(this, undefined, undefined, function* () {
-      var _a2, _b, _c;
-      const { protocols, queryParams, headers, debug: debug2, reconnectAttempts, connectionTimeoutInSeconds, abortSignal } = args;
-      const _headers = mergeHeaders2((_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, mergeOnlyDefinedHeaders({ Authorization: args.Authorization }), headers);
-      const socket = new ReconnectingWebSocket({
-        url: exports_url.join((_b = yield Supplier.get(this._options.baseUrl)) !== null && _b !== undefined ? _b : ((_c = yield Supplier.get(this._options.environment)) !== null && _c !== undefined ? _c : DeepgramEnvironment.Production).agent, "/v1/agent/converse"),
-        protocols: protocols !== null && protocols !== undefined ? protocols : [],
-        queryParameters: queryParams !== null && queryParams !== undefined ? queryParams : {},
-        headers: _headers,
-        options: {
-          debug: debug2 !== null && debug2 !== undefined ? debug2 : false,
-          maxRetries: reconnectAttempts !== null && reconnectAttempts !== undefined ? reconnectAttempts : 30,
-          connectionTimeout: connectionTimeoutInSeconds != null ? connectionTimeoutInSeconds * 1000 : undefined
-        },
-        abortSignal
-      });
-      return new V1Socket({ socket });
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/agent/client/Client.mjs
-class AgentClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptions(options);
-  }
-  get v1() {
-    var _a2;
-    return (_a2 = this._v1) !== null && _a2 !== undefined ? _a2 : this._v1 = new V1Client(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/auth/resources/v1/resources/tokens/client/Client.mjs
-var __awaiter17 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class TokensClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  grant(request = {}, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__grant(request, requestOptions));
-  }
-  __grant() {
-    return __awaiter17(this, arguments, undefined, function* (request = {}, requestOptions) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, "v1/auth/grant"),
-        method: "POST",
-        headers: _headers,
-        contentType: "application/json",
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "json",
-        body: request,
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "POST", "/v1/auth/grant");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/auth/resources/v1/client/Client.mjs
-class V1Client2 {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get tokens() {
-    var _a2;
-    return (_a2 = this._tokens) !== null && _a2 !== undefined ? _a2 : this._tokens = new TokensClient(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/auth/client/Client.mjs
-class AuthClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get v1() {
-    var _a2;
-    return (_a2 = this._v1) !== null && _a2 !== undefined ? _a2 : this._v1 = new V1Client2(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/listen/resources/v1/resources/media/client/Client.mjs
-var __awaiter18 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-var __rest = function(s, e) {
-  var t2 = {};
-  for (var p in s)
-    if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-      t2[p] = s[p];
-  if (s != null && typeof Object.getOwnPropertySymbols === "function")
-    for (var i = 0, p = Object.getOwnPropertySymbols(s);i < p.length; i++) {
-      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-        t2[p[i]] = s[p[i]];
-    }
-  return t2;
-};
-
-class MediaClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  transcribeUrl(request, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__transcribeUrl(request, requestOptions));
-  }
-  __transcribeUrl(request, requestOptions) {
-    return __awaiter18(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { callback, callback_method: callbackMethod, extra, sentiment, summarize, tag, topics, custom_topic: customTopic, custom_topic_mode: customTopicMode, intents, custom_intent: customIntent, custom_intent_mode: customIntentMode, detect_entities: detectEntities, detect_language: detectLanguage, diarize, diarize_model: diarizeModel, dictation, encoding, filler_words: fillerWords, keyterm, keywords, language, measurements, model, multichannel, numerals, paragraphs, profanity_filter: profanityFilter, punctuate, redact, replace, search, smart_format: smartFormat, utterances, utt_split: uttSplit, version, mip_opt_out: mipOptOut } = request, _body = __rest(request, ["callback", "callback_method", "extra", "sentiment", "summarize", "tag", "topics", "custom_topic", "custom_topic_mode", "intents", "custom_intent", "custom_intent_mode", "detect_entities", "detect_language", "diarize", "diarize_model", "dictation", "encoding", "filler_words", "keyterm", "keywords", "language", "measurements", "model", "multichannel", "numerals", "paragraphs", "profanity_filter", "punctuate", "redact", "replace", "search", "smart_format", "utterances", "utt_split", "version", "mip_opt_out"]);
-      const _queryParams = {
-        callback,
-        callback_method: callbackMethod != null ? callbackMethod : undefined,
-        extra,
-        sentiment,
-        summarize: summarize != null ? summarize : undefined,
-        tag,
-        topics,
-        custom_topic: customTopic,
-        custom_topic_mode: customTopicMode != null ? customTopicMode : undefined,
-        intents,
-        custom_intent: customIntent,
-        custom_intent_mode: customIntentMode != null ? customIntentMode : undefined,
-        detect_entities: detectEntities,
-        detect_language: detectLanguage,
-        diarize,
-        diarize_model: diarizeModel != null ? diarizeModel : undefined,
-        dictation,
-        encoding: encoding != null ? encoding : undefined,
-        filler_words: fillerWords,
-        keyterm,
-        keywords,
-        language,
-        measurements,
-        model: model != null ? model : undefined,
-        multichannel,
-        numerals,
-        paragraphs,
-        profanity_filter: profanityFilter,
-        punctuate,
-        redact,
-        replace,
-        search,
-        smart_format: smartFormat,
-        utterances,
-        utt_split: uttSplit,
-        version: version != null ? version : undefined,
-        mip_opt_out: mipOptOut
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, "v1/listen"),
-        method: "POST",
-        headers: _headers,
-        contentType: "application/json",
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "json",
-        body: _body,
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "POST", "/v1/listen");
-    });
-  }
-  transcribeFile(uploadable, request, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__transcribeFile(uploadable, request, requestOptions));
-  }
-  __transcribeFile(uploadable, request, requestOptions) {
-    return __awaiter18(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _queryParams = {
-        callback: request.callback,
-        callback_method: request.callback_method != null ? request.callback_method : undefined,
-        extra: request.extra,
-        sentiment: request.sentiment,
-        summarize: request.summarize != null ? request.summarize : undefined,
-        tag: request.tag,
-        topics: request.topics,
-        custom_topic: request.custom_topic,
-        custom_topic_mode: request.custom_topic_mode != null ? request.custom_topic_mode : undefined,
-        intents: request.intents,
-        custom_intent: request.custom_intent,
-        custom_intent_mode: request.custom_intent_mode != null ? request.custom_intent_mode : undefined,
-        detect_entities: request.detect_entities,
-        detect_language: request.detect_language,
-        diarize: request.diarize,
-        diarize_model: request.diarize_model != null ? request.diarize_model : undefined,
-        dictation: request.dictation,
-        encoding: request.encoding != null ? request.encoding : undefined,
-        filler_words: request.filler_words,
-        keyterm: request.keyterm,
-        keywords: request.keywords,
-        language: request.language,
-        measurements: request.measurements,
-        model: request.model != null ? request.model : undefined,
-        multichannel: request.multichannel,
-        numerals: request.numerals,
-        paragraphs: request.paragraphs,
-        profanity_filter: request.profanity_filter,
-        punctuate: request.punctuate,
-        redact: request.redact,
-        replace: request.replace,
-        search: request.search,
-        smart_format: request.smart_format,
-        utterances: request.utterances,
-        utt_split: request.utt_split,
-        version: request.version != null ? request.version : undefined,
-        mip_opt_out: request.mip_opt_out
-      };
-      const _binaryUploadRequest = yield exports_file.toBinaryUploadRequest(uploadable);
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, _binaryUploadRequest.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, "v1/listen"),
-        method: "POST",
-        headers: _headers,
-        contentType: "application/octet-stream",
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "bytes",
-        duplex: "half",
-        body: _binaryUploadRequest.body,
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "POST", "/v1/listen");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/listen/resources/v1/client/Socket.mjs
-var __awaiter19 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class V1Socket2 {
-  constructor(args) {
-    this.eventHandlers = {};
-    this.handleOpen = () => {
-      var _a2, _b;
-      (_b = (_a2 = this.eventHandlers).open) === null || _b === undefined || _b.call(_a2);
-    };
-    this.handleMessage = (event) => {
-      var _a2, _b;
-      const data = fromJson(event.data);
-      (_b = (_a2 = this.eventHandlers).message) === null || _b === undefined || _b.call(_a2, data);
-    };
-    this.handleClose = (event) => {
-      var _a2, _b;
-      (_b = (_a2 = this.eventHandlers).close) === null || _b === undefined || _b.call(_a2, event);
-    };
-    this.handleError = (event) => {
-      var _a2, _b;
-      const message = event.message;
-      (_b = (_a2 = this.eventHandlers).error) === null || _b === undefined || _b.call(_a2, new Error(message));
-    };
-    this.socket = args.socket;
-    this.socket.addEventListener("open", this.handleOpen);
-    this.socket.addEventListener("message", this.handleMessage);
-    this.socket.addEventListener("close", this.handleClose);
-    this.socket.addEventListener("error", this.handleError);
-  }
-  get readyState() {
-    return this.socket.readyState;
-  }
-  on(event, callback) {
-    this.eventHandlers[event] = callback;
-  }
-  sendMedia(message) {
-    this.assertSocketIsOpen();
-    this.sendBinary(message);
-  }
-  sendFinalize(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendCloseStream(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendKeepAlive(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  connect() {
-    this.socket.reconnect();
-    this.socket.addEventListener("open", this.handleOpen);
-    this.socket.addEventListener("message", this.handleMessage);
-    this.socket.addEventListener("close", this.handleClose);
-    this.socket.addEventListener("error", this.handleError);
-    return this;
-  }
-  close() {
-    this.socket.close();
-    this.handleClose({ code: 1000 });
-    this.socket.removeEventListener("open", this.handleOpen);
-    this.socket.removeEventListener("message", this.handleMessage);
-    this.socket.removeEventListener("close", this.handleClose);
-    this.socket.removeEventListener("error", this.handleError);
-  }
-  waitForOpen() {
-    return __awaiter19(this, undefined, undefined, function* () {
-      if (this.socket.readyState === ReconnectingWebSocket.ReadyState.OPEN) {
-        return this.socket;
-      }
-      return new Promise((resolve, reject) => {
-        this.socket.addEventListener("open", () => {
-          resolve(this.socket);
-        });
-        this.socket.addEventListener("error", (event) => {
-          reject(event);
-        });
-      });
-    });
-  }
-  assertSocketIsOpen() {
-    if (!this.socket) {
-      throw new Error("Socket is not connected.");
-    }
-    if (this.socket.readyState !== ReconnectingWebSocket.ReadyState.OPEN) {
-      throw new Error("Socket is not open.");
-    }
-  }
-  sendBinary(payload) {
-    this.socket.send(payload);
-  }
-  sendJson(payload) {
-    const jsonPayload = toJson(payload);
-    this.socket.send(jsonPayload);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/listen/resources/v1/client/Client.mjs
-var __awaiter20 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class V1Client3 {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get media() {
-    var _a2;
-    return (_a2 = this._media) !== null && _a2 !== undefined ? _a2 : this._media = new MediaClient(this._options);
-  }
-  connect(args) {
-    return __awaiter20(this, undefined, undefined, function* () {
-      var _a2, _b, _c;
-      const { callback, callback_method: callbackMethod, channels, detect_entities: detectEntities, diarize, diarize_model: diarizeModel, dictation, encoding, endpointing, extra, interim_results: interimResults, keyterm, keywords, language, mip_opt_out: mipOptOut, model, multichannel, numerals, profanity_filter: profanityFilter, punctuate, redact, replace, sample_rate: sampleRate, search, smart_format: smartFormat, tag, utterance_end_ms: utteranceEndMs, vad_events: vadEvents, version, protocols, queryParams, headers, debug: debug2, reconnectAttempts, connectionTimeoutInSeconds, abortSignal } = args;
-      const _queryParams = {
-        callback: callback != null ? typeof callback === "string" ? callback : toJson(callback) : undefined,
-        callback_method: callbackMethod != null ? callbackMethod : undefined,
-        channels: channels != null ? typeof channels === "string" ? channels : toJson(channels) : undefined,
-        detect_entities: detectEntities != null ? detectEntities : undefined,
-        diarize: diarize != null ? diarize : undefined,
-        diarize_model: diarizeModel != null ? diarizeModel : undefined,
-        dictation: dictation != null ? dictation : undefined,
-        encoding: encoding != null ? encoding : undefined,
-        endpointing: endpointing != null ? typeof endpointing === "string" ? endpointing : toJson(endpointing) : undefined,
-        extra: extra != null ? typeof extra === "string" ? extra : toJson(extra) : undefined,
-        interim_results: interimResults != null ? interimResults : undefined,
-        keyterm: keyterm != null ? typeof keyterm === "string" ? keyterm : toJson(keyterm) : undefined,
-        keywords: keywords != null ? typeof keywords === "string" ? keywords : toJson(keywords) : undefined,
-        language: language != null ? typeof language === "string" ? language : toJson(language) : undefined,
-        mip_opt_out: mipOptOut != null ? typeof mipOptOut === "string" ? mipOptOut : toJson(mipOptOut) : undefined,
-        model,
-        multichannel: multichannel != null ? multichannel : undefined,
-        numerals: numerals != null ? numerals : undefined,
-        profanity_filter: profanityFilter != null ? profanityFilter : undefined,
-        punctuate: punctuate != null ? punctuate : undefined,
-        redact: redact != null ? redact : undefined,
-        replace: replace != null ? typeof replace === "string" ? replace : toJson(replace) : undefined,
-        sample_rate: sampleRate != null ? typeof sampleRate === "string" ? sampleRate : toJson(sampleRate) : undefined,
-        search: search != null ? typeof search === "string" ? search : toJson(search) : undefined,
-        smart_format: smartFormat != null ? smartFormat : undefined,
-        tag: tag != null ? typeof tag === "string" ? tag : toJson(tag) : undefined,
-        utterance_end_ms: utteranceEndMs != null ? typeof utteranceEndMs === "string" ? utteranceEndMs : toJson(utteranceEndMs) : undefined,
-        vad_events: vadEvents != null ? vadEvents : undefined,
-        version: version != null ? typeof version === "string" ? version : toJson(version) : undefined
-      };
-      const _headers = mergeHeaders2((_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, mergeOnlyDefinedHeaders({ Authorization: args.Authorization }), headers);
-      const socket = new ReconnectingWebSocket({
-        url: exports_url.join((_b = yield Supplier.get(this._options.baseUrl)) !== null && _b !== undefined ? _b : ((_c = yield Supplier.get(this._options.environment)) !== null && _c !== undefined ? _c : DeepgramEnvironment.Production).production, "/v1/listen"),
-        protocols: protocols !== null && protocols !== undefined ? protocols : [],
-        queryParameters: Object.assign(Object.assign({}, _queryParams), queryParams),
-        headers: _headers,
-        options: {
-          debug: debug2 !== null && debug2 !== undefined ? debug2 : false,
-          maxRetries: reconnectAttempts !== null && reconnectAttempts !== undefined ? reconnectAttempts : 30,
-          connectionTimeout: connectionTimeoutInSeconds != null ? connectionTimeoutInSeconds * 1000 : undefined
-        },
-        abortSignal
-      });
-      return new V1Socket2({ socket });
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/listen/resources/v2/client/Socket.mjs
-var __awaiter21 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class V2Socket {
-  constructor(args) {
-    this.eventHandlers = {};
-    this.handleOpen = () => {
-      var _a2, _b;
-      (_b = (_a2 = this.eventHandlers).open) === null || _b === undefined || _b.call(_a2);
-    };
-    this.handleMessage = (event) => {
-      var _a2, _b;
-      const data = fromJson(event.data);
-      (_b = (_a2 = this.eventHandlers).message) === null || _b === undefined || _b.call(_a2, data);
-    };
-    this.handleClose = (event) => {
-      var _a2, _b;
-      (_b = (_a2 = this.eventHandlers).close) === null || _b === undefined || _b.call(_a2, event);
-    };
-    this.handleError = (event) => {
-      var _a2, _b;
-      const message = event.message;
-      (_b = (_a2 = this.eventHandlers).error) === null || _b === undefined || _b.call(_a2, new Error(message));
-    };
-    this.socket = args.socket;
-    this.socket.addEventListener("open", this.handleOpen);
-    this.socket.addEventListener("message", this.handleMessage);
-    this.socket.addEventListener("close", this.handleClose);
-    this.socket.addEventListener("error", this.handleError);
-  }
-  get readyState() {
-    return this.socket.readyState;
-  }
-  on(event, callback) {
-    this.eventHandlers[event] = callback;
-  }
-  sendMedia(message) {
-    this.assertSocketIsOpen();
-    this.sendBinary(message);
-  }
-  sendCloseStream(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendConfigure(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  connect() {
-    this.socket.reconnect();
-    this.socket.addEventListener("open", this.handleOpen);
-    this.socket.addEventListener("message", this.handleMessage);
-    this.socket.addEventListener("close", this.handleClose);
-    this.socket.addEventListener("error", this.handleError);
-    return this;
-  }
-  close() {
-    this.socket.close();
-    this.handleClose({ code: 1000 });
-    this.socket.removeEventListener("open", this.handleOpen);
-    this.socket.removeEventListener("message", this.handleMessage);
-    this.socket.removeEventListener("close", this.handleClose);
-    this.socket.removeEventListener("error", this.handleError);
-  }
-  waitForOpen() {
-    return __awaiter21(this, undefined, undefined, function* () {
-      if (this.socket.readyState === ReconnectingWebSocket.ReadyState.OPEN) {
-        return this.socket;
-      }
-      return new Promise((resolve, reject) => {
-        this.socket.addEventListener("open", () => {
-          resolve(this.socket);
-        });
-        this.socket.addEventListener("error", (event) => {
-          reject(event);
-        });
-      });
-    });
-  }
-  assertSocketIsOpen() {
-    if (!this.socket) {
-      throw new Error("Socket is not connected.");
-    }
-    if (this.socket.readyState !== ReconnectingWebSocket.ReadyState.OPEN) {
-      throw new Error("Socket is not open.");
-    }
-  }
-  sendBinary(payload) {
-    this.socket.send(payload);
-  }
-  sendJson(payload) {
-    const jsonPayload = toJson(payload);
-    this.socket.send(jsonPayload);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/listen/resources/v2/client/Client.mjs
-var __awaiter22 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class V2Client {
-  constructor(options = {}) {
-    this._options = normalizeClientOptions(options);
-  }
-  connect(args) {
-    return __awaiter22(this, undefined, undefined, function* () {
-      var _a2, _b, _c;
-      const { model, encoding, sample_rate: sampleRate, eager_eot_threshold: eagerEotThreshold, eot_threshold: eotThreshold, eot_timeout_ms: eotTimeoutMs, keyterm, language_hint: languageHint, profanity_filter: profanityFilter, numerals, mip_opt_out: mipOptOut, tag, protocols, queryParams, headers, debug: debug2, reconnectAttempts, connectionTimeoutInSeconds, abortSignal } = args;
-      const _queryParams = {
-        model,
-        encoding: encoding != null ? encoding : undefined,
-        sample_rate: sampleRate != null ? typeof sampleRate === "string" ? sampleRate : toJson(sampleRate) : undefined,
-        eager_eot_threshold: eagerEotThreshold != null ? typeof eagerEotThreshold === "string" ? eagerEotThreshold : toJson(eagerEotThreshold) : undefined,
-        eot_threshold: eotThreshold != null ? typeof eotThreshold === "string" ? eotThreshold : toJson(eotThreshold) : undefined,
-        eot_timeout_ms: eotTimeoutMs != null ? typeof eotTimeoutMs === "string" ? eotTimeoutMs : toJson(eotTimeoutMs) : undefined,
-        keyterm: Array.isArray(keyterm) ? keyterm.map((item) => typeof item === "string" ? item : toJson(item)) : keyterm != null ? typeof keyterm === "string" ? keyterm : toJson(keyterm) : undefined,
-        language_hint: Array.isArray(languageHint) ? languageHint.map((item) => typeof item === "string" ? item : toJson(item)) : languageHint != null ? typeof languageHint === "string" ? languageHint : toJson(languageHint) : undefined,
-        profanity_filter: profanityFilter != null ? profanityFilter : undefined,
-        numerals: numerals != null ? numerals : undefined,
-        mip_opt_out: mipOptOut != null ? typeof mipOptOut === "string" ? mipOptOut : toJson(mipOptOut) : undefined,
-        tag: tag != null ? typeof tag === "string" ? tag : toJson(tag) : undefined
-      };
-      const _headers = mergeHeaders2((_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, mergeOnlyDefinedHeaders({ Authorization: args.Authorization }), headers);
-      const socket = new ReconnectingWebSocket({
-        url: exports_url.join((_b = yield Supplier.get(this._options.baseUrl)) !== null && _b !== undefined ? _b : ((_c = yield Supplier.get(this._options.environment)) !== null && _c !== undefined ? _c : DeepgramEnvironment.Production).production, "/v2/listen"),
-        protocols: protocols !== null && protocols !== undefined ? protocols : [],
-        queryParameters: Object.assign(Object.assign({}, _queryParams), queryParams),
-        headers: _headers,
-        options: {
-          debug: debug2 !== null && debug2 !== undefined ? debug2 : false,
-          maxRetries: reconnectAttempts !== null && reconnectAttempts !== undefined ? reconnectAttempts : 30,
-          connectionTimeout: connectionTimeoutInSeconds != null ? connectionTimeoutInSeconds * 1000 : undefined
-        },
-        abortSignal
-      });
-      return new V2Socket({ socket });
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/listen/client/Client.mjs
-class ListenClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get v1() {
-    var _a2;
-    return (_a2 = this._v1) !== null && _a2 !== undefined ? _a2 : this._v1 = new V1Client3(this._options);
-  }
-  get v2() {
-    var _a2;
-    return (_a2 = this._v2) !== null && _a2 !== undefined ? _a2 : this._v2 = new V2Client(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/models/client/Client.mjs
-var __awaiter23 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class ModelsClient2 {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  list(request = {}, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(request, requestOptions));
-  }
-  __list() {
-    return __awaiter23(this, arguments, undefined, function* (request = {}, requestOptions) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { include_outdated: includeOutdated } = request;
-      const _queryParams = {
-        include_outdated: includeOutdated
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, "v1/models"),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/models");
-    });
-  }
-  get(model_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__get(model_id, requestOptions));
-  }
-  __get(model_id, requestOptions) {
-    return __awaiter23(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/models/${exports_url.encodePathParam(model_id)}`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/models/{model_id}");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/resources/billing/resources/balances/client/Client.mjs
-var __awaiter24 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class BalancesClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  list(project_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(project_id, requestOptions));
-  }
-  __list(project_id, requestOptions) {
-    return __awaiter24(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/balances`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/balances");
-    });
-  }
-  get(project_id, balance_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__get(project_id, balance_id, requestOptions));
-  }
-  __get(project_id, balance_id, requestOptions) {
-    return __awaiter24(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/balances/${exports_url.encodePathParam(balance_id)}`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/balances/{balance_id}");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/resources/billing/resources/breakdown/client/Client.mjs
-var __awaiter25 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class BreakdownClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  list(project_id, request = {}, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(project_id, request, requestOptions));
-  }
-  __list(project_id_1) {
-    return __awaiter25(this, arguments, undefined, function* (project_id, request = {}, requestOptions) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { start, end, accessor, deployment, tag, line_item: lineItem, grouping } = request;
-      const _queryParams = {
-        start,
-        end,
-        accessor,
-        deployment: deployment != null ? deployment : undefined,
-        tag,
-        line_item: lineItem,
-        grouping: Array.isArray(grouping) ? grouping.map((item) => item) : grouping != null ? grouping : undefined
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/billing/breakdown`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/billing/breakdown");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/resources/billing/resources/fields/client/Client.mjs
-var __awaiter26 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class FieldsClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  list(project_id, request = {}, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(project_id, request, requestOptions));
-  }
-  __list(project_id_1) {
-    return __awaiter26(this, arguments, undefined, function* (project_id, request = {}, requestOptions) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { start, end } = request;
-      const _queryParams = {
-        start,
-        end
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/billing/fields`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/billing/fields");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/resources/billing/resources/purchases/client/Client.mjs
-var __awaiter27 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class PurchasesClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  list(project_id, request = {}, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(project_id, request, requestOptions));
-  }
-  __list(project_id_1) {
-    return __awaiter27(this, arguments, undefined, function* (project_id, request = {}, requestOptions) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { limit } = request;
-      const _queryParams = {
-        limit
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/purchases`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/purchases");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/resources/billing/client/Client.mjs
-class BillingClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get balances() {
-    var _a2;
-    return (_a2 = this._balances) !== null && _a2 !== undefined ? _a2 : this._balances = new BalancesClient(this._options);
-  }
-  get breakdown() {
-    var _a2;
-    return (_a2 = this._breakdown) !== null && _a2 !== undefined ? _a2 : this._breakdown = new BreakdownClient(this._options);
-  }
-  get fields() {
-    var _a2;
-    return (_a2 = this._fields) !== null && _a2 !== undefined ? _a2 : this._fields = new FieldsClient(this._options);
-  }
-  get purchases() {
-    var _a2;
-    return (_a2 = this._purchases) !== null && _a2 !== undefined ? _a2 : this._purchases = new PurchasesClient(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/resources/keys/client/Client.mjs
-var __awaiter28 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class KeysClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  list(project_id, request = {}, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(project_id, request, requestOptions));
-  }
-  __list(project_id_1) {
-    return __awaiter28(this, arguments, undefined, function* (project_id, request = {}, requestOptions) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { status: status2 } = request;
-      const _queryParams = {
-        status: status2 != null ? status2 : undefined
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/keys`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/keys");
-    });
-  }
-  create(project_id, request, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__create(project_id, request, requestOptions));
-  }
-  __create(project_id, request, requestOptions) {
-    return __awaiter28(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/keys`),
-        method: "POST",
-        headers: _headers,
-        contentType: "application/json",
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "json",
-        body: request,
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "POST", "/v1/projects/{project_id}/keys");
-    });
-  }
-  get(project_id, key_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__get(project_id, key_id, requestOptions));
-  }
-  __get(project_id, key_id, requestOptions) {
-    return __awaiter28(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/keys/${exports_url.encodePathParam(key_id)}`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/keys/{key_id}");
-    });
-  }
-  delete(project_id, key_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__delete(project_id, key_id, requestOptions));
-  }
-  __delete(project_id, key_id, requestOptions) {
-    return __awaiter28(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/keys/${exports_url.encodePathParam(key_id)}`),
-        method: "DELETE",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "DELETE", "/v1/projects/{project_id}/keys/{key_id}");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/resources/members/resources/invites/client/Client.mjs
-var __awaiter29 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class InvitesClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  list(project_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(project_id, requestOptions));
-  }
-  __list(project_id, requestOptions) {
-    return __awaiter29(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/invites`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/invites");
-    });
-  }
-  create(project_id, request, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__create(project_id, request, requestOptions));
-  }
-  __create(project_id, request, requestOptions) {
-    return __awaiter29(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/invites`),
-        method: "POST",
-        headers: _headers,
-        contentType: "application/json",
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "json",
-        body: request,
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "POST", "/v1/projects/{project_id}/invites");
-    });
-  }
-  delete(project_id, email, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__delete(project_id, email, requestOptions));
-  }
-  __delete(project_id, email, requestOptions) {
-    return __awaiter29(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/invites/${exports_url.encodePathParam(email)}`),
-        method: "DELETE",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "DELETE", "/v1/projects/{project_id}/invites/{email}");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/resources/members/resources/scopes/client/Client.mjs
-var __awaiter30 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class ScopesClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  list(project_id, member_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(project_id, member_id, requestOptions));
-  }
-  __list(project_id, member_id, requestOptions) {
-    return __awaiter30(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/members/${exports_url.encodePathParam(member_id)}/scopes`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/members/{member_id}/scopes");
-    });
-  }
-  update(project_id, member_id, request, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__update(project_id, member_id, request, requestOptions));
-  }
-  __update(project_id, member_id, request, requestOptions) {
-    return __awaiter30(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/members/${exports_url.encodePathParam(member_id)}/scopes`),
-        method: "PUT",
-        headers: _headers,
-        contentType: "application/json",
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "json",
-        body: request,
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "PUT", "/v1/projects/{project_id}/members/{member_id}/scopes");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/resources/members/client/Client.mjs
-var __awaiter31 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class MembersClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get invites() {
-    var _a2;
-    return (_a2 = this._invites) !== null && _a2 !== undefined ? _a2 : this._invites = new InvitesClient(this._options);
-  }
-  get scopes() {
-    var _a2;
-    return (_a2 = this._scopes) !== null && _a2 !== undefined ? _a2 : this._scopes = new ScopesClient(this._options);
-  }
-  list(project_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(project_id, requestOptions));
-  }
-  __list(project_id, requestOptions) {
-    return __awaiter31(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/members`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/members");
-    });
-  }
-  delete(project_id, member_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__delete(project_id, member_id, requestOptions));
-  }
-  __delete(project_id, member_id, requestOptions) {
-    return __awaiter31(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/members/${exports_url.encodePathParam(member_id)}`),
-        method: "DELETE",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "DELETE", "/v1/projects/{project_id}/members/{member_id}");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/resources/models/client/Client.mjs
-var __awaiter32 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class ModelsClient3 {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  list(project_id, request = {}, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(project_id, request, requestOptions));
-  }
-  __list(project_id_1) {
-    return __awaiter32(this, arguments, undefined, function* (project_id, request = {}, requestOptions) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { include_outdated: includeOutdated } = request;
-      const _queryParams = {
-        include_outdated: includeOutdated
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/models`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/models");
-    });
-  }
-  get(project_id, model_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__get(project_id, model_id, requestOptions));
-  }
-  __get(project_id, model_id, requestOptions) {
-    return __awaiter32(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/models/${exports_url.encodePathParam(model_id)}`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/models/{model_id}");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/resources/requests/client/Client.mjs
-var __awaiter33 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class RequestsClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  list(project_id, request = {}, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(project_id, request, requestOptions));
-  }
-  __list(project_id_1) {
-    return __awaiter33(this, arguments, undefined, function* (project_id, request = {}, requestOptions) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { start, end, limit, page, accessor, request_id: requestId, deployment, endpoint, method, status: status2 } = request;
-      const _queryParams = {
-        start: start != null ? start : undefined,
-        end: end != null ? end : undefined,
-        limit,
-        page,
-        accessor,
-        request_id: requestId,
-        deployment: deployment != null ? deployment : undefined,
-        endpoint: endpoint != null ? endpoint : undefined,
-        method: method != null ? method : undefined,
-        status: status2 != null ? status2 : undefined
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/requests`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/requests");
-    });
-  }
-  get(project_id, request_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__get(project_id, request_id, requestOptions));
-  }
-  __get(project_id, request_id, requestOptions) {
-    return __awaiter33(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/requests/${exports_url.encodePathParam(request_id)}`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/requests/{request_id}");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/resources/usage/resources/breakdown/client/Client.mjs
-var __awaiter34 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class BreakdownClient2 {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get(project_id, request = {}, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__get(project_id, request, requestOptions));
-  }
-  __get(project_id_1) {
-    return __awaiter34(this, arguments, undefined, function* (project_id, request = {}, requestOptions) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { start, end, grouping, accessor, alternatives, callback_method: callbackMethod, callback, channels, custom_intent_mode: customIntentMode, custom_intent: customIntent, custom_topic_mode: customTopicMode, custom_topic: customTopic, deployment, detect_entities: detectEntities, detect_language: detectLanguage, diarize, dictation, encoding, endpoint, extra, filler_words: fillerWords, intents, keyterm, keywords, language, measurements, method, model, multichannel, numerals, paragraphs, profanity_filter: profanityFilter, punctuate, redact, replace, sample_rate: sampleRate, search, sentiment, smart_format: smartFormat, summarize, tag, topics, utt_split: uttSplit, utterances, version } = request;
-      const _queryParams = {
-        start,
-        end,
-        grouping: grouping != null ? grouping : undefined,
-        accessor,
-        alternatives,
-        callback_method: callbackMethod,
-        callback,
-        channels,
-        custom_intent_mode: customIntentMode,
-        custom_intent: customIntent,
-        custom_topic_mode: customTopicMode,
-        custom_topic: customTopic,
-        deployment: deployment != null ? deployment : undefined,
-        detect_entities: detectEntities,
-        detect_language: detectLanguage,
-        diarize,
-        dictation,
-        encoding,
-        endpoint: endpoint != null ? endpoint : undefined,
-        extra,
-        filler_words: fillerWords,
-        intents,
-        keyterm,
-        keywords,
-        language,
-        measurements,
-        method: method != null ? method : undefined,
-        model,
-        multichannel,
-        numerals,
-        paragraphs,
-        profanity_filter: profanityFilter,
-        punctuate,
-        redact,
-        replace,
-        sample_rate: sampleRate,
-        search,
-        sentiment,
-        smart_format: smartFormat,
-        summarize,
-        tag,
-        topics,
-        utt_split: uttSplit,
-        utterances,
-        version
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/usage/breakdown`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/usage/breakdown");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/resources/usage/resources/fields/client/Client.mjs
-var __awaiter35 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class FieldsClient2 {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  list(project_id, request = {}, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(project_id, request, requestOptions));
-  }
-  __list(project_id_1) {
-    return __awaiter35(this, arguments, undefined, function* (project_id, request = {}, requestOptions) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { start, end } = request;
-      const _queryParams = {
-        start,
-        end
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/usage/fields`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/usage/fields");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/resources/usage/client/Client.mjs
-var __awaiter36 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class UsageClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get breakdown() {
-    var _a2;
-    return (_a2 = this._breakdown) !== null && _a2 !== undefined ? _a2 : this._breakdown = new BreakdownClient2(this._options);
-  }
-  get fields() {
-    var _a2;
-    return (_a2 = this._fields) !== null && _a2 !== undefined ? _a2 : this._fields = new FieldsClient2(this._options);
-  }
-  get(project_id, request = {}, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__get(project_id, request, requestOptions));
-  }
-  __get(project_id_1) {
-    return __awaiter36(this, arguments, undefined, function* (project_id, request = {}, requestOptions) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { start, end, accessor, alternatives, callback_method: callbackMethod, callback, channels, custom_intent_mode: customIntentMode, custom_intent: customIntent, custom_topic_mode: customTopicMode, custom_topic: customTopic, deployment, detect_entities: detectEntities, detect_language: detectLanguage, diarize, dictation, encoding, endpoint, extra, filler_words: fillerWords, intents, keyterm, keywords, language, measurements, method, model, multichannel, numerals, paragraphs, profanity_filter: profanityFilter, punctuate, redact, replace, sample_rate: sampleRate, search, sentiment, smart_format: smartFormat, summarize, tag, topics, utt_split: uttSplit, utterances, version } = request;
-      const _queryParams = {
-        start,
-        end,
-        accessor,
-        alternatives,
-        callback_method: callbackMethod,
-        callback,
-        channels,
-        custom_intent_mode: customIntentMode,
-        custom_intent: customIntent,
-        custom_topic_mode: customTopicMode,
-        custom_topic: customTopic,
-        deployment: deployment != null ? deployment : undefined,
-        detect_entities: detectEntities,
-        detect_language: detectLanguage,
-        diarize,
-        dictation,
-        encoding,
-        endpoint: endpoint != null ? endpoint : undefined,
-        extra,
-        filler_words: fillerWords,
-        intents,
-        keyterm,
-        keywords,
-        language,
-        measurements,
-        method: method != null ? method : undefined,
-        model,
-        multichannel,
-        numerals,
-        paragraphs,
-        profanity_filter: profanityFilter,
-        punctuate,
-        redact,
-        replace,
-        sample_rate: sampleRate,
-        search,
-        sentiment,
-        smart_format: smartFormat,
-        summarize,
-        tag,
-        topics,
-        utt_split: uttSplit,
-        utterances,
-        version
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/usage`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/usage");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/resources/projects/client/Client.mjs
-var __awaiter37 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class ProjectsClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get keys() {
-    var _a2;
-    return (_a2 = this._keys) !== null && _a2 !== undefined ? _a2 : this._keys = new KeysClient(this._options);
-  }
-  get members() {
-    var _a2;
-    return (_a2 = this._members) !== null && _a2 !== undefined ? _a2 : this._members = new MembersClient(this._options);
-  }
-  get models() {
-    var _a2;
-    return (_a2 = this._models) !== null && _a2 !== undefined ? _a2 : this._models = new ModelsClient3(this._options);
-  }
-  get requests() {
-    var _a2;
-    return (_a2 = this._requests) !== null && _a2 !== undefined ? _a2 : this._requests = new RequestsClient(this._options);
-  }
-  get usage() {
-    var _a2;
-    return (_a2 = this._usage) !== null && _a2 !== undefined ? _a2 : this._usage = new UsageClient(this._options);
-  }
-  get billing() {
-    var _a2;
-    return (_a2 = this._billing) !== null && _a2 !== undefined ? _a2 : this._billing = new BillingClient(this._options);
-  }
-  list(requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(requestOptions));
-  }
-  __list(requestOptions) {
-    return __awaiter37(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, "v1/projects"),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects");
-    });
-  }
-  get(project_id, request = {}, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__get(project_id, request, requestOptions));
-  }
-  __get(project_id_1) {
-    return __awaiter37(this, arguments, undefined, function* (project_id, request = {}, requestOptions) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { limit, page } = request;
-      const _queryParams = {
-        limit,
-        page
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}");
-    });
-  }
-  delete(project_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__delete(project_id, requestOptions));
-  }
-  __delete(project_id, requestOptions) {
-    return __awaiter37(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}`),
-        method: "DELETE",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "DELETE", "/v1/projects/{project_id}");
-    });
-  }
-  update(project_id, request = {}, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__update(project_id, request, requestOptions));
-  }
-  __update(project_id_1) {
-    return __awaiter37(this, arguments, undefined, function* (project_id, request = {}, requestOptions) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}`),
-        method: "PATCH",
-        headers: _headers,
-        contentType: "application/json",
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "json",
-        body: request,
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "PATCH", "/v1/projects/{project_id}");
-    });
-  }
-  leave(project_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__leave(project_id, requestOptions));
-  }
-  __leave(project_id, requestOptions) {
-    return __awaiter37(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/leave`),
-        method: "DELETE",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "DELETE", "/v1/projects/{project_id}/leave");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/resources/v1/client/Client.mjs
-class V1Client4 {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get models() {
-    var _a2;
-    return (_a2 = this._models) !== null && _a2 !== undefined ? _a2 : this._models = new ModelsClient2(this._options);
-  }
-  get projects() {
-    var _a2;
-    return (_a2 = this._projects) !== null && _a2 !== undefined ? _a2 : this._projects = new ProjectsClient(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/manage/client/Client.mjs
-class ManageClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get v1() {
-    var _a2;
-    return (_a2 = this._v1) !== null && _a2 !== undefined ? _a2 : this._v1 = new V1Client4(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/read/resources/v1/resources/text/client/Client.mjs
-var __awaiter38 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class TextClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  analyze(request, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__analyze(request, requestOptions));
-  }
-  __analyze(request, requestOptions) {
-    return __awaiter38(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { callback, callback_method: callbackMethod, sentiment, summarize, tag, topics, custom_topic: customTopic, custom_topic_mode: customTopicMode, intents, custom_intent: customIntent, custom_intent_mode: customIntentMode, language, body: _body } = request;
-      const _queryParams = {
-        callback,
-        callback_method: callbackMethod != null ? callbackMethod : undefined,
-        sentiment,
-        summarize: summarize != null ? summarize : undefined,
-        tag,
-        topics,
-        custom_topic: customTopic,
-        custom_topic_mode: customTopicMode != null ? customTopicMode : undefined,
-        intents,
-        custom_intent: customIntent,
-        custom_intent_mode: customIntentMode != null ? customIntentMode : undefined,
-        language
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, "v1/read"),
-        method: "POST",
-        headers: _headers,
-        contentType: "application/json",
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "json",
-        body: _body,
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "POST", "/v1/read");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/read/resources/v1/client/Client.mjs
-class V1Client5 {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get text() {
-    var _a2;
-    return (_a2 = this._text) !== null && _a2 !== undefined ? _a2 : this._text = new TextClient(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/read/client/Client.mjs
-class ReadClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get v1() {
-    var _a2;
-    return (_a2 = this._v1) !== null && _a2 !== undefined ? _a2 : this._v1 = new V1Client5(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/selfHosted/resources/v1/resources/distributionCredentials/client/Client.mjs
-var __awaiter39 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-var __rest2 = function(s, e) {
-  var t2 = {};
-  for (var p in s)
-    if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-      t2[p] = s[p];
-  if (s != null && typeof Object.getOwnPropertySymbols === "function")
-    for (var i = 0, p = Object.getOwnPropertySymbols(s);i < p.length; i++) {
-      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-        t2[p[i]] = s[p[i]];
-    }
-  return t2;
-};
-
-class DistributionCredentialsClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  list(project_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(project_id, requestOptions));
-  }
-  __list(project_id, requestOptions) {
-    return __awaiter39(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/self-hosted/distribution/credentials`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/self-hosted/distribution/credentials");
-    });
-  }
-  create(project_id, request = {}, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__create(project_id, request, requestOptions));
-  }
-  __create(project_id_1) {
-    return __awaiter39(this, arguments, undefined, function* (project_id, request = {}, requestOptions) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { scopes, provider } = request, _body = __rest2(request, ["scopes", "provider"]);
-      const _queryParams = {
-        scopes: Array.isArray(scopes) ? scopes.map((item) => item) : scopes != null ? scopes : undefined,
-        provider: provider != null ? provider : undefined
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/self-hosted/distribution/credentials`),
-        method: "POST",
-        headers: _headers,
-        contentType: "application/json",
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "json",
-        body: _body,
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "POST", "/v1/projects/{project_id}/self-hosted/distribution/credentials");
-    });
-  }
-  get(project_id, distribution_credentials_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__get(project_id, distribution_credentials_id, requestOptions));
-  }
-  __get(project_id, distribution_credentials_id, requestOptions) {
-    return __awaiter39(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/self-hosted/distribution/credentials/${exports_url.encodePathParam(distribution_credentials_id)}`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/self-hosted/distribution/credentials/{distribution_credentials_id}");
-    });
-  }
-  delete(project_id, distribution_credentials_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__delete(project_id, distribution_credentials_id, requestOptions));
-  }
-  __delete(project_id, distribution_credentials_id, requestOptions) {
-    return __awaiter39(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/self-hosted/distribution/credentials/${exports_url.encodePathParam(distribution_credentials_id)}`),
-        method: "DELETE",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "DELETE", "/v1/projects/{project_id}/self-hosted/distribution/credentials/{distribution_credentials_id}");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/selfHosted/resources/v1/client/Client.mjs
-class V1Client6 {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get distributionCredentials() {
-    var _a2;
-    return (_a2 = this._distributionCredentials) !== null && _a2 !== undefined ? _a2 : this._distributionCredentials = new DistributionCredentialsClient(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/selfHosted/client/Client.mjs
-class SelfHostedClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get v1() {
-    var _a2;
-    return (_a2 = this._v1) !== null && _a2 !== undefined ? _a2 : this._v1 = new V1Client6(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/speak/resources/v1/resources/audio/client/Client.mjs
-var __awaiter40 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-var __rest3 = function(s, e) {
-  var t2 = {};
-  for (var p in s)
-    if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-      t2[p] = s[p];
-  if (s != null && typeof Object.getOwnPropertySymbols === "function")
-    for (var i = 0, p = Object.getOwnPropertySymbols(s);i < p.length; i++) {
-      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-        t2[p[i]] = s[p[i]];
-    }
-  return t2;
-};
-
-class AudioClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  generate(request, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__generate(request, requestOptions));
-  }
-  __generate(request, requestOptions) {
-    return __awaiter40(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { callback, callback_method: callbackMethod, mip_opt_out: mipOptOut, tag, bit_rate: bitRate, container, encoding, model, sample_rate: sampleRate, speed } = request, _body = __rest3(request, ["callback", "callback_method", "mip_opt_out", "tag", "bit_rate", "container", "encoding", "model", "sample_rate", "speed"]);
-      const _queryParams = {
-        callback,
-        callback_method: callbackMethod != null ? callbackMethod : undefined,
-        mip_opt_out: mipOptOut,
-        tag,
-        bit_rate: bitRate,
-        container: container != null ? container : undefined,
-        encoding: encoding != null ? encoding : undefined,
-        model: model != null ? model : undefined,
-        sample_rate: sampleRate,
-        speed
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, "v1/speak"),
-        method: "POST",
-        headers: _headers,
-        contentType: "application/json",
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "json",
-        body: _body,
-        responseType: "binary-response",
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "POST", "/v1/speak");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/speak/resources/v1/client/Socket.mjs
-var __awaiter41 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class V1Socket3 {
-  constructor(args) {
-    this.eventHandlers = {};
-    this.handleOpen = () => {
-      var _a2, _b;
-      (_b = (_a2 = this.eventHandlers).open) === null || _b === undefined || _b.call(_a2);
-    };
-    this.handleMessage = (event) => {
-      var _a2, _b;
-      const data = fromJson(event.data);
-      (_b = (_a2 = this.eventHandlers).message) === null || _b === undefined || _b.call(_a2, data);
-    };
-    this.handleClose = (event) => {
-      var _a2, _b;
-      (_b = (_a2 = this.eventHandlers).close) === null || _b === undefined || _b.call(_a2, event);
-    };
-    this.handleError = (event) => {
-      var _a2, _b;
-      const message = event.message;
-      (_b = (_a2 = this.eventHandlers).error) === null || _b === undefined || _b.call(_a2, new Error(message));
-    };
-    this.socket = args.socket;
-    this.socket.addEventListener("open", this.handleOpen);
-    this.socket.addEventListener("message", this.handleMessage);
-    this.socket.addEventListener("close", this.handleClose);
-    this.socket.addEventListener("error", this.handleError);
-  }
-  get readyState() {
-    return this.socket.readyState;
-  }
-  on(event, callback) {
-    this.eventHandlers[event] = callback;
-  }
-  sendText(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendFlush(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendClear(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendClose(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  connect() {
-    this.socket.reconnect();
-    this.socket.addEventListener("open", this.handleOpen);
-    this.socket.addEventListener("message", this.handleMessage);
-    this.socket.addEventListener("close", this.handleClose);
-    this.socket.addEventListener("error", this.handleError);
-    return this;
-  }
-  close() {
-    this.socket.close();
-    this.handleClose({ code: 1000 });
-    this.socket.removeEventListener("open", this.handleOpen);
-    this.socket.removeEventListener("message", this.handleMessage);
-    this.socket.removeEventListener("close", this.handleClose);
-    this.socket.removeEventListener("error", this.handleError);
-  }
-  waitForOpen() {
-    return __awaiter41(this, undefined, undefined, function* () {
-      if (this.socket.readyState === ReconnectingWebSocket.ReadyState.OPEN) {
-        return this.socket;
-      }
-      return new Promise((resolve, reject) => {
-        this.socket.addEventListener("open", () => {
-          resolve(this.socket);
-        });
-        this.socket.addEventListener("error", (event) => {
-          reject(event);
-        });
-      });
-    });
-  }
-  assertSocketIsOpen() {
-    if (!this.socket) {
-      throw new Error("Socket is not connected.");
-    }
-    if (this.socket.readyState !== ReconnectingWebSocket.ReadyState.OPEN) {
-      throw new Error("Socket is not open.");
-    }
-  }
-  sendBinary(payload) {
-    this.socket.send(payload);
-  }
-  sendJson(payload) {
-    const jsonPayload = toJson(payload);
-    this.socket.send(jsonPayload);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/speak/resources/v1/client/Client.mjs
-var __awaiter42 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class V1Client7 {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get audio() {
-    var _a2;
-    return (_a2 = this._audio) !== null && _a2 !== undefined ? _a2 : this._audio = new AudioClient(this._options);
-  }
-  connect(args) {
-    return __awaiter42(this, undefined, undefined, function* () {
-      var _a2, _b, _c;
-      const { encoding, mip_opt_out: mipOptOut, model, sample_rate: sampleRate, speed, protocols, queryParams, headers, debug: debug2, reconnectAttempts, connectionTimeoutInSeconds, abortSignal } = args;
-      const _queryParams = {
-        encoding: encoding != null ? encoding : undefined,
-        mip_opt_out: mipOptOut != null ? typeof mipOptOut === "string" ? mipOptOut : toJson(mipOptOut) : undefined,
-        model: model != null ? model : undefined,
-        sample_rate: sampleRate != null ? sampleRate : undefined,
-        speed
-      };
-      const _headers = mergeHeaders2((_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, mergeOnlyDefinedHeaders({ Authorization: args.Authorization }), headers);
-      const socket = new ReconnectingWebSocket({
-        url: exports_url.join((_b = yield Supplier.get(this._options.baseUrl)) !== null && _b !== undefined ? _b : ((_c = yield Supplier.get(this._options.environment)) !== null && _c !== undefined ? _c : DeepgramEnvironment.Production).production, "/v1/speak"),
-        protocols: protocols !== null && protocols !== undefined ? protocols : [],
-        queryParameters: Object.assign(Object.assign({}, _queryParams), queryParams),
-        headers: _headers,
-        options: {
-          debug: debug2 !== null && debug2 !== undefined ? debug2 : false,
-          maxRetries: reconnectAttempts !== null && reconnectAttempts !== undefined ? reconnectAttempts : 30,
-          connectionTimeout: connectionTimeoutInSeconds != null ? connectionTimeoutInSeconds * 1000 : undefined
-        },
-        abortSignal
-      });
-      return new V1Socket3({ socket });
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/speak/resources/v2/resources/audio/client/Client.mjs
-var __awaiter43 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-var __rest4 = function(s, e) {
-  var t2 = {};
-  for (var p in s)
-    if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-      t2[p] = s[p];
-  if (s != null && typeof Object.getOwnPropertySymbols === "function")
-    for (var i = 0, p = Object.getOwnPropertySymbols(s);i < p.length; i++) {
-      if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-        t2[p[i]] = s[p[i]];
-    }
-  return t2;
-};
-
-class AudioClient2 {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  generate(request, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__generate(request, requestOptions));
-  }
-  __generate(request, requestOptions) {
-    return __awaiter43(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const { callback, callback_method: callbackMethod, mip_opt_out: mipOptOut, tag, bit_rate: bitRate, container, encoding, model, sample_rate: sampleRate, priority } = request, _body = __rest4(request, ["callback", "callback_method", "mip_opt_out", "tag", "bit_rate", "container", "encoding", "model", "sample_rate", "priority"]);
-      const _queryParams = {
-        callback,
-        callback_method: callbackMethod != null ? callbackMethod : undefined,
-        mip_opt_out: mipOptOut,
-        tag,
-        bit_rate: bitRate,
-        container: container != null ? container : undefined,
-        encoding: encoding != null ? encoding : undefined,
-        model,
-        sample_rate: sampleRate,
-        priority: priority != null ? priority : undefined
-      };
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, "v2/speak"),
-        method: "POST",
-        headers: _headers,
-        contentType: "application/json",
-        queryString: exports_url.queryBuilder().addMany(_queryParams).mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "json",
-        body: _body,
-        responseType: "binary-response",
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "POST", "/v2/speak");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/speak/resources/v2/client/Socket.mjs
-var __awaiter44 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class V2Socket2 {
-  constructor(args) {
-    this.eventHandlers = {};
-    this.handleOpen = () => {
-      var _a2, _b;
-      (_b = (_a2 = this.eventHandlers).open) === null || _b === undefined || _b.call(_a2);
-    };
-    this.handleMessage = (event) => {
-      var _a2, _b;
-      const data = fromJson(event.data);
-      (_b = (_a2 = this.eventHandlers).message) === null || _b === undefined || _b.call(_a2, data);
-    };
-    this.handleClose = (event) => {
-      var _a2, _b;
-      (_b = (_a2 = this.eventHandlers).close) === null || _b === undefined || _b.call(_a2, event);
-    };
-    this.handleError = (event) => {
-      var _a2, _b;
-      const message = event.message;
-      (_b = (_a2 = this.eventHandlers).error) === null || _b === undefined || _b.call(_a2, new Error(message));
-    };
-    this.socket = args.socket;
-    this.socket.addEventListener("open", this.handleOpen);
-    this.socket.addEventListener("message", this.handleMessage);
-    this.socket.addEventListener("close", this.handleClose);
-    this.socket.addEventListener("error", this.handleError);
-  }
-  get readyState() {
-    return this.socket.readyState;
-  }
-  on(event, callback) {
-    this.eventHandlers[event] = callback;
-  }
-  sendSpeak(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendFlush(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  sendClose(message) {
-    this.assertSocketIsOpen();
-    this.sendJson(message);
-  }
-  connect() {
-    this.socket.reconnect();
-    this.socket.addEventListener("open", this.handleOpen);
-    this.socket.addEventListener("message", this.handleMessage);
-    this.socket.addEventListener("close", this.handleClose);
-    this.socket.addEventListener("error", this.handleError);
-    return this;
-  }
-  close() {
-    this.socket.close();
-    this.handleClose({ code: 1000 });
-    this.socket.removeEventListener("open", this.handleOpen);
-    this.socket.removeEventListener("message", this.handleMessage);
-    this.socket.removeEventListener("close", this.handleClose);
-    this.socket.removeEventListener("error", this.handleError);
-  }
-  waitForOpen() {
-    return __awaiter44(this, undefined, undefined, function* () {
-      if (this.socket.readyState === ReconnectingWebSocket.ReadyState.OPEN) {
-        return this.socket;
-      }
-      return new Promise((resolve, reject) => {
-        this.socket.addEventListener("open", () => {
-          resolve(this.socket);
-        });
-        this.socket.addEventListener("error", (event) => {
-          reject(event);
-        });
-      });
-    });
-  }
-  assertSocketIsOpen() {
-    if (!this.socket) {
-      throw new Error("Socket is not connected.");
-    }
-    if (this.socket.readyState !== ReconnectingWebSocket.ReadyState.OPEN) {
-      throw new Error("Socket is not open.");
-    }
-  }
-  sendBinary(payload) {
-    this.socket.send(payload);
-  }
-  sendJson(payload) {
-    const jsonPayload = toJson(payload);
-    this.socket.send(jsonPayload);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/speak/resources/v2/client/Client.mjs
-var __awaiter45 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class V2Client2 {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get audio() {
-    var _a2;
-    return (_a2 = this._audio) !== null && _a2 !== undefined ? _a2 : this._audio = new AudioClient2(this._options);
-  }
-  connect(args) {
-    return __awaiter45(this, undefined, undefined, function* () {
-      var _a2, _b, _c;
-      const { model, encoding, sample_rate: sampleRate, mip_opt_out: mipOptOut, tag, protocols, queryParams, headers, debug: debug2, reconnectAttempts, connectionTimeoutInSeconds, abortSignal } = args;
-      const _queryParams = {
-        model,
-        encoding: encoding != null ? encoding : undefined,
-        sample_rate: sampleRate != null ? sampleRate : undefined,
-        mip_opt_out: mipOptOut != null ? typeof mipOptOut === "string" ? mipOptOut : toJson(mipOptOut) : undefined,
-        tag: tag != null ? typeof tag === "string" ? tag : toJson(tag) : undefined
-      };
-      const _headers = mergeHeaders2((_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, mergeOnlyDefinedHeaders({ Authorization: args.Authorization }), headers);
-      const socket = new ReconnectingWebSocket({
-        url: exports_url.join((_b = yield Supplier.get(this._options.baseUrl)) !== null && _b !== undefined ? _b : ((_c = yield Supplier.get(this._options.environment)) !== null && _c !== undefined ? _c : DeepgramEnvironment.Production).production, "/v2/speak"),
-        protocols: protocols !== null && protocols !== undefined ? protocols : [],
-        queryParameters: Object.assign(Object.assign({}, _queryParams), queryParams),
-        headers: _headers,
-        options: {
-          debug: debug2 !== null && debug2 !== undefined ? debug2 : false,
-          maxRetries: reconnectAttempts !== null && reconnectAttempts !== undefined ? reconnectAttempts : 30,
-          connectionTimeout: connectionTimeoutInSeconds != null ? connectionTimeoutInSeconds * 1000 : undefined
-        },
-        abortSignal
-      });
-      return new V2Socket2({ socket });
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/speak/client/Client.mjs
-class SpeakClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get v1() {
-    var _a2;
-    return (_a2 = this._v1) !== null && _a2 !== undefined ? _a2 : this._v1 = new V1Client7(this._options);
-  }
-  get v2() {
-    var _a2;
-    return (_a2 = this._v2) !== null && _a2 !== undefined ? _a2 : this._v2 = new V2Client2(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/voiceAgent/resources/configurations/client/Client.mjs
-var __awaiter46 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class ConfigurationsClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  list(project_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(project_id, requestOptions));
-  }
-  __list(project_id, requestOptions) {
-    return __awaiter46(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/agents`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/agents");
-    });
-  }
-  create(project_id, request, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__create(project_id, request, requestOptions));
-  }
-  __create(project_id, request, requestOptions) {
-    return __awaiter46(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/agents`),
-        method: "POST",
-        headers: _headers,
-        contentType: "application/json",
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "json",
-        body: request,
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "POST", "/v1/projects/{project_id}/agents");
-    });
-  }
-  get(project_id, agent_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__get(project_id, agent_id, requestOptions));
-  }
-  __get(project_id, agent_id, requestOptions) {
-    return __awaiter46(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/agents/${exports_url.encodePathParam(agent_id)}`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/agents/{agent_id}");
-    });
-  }
-  update(project_id, agent_id, request, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__update(project_id, agent_id, request, requestOptions));
-  }
-  __update(project_id, agent_id, request, requestOptions) {
-    return __awaiter46(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/agents/${exports_url.encodePathParam(agent_id)}`),
-        method: "PUT",
-        headers: _headers,
-        contentType: "application/json",
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "json",
-        body: request,
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "PUT", "/v1/projects/{project_id}/agents/{agent_id}");
-    });
-  }
-  delete(project_id, agent_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__delete(project_id, agent_id, requestOptions));
-  }
-  __delete(project_id, agent_id, requestOptions) {
-    return __awaiter46(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/agents/${exports_url.encodePathParam(agent_id)}`),
-        method: "DELETE",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "DELETE", "/v1/projects/{project_id}/agents/{agent_id}");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/voiceAgent/resources/variables/client/Client.mjs
-var __awaiter47 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class VariablesClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  list(project_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__list(project_id, requestOptions));
-  }
-  __list(project_id, requestOptions) {
-    return __awaiter47(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/agent-variables`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/agent-variables");
-    });
-  }
-  create(project_id, request, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__create(project_id, request, requestOptions));
-  }
-  __create(project_id, request, requestOptions) {
-    return __awaiter47(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/agent-variables`),
-        method: "POST",
-        headers: _headers,
-        contentType: "application/json",
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "json",
-        body: request,
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "POST", "/v1/projects/{project_id}/agent-variables");
-    });
-  }
-  get(project_id, variable_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__get(project_id, variable_id, requestOptions));
-  }
-  __get(project_id, variable_id, requestOptions) {
-    return __awaiter47(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/agent-variables/${exports_url.encodePathParam(variable_id)}`),
-        method: "GET",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/v1/projects/{project_id}/agent-variables/{variable_id}");
-    });
-  }
-  delete(project_id, variable_id, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__delete(project_id, variable_id, requestOptions));
-  }
-  __delete(project_id, variable_id, requestOptions) {
-    return __awaiter47(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/agent-variables/${exports_url.encodePathParam(variable_id)}`),
-        method: "DELETE",
-        headers: _headers,
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return {
-          data: _response.body,
-          rawResponse: _response.rawResponse
-        };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "DELETE", "/v1/projects/{project_id}/agent-variables/{variable_id}");
-    });
-  }
-  update(project_id, variable_id, request, requestOptions) {
-    return HttpResponsePromise.fromPromise(this.__update(project_id, variable_id, request, requestOptions));
-  }
-  __update(project_id, variable_id, request, requestOptions) {
-    return __awaiter47(this, undefined, undefined, function* () {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-      const _authRequest = yield this._options.authProvider.getAuthRequest();
-      const _headers = mergeHeaders2(_authRequest.headers, (_a2 = this._options) === null || _a2 === undefined ? undefined : _a2.headers, requestOptions === null || requestOptions === undefined ? undefined : requestOptions.headers);
-      const _response = yield ((_b = this._options.fetcher) !== null && _b !== undefined ? _b : fetcher)({
-        url: exports_url.join((_c = yield Supplier.get(this._options.baseUrl)) !== null && _c !== undefined ? _c : ((_d = yield Supplier.get(this._options.environment)) !== null && _d !== undefined ? _d : DeepgramEnvironment.Production).base, `v1/projects/${exports_url.encodePathParam(project_id)}/agent-variables/${exports_url.encodePathParam(variable_id)}`),
-        method: "PATCH",
-        headers: _headers,
-        contentType: "application/json",
-        queryString: exports_url.queryBuilder().mergeAdditional(requestOptions === null || requestOptions === undefined ? undefined : requestOptions.queryParams).build(),
-        requestType: "json",
-        body: request,
-        timeoutMs: ((_g = (_e = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.timeoutInSeconds) !== null && _e !== undefined ? _e : (_f = this._options) === null || _f === undefined ? undefined : _f.timeoutInSeconds) !== null && _g !== undefined ? _g : 60) * 1000,
-        maxRetries: (_h = requestOptions === null || requestOptions === undefined ? undefined : requestOptions.maxRetries) !== null && _h !== undefined ? _h : (_j = this._options) === null || _j === undefined ? undefined : _j.maxRetries,
-        abortSignal: requestOptions === null || requestOptions === undefined ? undefined : requestOptions.abortSignal,
-        fetchFn: (_k = this._options) === null || _k === undefined ? undefined : _k.fetch,
-        logging: this._options.logging
-      });
-      if (_response.ok) {
-        return { data: _response.body, rawResponse: _response.rawResponse };
-      }
-      if (_response.error.reason === "status-code") {
-        switch (_response.error.statusCode) {
-          case 400:
-            throw new BadRequestError(_response.error.body, _response.rawResponse);
-          default:
-            throw new DeepgramError({
-              statusCode: _response.error.statusCode,
-              body: _response.error.body,
-              rawResponse: _response.rawResponse
-            });
-        }
-      }
-      return handleNonStatusCodeError(_response.error, _response.rawResponse, "PATCH", "/v1/projects/{project_id}/agent-variables/{variable_id}");
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/api/resources/voiceAgent/client/Client.mjs
-class VoiceAgentClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get configurations() {
-    var _a2;
-    return (_a2 = this._configurations) !== null && _a2 !== undefined ? _a2 : this._configurations = new ConfigurationsClient(this._options);
-  }
-  get variables() {
-    var _a2;
-    return (_a2 = this._variables) !== null && _a2 !== undefined ? _a2 : this._variables = new VariablesClient(this._options);
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/Client.mjs
-var __awaiter48 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-
-class DeepgramClient {
-  constructor(options = {}) {
-    this._options = normalizeClientOptionsWithAuth(options);
-  }
-  get agent() {
-    var _a2;
-    return (_a2 = this._agent) !== null && _a2 !== undefined ? _a2 : this._agent = new AgentClient(this._options);
-  }
-  get auth() {
-    var _a2;
-    return (_a2 = this._auth) !== null && _a2 !== undefined ? _a2 : this._auth = new AuthClient(this._options);
-  }
-  get listen() {
-    var _a2;
-    return (_a2 = this._listen) !== null && _a2 !== undefined ? _a2 : this._listen = new ListenClient(this._options);
-  }
-  get manage() {
-    var _a2;
-    return (_a2 = this._manage) !== null && _a2 !== undefined ? _a2 : this._manage = new ManageClient(this._options);
-  }
-  get read() {
-    var _a2;
-    return (_a2 = this._read) !== null && _a2 !== undefined ? _a2 : this._read = new ReadClient(this._options);
-  }
-  get selfHosted() {
-    var _a2;
-    return (_a2 = this._selfHosted) !== null && _a2 !== undefined ? _a2 : this._selfHosted = new SelfHostedClient(this._options);
-  }
-  get speak() {
-    var _a2;
-    return (_a2 = this._speak) !== null && _a2 !== undefined ? _a2 : this._speak = new SpeakClient(this._options);
-  }
-  get voiceAgent() {
-    var _a2;
-    return (_a2 = this._voiceAgent) !== null && _a2 !== undefined ? _a2 : this._voiceAgent = new VoiceAgentClient(this._options);
-  }
-  fetch(input, init, requestOptions) {
-    return __awaiter48(this, undefined, undefined, function* () {
-      var _a2;
-      return makePassthroughRequest(input, init, {
-        baseUrl: (_a2 = this._options.baseUrl) !== null && _a2 !== undefined ? _a2 : () => __awaiter48(this, undefined, undefined, function* () {
-          var _a3;
-          const env3 = yield Supplier.get(this._options.environment);
-          return typeof env3 === "string" ? env3 : (_a3 = env3 === null || env3 === undefined ? undefined : env3.base) !== null && _a3 !== undefined ? _a3 : DeepgramEnvironment.Production.base;
-        }),
-        headers: this._options.headers,
-        timeoutInSeconds: this._options.timeoutInSeconds,
-        maxRetries: this._options.maxRetries,
-        fetch: this._options.fetch,
-        logging: this._options.logging,
-        getAuthHeaders: () => __awaiter48(this, undefined, undefined, function* () {
-          return (yield this._options.authProvider.getAuthRequest()).headers;
-        })
-      }, requestOptions);
-    });
-  }
-}
-
-// node_modules/@deepgram/sdk/dist/esm/CustomClient.mjs
-var __awaiter49 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-var DEFAULT_CONNECTION_TIMEOUT_MS = 1e4;
-var WEBSOCKET_OPTION_KEYS = new Set([
-  "Authorization",
-  "headers",
-  "protocols",
-  "debug",
-  "reconnectAttempts",
-  "connectionTimeoutInSeconds",
-  "abortSignal",
-  "queryParams"
-]);
-var NodeWebSocket2;
-var _wsInitialized = false;
-function loadNodeWebSocket() {
-  return __awaiter49(this, undefined, undefined, function* () {
-    var _a2;
-    if (_wsInitialized)
-      return;
-    _wsInitialized = true;
-    try {
-      if (true) {
-        let ws = __require("ws");
-        NodeWebSocket2 = ws.WebSocket || ws.default || ws;
-      }
-    } catch (_b) {
-      NodeWebSocket2 = undefined;
-    }
-  });
-}
-function generateUUID() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  if (RUNTIME.type === "node") {
-    try {
-      const nodeCrypto = __require("crypto");
-      return nodeCrypto.randomUUID();
-    } catch (_a2) {}
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = Math.random() * 16 | 0;
-    const v = c === "x" ? r : r & 3 | 8;
-    return v.toString(16);
-  });
-}
-
-class ApiKeyAuthProviderWrapper {
-  constructor(originalProvider) {
-    this.originalProvider = originalProvider;
-  }
-  getAuthRequest(arg) {
-    return __awaiter49(this, undefined, undefined, function* () {
-      var _a2, _b;
-      const authRequest = yield this.originalProvider.getAuthRequest(arg);
-      const authHeader = ((_a2 = authRequest.headers) === null || _a2 === undefined ? undefined : _a2.Authorization) || ((_b = authRequest.headers) === null || _b === undefined ? undefined : _b.authorization);
-      if (authHeader && typeof authHeader === "string") {
-        if (!authHeader.startsWith("Bearer ") && !authHeader.startsWith("Token ") && !authHeader.startsWith("token ")) {
-          return {
-            headers: Object.assign(Object.assign({}, authRequest.headers), { Authorization: `Token ${authHeader}` })
-          };
-        }
-      }
-      return authRequest;
-    });
-  }
-}
-
-class AccessTokenAuthProviderWrapper {
-  constructor(originalProvider, accessToken) {
-    this.originalProvider = originalProvider;
-    this.accessToken = accessToken;
-  }
-  getAuthRequest(arg) {
-    return __awaiter49(this, undefined, undefined, function* () {
-      var _a2, _b;
-      const accessToken = (_a2 = yield Supplier.get(this.accessToken)) !== null && _a2 !== undefined ? _a2 : (_b = process.env) === null || _b === undefined ? undefined : _b.DEEPGRAM_ACCESS_TOKEN;
-      if (accessToken != null) {
-        return {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        };
-      }
-      return this.originalProvider.getAuthRequest(arg);
-    });
-  }
-}
-
-class CustomDeepgramClient extends DeepgramClient {
-  constructor(options = {}) {
-    var _a2;
-    const sessionId = generateUUID();
-    const reconnect = (_a2 = options.reconnect) !== null && _a2 !== undefined ? _a2 : options.transportFactory == null;
-    const optionsWithSessionId = Object.assign(Object.assign({}, options), { reconnect, headers: Object.assign(Object.assign({}, options.headers), { "x-deepgram-session-id": sessionId }) });
-    super(optionsWithSessionId);
-    this._sessionId = sessionId;
-    this._reconnect = reconnect;
-    this._options.authProvider = new ApiKeyAuthProviderWrapper(this._options.authProvider);
-    if (options.accessToken != null) {
-      this._options.authProvider = new AccessTokenAuthProviderWrapper(this._options.authProvider, options.accessToken);
-    }
-  }
-  get sessionId() {
-    return this._sessionId;
-  }
-  get reconnect() {
-    return this._reconnect;
-  }
-  get agent() {
-    if (!this._customAgent) {
-      this._customAgent = new WrappedAgentClient(this._options);
-    }
-    return this._customAgent;
-  }
-  get listen() {
-    if (!this._customListen) {
-      this._customListen = new WrappedListenClient(this._options);
-    }
-    return this._customListen;
-  }
-  get speak() {
-    if (!this._customSpeak) {
-      this._customSpeak = new WrappedSpeakClient(this._options);
-    }
-    return this._customSpeak;
-  }
-}
-
-class WrappedAgentClient extends AgentClient {
-  get v1() {
-    return new WrappedAgentV1Client(this._options);
-  }
-}
-
-class WrappedListenClient extends ListenClient {
-  get v1() {
-    return new WrappedListenV1Client(this._options);
-  }
-  get v2() {
-    return new WrappedListenV2Client(this._options);
-  }
-}
-
-class WrappedSpeakClient extends SpeakClient {
-  get v1() {
-    return new WrappedSpeakV1Client(this._options);
-  }
-  get v2() {
-    return new WrappedSpeakV2Client(this._options);
-  }
-}
-function resolveHeaders(headers) {
-  return __awaiter49(this, undefined, undefined, function* () {
-    const resolved = {};
-    for (const [key, value] of Object.entries(headers)) {
-      if (value == null) {
-        continue;
-      }
-      const resolvedValue = yield Supplier.get(value);
-      if (resolvedValue != null) {
-        resolved[key] = resolvedValue;
-      }
-    }
-    return resolved;
-  });
-}
-function buildQueryParams(args) {
-  const result = {};
-  for (const [key, value] of Object.entries(args)) {
-    if (!WEBSOCKET_OPTION_KEYS.has(key) && value != null) {
-      result[key] = value;
-    }
-  }
-  if (args.queryParams != null && typeof args.queryParams === "object") {
-    Object.assign(result, args.queryParams);
-  }
-  return result;
-}
-function normalizeProtocols(protocols) {
-  if (protocols == null) {
-    return [];
-  }
-  return Array.isArray(protocols) ? protocols : [protocols];
-}
-function stringifyHeaders(headers) {
-  const result = {};
-  for (const [key, value] of Object.entries(headers)) {
-    result[key] = String(value);
-  }
-  return result;
-}
-function buildWebSocketUrl(url, queryParams) {
-  const queryString = exports_url.toQueryString(queryParams, { arrayFormat: "repeat" });
-  return queryString ? `${url}?${queryString}` : url;
-}
-function getTransportFactory(options) {
-  return options.transportFactory;
-}
-function getReconnect(options) {
-  return options.reconnect !== false;
-}
-
-class TransportWebSocketAdapter {
-  constructor(args) {
-    this._listeners = {
-      error: [],
-      message: [],
-      open: [],
-      close: []
-    };
-    this._retryCount = -1;
-    this._shouldReconnect = true;
-    this._connectLock = false;
-    this._binaryType = "blob";
-    this._closeCalled = false;
-    this._messageQueue = [];
-    this.CONNECTING = ReconnectingWebSocket.CONNECTING;
-    this.OPEN = ReconnectingWebSocket.OPEN;
-    this.CLOSING = ReconnectingWebSocket.CLOSING;
-    this.CLOSED = ReconnectingWebSocket.CLOSED;
-    this.onclose = null;
-    this.onerror = null;
-    this.onmessage = null;
-    this.onopen = null;
-    this._handleAbort = () => {
-      if (this._closeCalled) {
-        return;
-      }
-      this._debug("abort signal fired");
-      this._closeCalled = true;
-      this._shouldReconnect = false;
-      this._clearConnectTimeout();
-      const transport = this._transport;
-      this._transport = undefined;
-      this._setTransportHandle(undefined);
-      if (transport) {
-        transport.close(1000, "aborted");
-      }
-      this._readyState = ReconnectingWebSocket.ReadyState.CLOSED;
-      this._emitClose(1000, "aborted");
-    };
-    this._factory = args.factory;
-    this._request = args.request;
-    this._reconnect = args.reconnect !== false;
-    this._readyState = args.startClosed ? ReconnectingWebSocket.ReadyState.CLOSED : ReconnectingWebSocket.ReadyState.CONNECTING;
-    if (this._request.abortSignal) {
-      this._request.abortSignal.addEventListener("abort", this._handleAbort, { once: true });
-    }
-    if (!args.startClosed) {
-      this._connect();
-    }
-  }
-  get binaryType() {
-    return this._binaryType;
-  }
-  set binaryType(value) {
-    this._binaryType = value;
-  }
-  get retryCount() {
-    return Math.max(this._retryCount, 0);
-  }
-  get bufferedAmount() {
-    return this._messageQueue.reduce((acc, message) => {
-      if (typeof message === "string") {
-        return acc + message.length;
-      }
-      if (message instanceof Blob) {
-        return acc + message.size;
-      }
-      return acc + message.byteLength;
-    }, 0);
-  }
-  get extensions() {
-    return "";
-  }
-  get protocol() {
-    var _a2;
-    return (_a2 = this._request.protocols[0]) !== null && _a2 !== undefined ? _a2 : "";
-  }
-  get readyState() {
-    return this._readyState;
-  }
-  get url() {
-    return this._request.url;
-  }
-  close(code = 1000, reason) {
-    this._closeCalled = true;
-    this._shouldReconnect = false;
-    this._clearConnectTimeout();
-    this._readyState = ReconnectingWebSocket.ReadyState.CLOSING;
-    const transport = this._transport;
-    this._transport = undefined;
-    this._setTransportHandle(undefined);
-    if (!transport) {
-      this._readyState = ReconnectingWebSocket.ReadyState.CLOSED;
-      return;
-    }
-    transport.close(code, reason);
-    this._readyState = ReconnectingWebSocket.ReadyState.CLOSED;
-  }
-  reconnect(code, reason) {
-    this._shouldReconnect = true;
-    this._closeCalled = false;
-    this._retryCount = -1;
-    this._readyState = ReconnectingWebSocket.ReadyState.CONNECTING;
-    const transport = this._transport;
-    this._transport = undefined;
-    this._setTransportHandle(undefined);
-    if (transport) {
-      transport.close(code, reason);
-    }
-    this._connect();
-  }
-  send(data) {
-    var _a2;
-    if ((_a2 = this._transport) === null || _a2 === undefined ? undefined : _a2.isOpen()) {
-      this._transport.send(data);
-      return;
-    }
-    this._messageQueue.push(data);
-  }
-  addEventListener(type, listener) {
-    if (this._listeners[type]) {
-      this._listeners[type].push(listener);
-    }
-  }
-  dispatchEvent(event) {
-    const listeners = this._listeners[event.type];
-    if (listeners) {
-      for (const listener of listeners) {
-        this._callEventListener(event, listener);
-      }
-    }
-    return true;
-  }
-  removeEventListener(type, listener) {
-    if (this._listeners[type]) {
-      this._listeners[type] = this._listeners[type].filter((registered) => registered !== listener);
-    }
-  }
-  _debug(...args) {
-    if (this._request.debug) {
-      console.log.apply(console, ["DG-TRANSPORT>", ...args]);
-    }
-  }
-  _connect() {
-    return __awaiter49(this, undefined, undefined, function* () {
-      var _a2, _b;
-      if (this._connectLock || !this._shouldReconnect || ((_a2 = this._request.abortSignal) === null || _a2 === undefined ? undefined : _a2.aborted)) {
-        return;
-      }
-      if (!this._reconnect && this._retryCount >= 0) {
-        this._debug("reconnect disabled, skipping retry");
-        return;
-      }
-      if (this._retryCount >= this._request.reconnectAttempts) {
-        this._debug("max retries reached", this._retryCount, ">=", this._request.reconnectAttempts);
-        return;
-      }
-      this._connectLock = true;
-      this._retryCount++;
-      this._readyState = ReconnectingWebSocket.ReadyState.CONNECTING;
-      this._clearConnectTimeout();
-      try {
-        const transport = yield this._factory(this._request.url, this._request.headers, this._request);
-        if (this._closeCalled || ((_b = this._request.abortSignal) === null || _b === undefined ? undefined : _b.aborted)) {
-          this._connectLock = false;
-          yield transport.close(1000, "aborted");
-          return;
-        }
-        this._transport = transport;
-        this._setTransportHandle(transport);
-        this._bindTransport(transport);
-        this._armConnectTimeout();
-        this._connectLock = false;
-        if (transport.isOpen()) {
-          this._handleOpen(transport);
-        }
-      } catch (error) {
-        this._connectLock = false;
-        this._handleError(error instanceof Error ? error : new Error(String(error)));
-      }
-    });
-  }
-  _bindTransport(transport) {
-    transport.onOpen(() => {
-      if (this._transport !== transport) {
-        return;
-      }
-      this._handleOpen(transport);
-    });
-    transport.onMessage((message) => {
-      if (this._transport !== transport) {
-        return;
-      }
-      this._handleMessage(message);
-    });
-    transport.onError((error) => {
-      if (this._transport !== transport) {
-        return;
-      }
-      this._handleError(error);
-    });
-    transport.onClose((event) => {
-      var _a2, _b;
-      if (this._transport !== transport) {
-        return;
-      }
-      this._handleClose((_a2 = event.code) !== null && _a2 !== undefined ? _a2 : 1000, (_b = event.reason) !== null && _b !== undefined ? _b : "");
-    });
-  }
-  _armConnectTimeout() {
-    const timeoutMs = this._request.connectionTimeoutInSeconds != null ? this._request.connectionTimeoutInSeconds * 1000 : DEFAULT_CONNECTION_TIMEOUT_MS;
-    this._connectTimeout = setTimeout(() => {
-      this._handleError(new Error("TIMEOUT"));
-    }, timeoutMs);
-  }
-  _clearConnectTimeout() {
-    if (this._connectTimeout != null) {
-      clearTimeout(this._connectTimeout);
-      this._connectTimeout = undefined;
-    }
-  }
-  _handleOpen(transport) {
-    if (this._transport !== transport || this._readyState === ReconnectingWebSocket.ReadyState.OPEN) {
-      return;
-    }
-    this._debug("open event");
-    this._clearConnectTimeout();
-    this._readyState = ReconnectingWebSocket.ReadyState.OPEN;
-    const queued = [...this._messageQueue];
-    this._messageQueue = [];
-    for (const message of queued) {
-      transport.send(message);
-    }
-    const event = new Event("open", this);
-    if (this.onopen) {
-      this.onopen(event);
-    }
-    this._listeners.open.forEach((listener) => this._callEventListener(event, listener));
-  }
-  _handleMessage(message) {
-    const event = { type: "message", data: message, target: this };
-    if (this.onmessage) {
-      this.onmessage(event);
-    }
-    this._listeners.message.forEach((listener) => this._callEventListener(event, listener));
-  }
-  _handleError(error) {
-    this._debug("error event", error.message);
-    this._clearConnectTimeout();
-    this._readyState = ReconnectingWebSocket.ReadyState.CLOSED;
-    const event = new ErrorEvent(error, this);
-    if (this.onerror) {
-      this.onerror(event);
-    }
-    this._listeners.error.forEach((listener) => this._callEventListener(event, listener));
-    const transport = this._transport;
-    this._transport = undefined;
-    this._setTransportHandle(undefined);
-    if (transport) {
-      transport.close(1011, error.message);
-    }
-    if (this._shouldReconnect && !this._closeCalled) {
-      this._connect();
-    }
-  }
-  _handleClose(code, reason) {
-    this._debug("close event", code, reason);
-    this._clearConnectTimeout();
-    this._transport = undefined;
-    this._readyState = ReconnectingWebSocket.ReadyState.CLOSED;
-    this._setTransportHandle(undefined);
-    if (code === 1000) {
-      this._shouldReconnect = false;
-    }
-    this._emitClose(code, reason);
-    if (this._shouldReconnect && !this._closeCalled) {
-      this._connect();
-    }
-  }
-  _emitClose(code, reason) {
-    const event = new CloseEvent(code, reason, this);
-    if (this.onclose) {
-      this.onclose(event);
-    }
-    this._listeners.close.forEach((listener) => this._callEventListener(event, listener));
-  }
-  _setTransportHandle(transport) {
-    if (!transport) {
-      this._ws = undefined;
-      return;
-    }
-    this._ws = {
-      OPEN: this.OPEN,
-      get readyState() {
-        return transport.isOpen() ? ReconnectingWebSocket.ReadyState.OPEN : ReconnectingWebSocket.ReadyState.CLOSED;
-      },
-      ping: transport.ping ? (data) => {
-        var _a2;
-        (_a2 = transport.ping) === null || _a2 === undefined || _a2.call(transport, data);
-      } : undefined
-    };
-  }
-  _callEventListener(event, listener) {
-    if (typeof listener === "object" && listener && "handleEvent" in listener) {
-      listener.handleEvent(event);
-    } else {
-      listener(event);
-    }
-  }
-}
-TransportWebSocketAdapter.CONNECTING = ReconnectingWebSocket.CONNECTING;
-TransportWebSocketAdapter.OPEN = ReconnectingWebSocket.OPEN;
-TransportWebSocketAdapter.CLOSING = ReconnectingWebSocket.CLOSING;
-TransportWebSocketAdapter.CLOSED = ReconnectingWebSocket.CLOSED;
-function getWebSocketOptions(headers, requestedProtocols) {
-  const options = {};
-  const isBrowser = RUNTIME.type === "browser" || RUNTIME.type === "web-worker";
-  const sessionIdHeader = headers["x-deepgram-session-id"] || headers["X-Deepgram-Session-Id"];
-  if (RUNTIME.type === "node" && NodeWebSocket2) {
-    options.WebSocket = NodeWebSocket2;
-    options.headers = headers;
-    if (requestedProtocols.length > 0) {
-      options.protocols = requestedProtocols;
-    }
-  } else if (isBrowser) {
-    const authHeader = headers.Authorization || headers.authorization;
-    const browserHeaders = Object.assign({}, headers);
-    delete browserHeaders.Authorization;
-    delete browserHeaders.authorization;
-    delete browserHeaders["x-deepgram-session-id"];
-    delete browserHeaders["X-Deepgram-Session-Id"];
-    options.headers = browserHeaders;
-    const protocols = [...requestedProtocols];
-    if (authHeader && typeof authHeader === "string") {
-      if (authHeader.startsWith("Token ")) {
-        const apiKey = authHeader.substring(6);
-        protocols.push("token", apiKey);
-      } else if (authHeader.startsWith("Bearer ")) {
-        const token = authHeader.substring(7);
-        protocols.push("bearer", token);
-      } else {
-        protocols.push(authHeader);
-      }
-    }
-    if (sessionIdHeader && typeof sessionIdHeader === "string") {
-      protocols.push("x-deepgram-session-id", sessionIdHeader);
-    }
-    if (protocols.length > 0) {
-      options.protocols = protocols;
-    }
-  } else {
-    options.headers = headers;
-    if (requestedProtocols.length > 0) {
-      options.protocols = requestedProtocols;
-    }
-  }
-  return options;
-}
-function setupBinaryHandling(socket, eventHandlers) {
-  var _a2;
-  const binaryAwareHandler = (event) => {
-    var _a3, _b, _c;
-    if (typeof event.data === "string") {
-      try {
-        const data = fromJson(event.data);
-        (_a3 = eventHandlers.message) === null || _a3 === undefined || _a3.call(eventHandlers, data);
-      } catch (error) {
-        (_b = eventHandlers.message) === null || _b === undefined || _b.call(eventHandlers, event.data);
-      }
-    } else {
-      (_c = eventHandlers.message) === null || _c === undefined || _c.call(eventHandlers, event.data);
-    }
-  };
-  const socketAny = socket;
-  if ((_a2 = socketAny._listeners) === null || _a2 === undefined ? undefined : _a2.message) {
-    socketAny._listeners.message.forEach((listener) => {
-      socket.removeEventListener("message", listener);
-    });
-  }
-  socket.addEventListener("message", binaryAwareHandler);
-  return binaryAwareHandler;
-}
-function preventDuplicateEventListeners(socket, handlers) {
-  if (handlers.handleOpen) {
-    socket.removeEventListener("open", handlers.handleOpen);
-  }
-  if (handlers.handleMessage) {
-    socket.removeEventListener("message", handlers.handleMessage);
-  }
-  if (handlers.handleClose) {
-    socket.removeEventListener("close", handlers.handleClose);
-  }
-  if (handlers.handleError) {
-    socket.removeEventListener("error", handlers.handleError);
-  }
-}
-function resetSocketConnectionState(socket) {
-  if (socket.readyState === socket.CLOSED) {
-    socket._connectLock = false;
-    socket._shouldReconnect = true;
-  }
-}
-var closedSockets = new WeakSet;
-function closeOnce(self2, doClose) {
-  if (closedSockets.has(self2)) {
-    return;
-  }
-  closedSockets.add(self2);
-  doClose();
-}
-function armCloseGuard(self2) {
-  closedSockets.delete(self2);
-}
-function createWebSocketConnection(_a2) {
-  return __awaiter49(this, arguments, undefined, function* ({ options, urlPath, environmentKey, queryParams, protocols, service, headers, debug: debug2, reconnectAttempts, connectionTimeoutInSeconds, abortSignal }) {
-    var _b, _c, _d, _e, _f, _g;
-    yield loadNodeWebSocket();
-    const authRequest = yield (_b = options.authProvider) === null || _b === undefined ? undefined : _b.getAuthRequest();
-    const mergedHeaders = mergeHeaders2((_c = options.headers) !== null && _c !== undefined ? _c : {}, (_d = authRequest === null || authRequest === undefined ? undefined : authRequest.headers) !== null && _d !== undefined ? _d : {}, headers);
-    const _headers = yield resolveHeaders(mergedHeaders);
-    const normalizedProtocols = normalizeProtocols(protocols);
-    const baseUrl = (_e = yield Supplier.get(options.baseUrl)) !== null && _e !== undefined ? _e : ((_f = yield Supplier.get(options.environment)) !== null && _f !== undefined ? _f : DeepgramEnvironment.Production)[environmentKey];
-    const url = exports_url.join(baseUrl, urlPath);
-    const fullUrl = buildWebSocketUrl(url, queryParams);
-    const transportFactory = getTransportFactory(options);
-    const reconnect = getReconnect(options);
-    if (transportFactory) {
-      const request = {
-        url: fullUrl,
-        headers: stringifyHeaders(_headers),
-        protocols: normalizedProtocols,
-        path: urlPath,
-        service,
-        queryParams,
-        debug: debug2 !== null && debug2 !== undefined ? debug2 : false,
-        reconnectAttempts: reconnectAttempts !== null && reconnectAttempts !== undefined ? reconnectAttempts : 30,
-        connectionTimeoutInSeconds,
-        abortSignal
-      };
-      return new TransportWebSocketAdapter({
-        factory: transportFactory,
-        request,
-        startClosed: true,
-        reconnect
-      });
-    }
-    const wsOptions = getWebSocketOptions(_headers, normalizedProtocols);
-    return new ReconnectingWebSocket({
-      url,
-      protocols: (_g = wsOptions.protocols) !== null && _g !== undefined ? _g : [],
-      queryParameters: queryParams,
-      headers: wsOptions.headers,
-      options: {
-        WebSocket: wsOptions.WebSocket,
-        debug: debug2 !== null && debug2 !== undefined ? debug2 : false,
-        maxRetries: reconnectAttempts !== null && reconnectAttempts !== undefined ? reconnectAttempts : 30,
-        startClosed: true,
-        connectionTimeout: connectionTimeoutInSeconds != null ? connectionTimeoutInSeconds * 1000 : DEFAULT_CONNECTION_TIMEOUT_MS
-      },
-      abortSignal
-    });
-  });
-}
-
-class WrappedAgentV1Client extends V1Client {
-  connect() {
-    return __awaiter49(this, arguments, undefined, function* (args = {}) {
-      const { headers, protocols, debug: debug2, reconnectAttempts, connectionTimeoutInSeconds, abortSignal } = args;
-      const socket = yield createWebSocketConnection({
-        options: this._options,
-        urlPath: "/v1/agent/converse",
-        environmentKey: "agent",
-        queryParams: buildQueryParams(args),
-        protocols,
-        service: "agent.v1",
-        headers,
-        debug: debug2,
-        reconnectAttempts,
-        connectionTimeoutInSeconds,
-        abortSignal
-      });
-      return new WrappedAgentV1Socket({ socket });
-    });
-  }
-  createConnection() {
-    return __awaiter49(this, arguments, undefined, function* (args = {}) {
-      return this.connect(args);
-    });
-  }
-}
-
-class WrappedAgentV1Socket extends V1Socket {
-  constructor(args) {
-    super(args);
-    this.setupBinaryHandling();
-  }
-  setupBinaryHandling() {
-    this.binaryAwareHandler = setupBinaryHandling(this.socket, this.eventHandlers);
-  }
-  close() {
-    closeOnce(this, () => super.close());
-  }
-  connect() {
-    armCloseGuard(this);
-    const socketAny = this;
-    preventDuplicateEventListeners(this.socket, {
-      handleOpen: socketAny.handleOpen,
-      handleMessage: socketAny.handleMessage,
-      handleClose: socketAny.handleClose,
-      handleError: socketAny.handleError
-    });
-    resetSocketConnectionState(this.socket);
-    super.connect();
-    this.setupBinaryHandling();
-    return this;
-  }
-}
-
-class WrappedListenV1Client extends V1Client3 {
-  connect(args) {
-    return __awaiter49(this, undefined, undefined, function* () {
-      const { headers, protocols, debug: debug2, reconnectAttempts, connectionTimeoutInSeconds, abortSignal } = args;
-      const socket = yield createWebSocketConnection({
-        options: this._options,
-        urlPath: "/v1/listen",
-        environmentKey: "production",
-        queryParams: buildQueryParams(args),
-        protocols,
-        service: "listen.v1",
-        headers,
-        debug: debug2,
-        reconnectAttempts,
-        connectionTimeoutInSeconds,
-        abortSignal
-      });
-      return new WrappedListenV1Socket({ socket });
-    });
-  }
-  createConnection(args) {
-    return __awaiter49(this, undefined, undefined, function* () {
-      return this.connect(args);
-    });
-  }
-}
-
-class WrappedListenV1Socket extends V1Socket2 {
-  constructor(args) {
-    super(args);
-    this.setupBinaryHandling();
-  }
-  setupBinaryHandling() {
-    this.binaryAwareHandler = setupBinaryHandling(this.socket, this.eventHandlers);
-  }
-  close() {
-    closeOnce(this, () => super.close());
-  }
-  connect() {
-    armCloseGuard(this);
-    const socketAny = this;
-    preventDuplicateEventListeners(this.socket, {
-      handleOpen: socketAny.handleOpen,
-      handleMessage: socketAny.handleMessage,
-      handleClose: socketAny.handleClose,
-      handleError: socketAny.handleError
-    });
-    resetSocketConnectionState(this.socket);
-    super.connect();
-    this.setupBinaryHandling();
-    return this;
-  }
-}
-
-class WrappedListenV2Client extends V2Client {
-  connect(args) {
-    return __awaiter49(this, undefined, undefined, function* () {
-      const { headers, protocols, debug: debug2, reconnectAttempts, connectionTimeoutInSeconds, abortSignal } = args;
-      const socket = yield createWebSocketConnection({
-        options: this._options,
-        urlPath: "/v2/listen",
-        environmentKey: "production",
-        queryParams: buildQueryParams(args),
-        protocols,
-        service: "listen.v2",
-        headers,
-        debug: debug2,
-        reconnectAttempts,
-        connectionTimeoutInSeconds,
-        abortSignal
-      });
-      return new WrappedListenV2Socket({ socket });
-    });
-  }
-  createConnection(args) {
-    return __awaiter49(this, undefined, undefined, function* () {
-      return this.connect(args);
-    });
-  }
-}
-
-class WrappedListenV2Socket extends V2Socket {
-  constructor(args) {
-    super(args);
-    this.setupBinaryHandling();
-  }
-  setupBinaryHandling() {
-    this.binaryAwareHandler = setupBinaryHandling(this.socket, this.eventHandlers);
-  }
-  close() {
-    closeOnce(this, () => super.close());
-  }
-  connect() {
-    armCloseGuard(this);
-    const socketAny = this;
-    preventDuplicateEventListeners(this.socket, {
-      handleOpen: socketAny.handleOpen,
-      handleMessage: socketAny.handleMessage,
-      handleClose: socketAny.handleClose,
-      handleError: socketAny.handleError
-    });
-    resetSocketConnectionState(this.socket);
-    super.connect();
-    this.setupBinaryHandling();
-    return this;
-  }
-  ping(data) {
-    const ws = this.socket._ws;
-    if (!ws) {
-      throw new Error("WebSocket is not connected. Call connect() and waitForOpen() first.");
-    }
-    if (ws.readyState !== ws.OPEN) {
-      throw new Error("WebSocket is not in OPEN state.");
-    }
-    if (RUNTIME.type === "node" && typeof ws.ping === "function") {
-      ws.ping(data);
-    } else {
-      throw new Error("WebSocket ping is not supported in browser environments. " + "Browser WebSocket connections handle ping/pong automatically. " + "If you need keepalive in the browser, consider sending periodic audio data or using a timer.");
-    }
-  }
-}
-
-class WrappedSpeakV1Client extends V1Client7 {
-  connect(args) {
-    return __awaiter49(this, undefined, undefined, function* () {
-      const { headers, protocols, debug: debug2, reconnectAttempts, connectionTimeoutInSeconds, abortSignal } = args;
-      const socket = yield createWebSocketConnection({
-        options: this._options,
-        urlPath: "/v1/speak",
-        environmentKey: "production",
-        queryParams: buildQueryParams(args),
-        protocols,
-        service: "speak.v1",
-        headers,
-        debug: debug2,
-        reconnectAttempts,
-        connectionTimeoutInSeconds,
-        abortSignal
-      });
-      return new WrappedSpeakV1Socket({ socket });
-    });
-  }
-  createConnection(args) {
-    return __awaiter49(this, undefined, undefined, function* () {
-      return this.connect(args);
-    });
-  }
-}
-
-class WrappedSpeakV1Socket extends V1Socket3 {
-  constructor(args) {
-    super(args);
-    const socketAny = this;
-    if (socketAny.handleMessage) {
-      this.socket.removeEventListener("message", socketAny.handleMessage);
-    }
-    this.setupBinaryHandling();
-  }
-  setupBinaryHandling() {
-    this.binaryAwareHandler = setupBinaryHandling(this.socket, this.eventHandlers);
-  }
-  close() {
-    closeOnce(this, () => super.close());
-  }
-  connect() {
-    armCloseGuard(this);
-    const socketAny = this;
-    preventDuplicateEventListeners(this.socket, {
-      handleOpen: socketAny.handleOpen,
-      handleMessage: socketAny.handleMessage,
-      handleClose: socketAny.handleClose,
-      handleError: socketAny.handleError
-    });
-    resetSocketConnectionState(this.socket);
-    super.connect();
-    this.setupBinaryHandling();
-    return this;
-  }
-}
-
-class WrappedSpeakV2Client extends V2Client2 {
-  connect(args) {
-    return __awaiter49(this, undefined, undefined, function* () {
-      const { headers, protocols, debug: debug2, reconnectAttempts, connectionTimeoutInSeconds, abortSignal } = args;
-      const socket = yield createWebSocketConnection({
-        options: this._options,
-        urlPath: "/v2/speak",
-        environmentKey: "production",
-        queryParams: buildQueryParams(args),
-        protocols,
-        service: "speak.v2",
-        headers,
-        debug: debug2,
-        reconnectAttempts,
-        connectionTimeoutInSeconds,
-        abortSignal
-      });
-      return new WrappedSpeakV2Socket({ socket });
-    });
-  }
-  createConnection(args) {
-    return __awaiter49(this, undefined, undefined, function* () {
-      return this.connect(args);
-    });
-  }
-}
-
-class WrappedSpeakV2Socket extends V2Socket2 {
-  constructor(args) {
-    super(args);
-    const socketAny = this;
-    if (socketAny.handleMessage) {
-      this.socket.removeEventListener("message", socketAny.handleMessage);
-    }
-    this.setupBinaryHandling();
-  }
-  setupBinaryHandling() {
-    this.binaryAwareHandler = setupBinaryHandling(this.socket, this.eventHandlers);
-  }
-  close() {
-    closeOnce(this, () => super.close());
-  }
-  connect() {
-    armCloseGuard(this);
-    const socketAny = this;
-    preventDuplicateEventListeners(this.socket, {
-      handleOpen: socketAny.handleOpen,
-      handleMessage: socketAny.handleMessage,
-      handleClose: socketAny.handleClose,
-      handleError: socketAny.handleError
-    });
-    resetSocketConnectionState(this.socket);
-    super.connect();
-    this.setupBinaryHandling();
-    return this;
-  }
-}
 // src/deepgram-stt.ts
 var DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY || "";
-async function createDeepgramSession(clientWs) {
+async function createDeepgramSession(clientWs, onFinalTranscript) {
   if (!DEEPGRAM_API_KEY) {
-    console.error("[Deepgram] DEEPGRAM_API_KEY not set \u2014 STT disabled");
+    console.error("[Deepgram] DEEPGRAM_API_KEY not set — STT disabled");
     return {
       isReady: () => false,
       sendAudio: () => {},
       close: () => {}
     };
   }
-  const client = new CustomDeepgramClient({ key: DEEPGRAM_API_KEY });
   let ready = false;
-  const conn = await client.listen.v1.connect({
+  const params = new URLSearchParams({
     model: "nova-3",
     language: "id",
-    smart_format: true,
-    interim_results: true,
+    smart_format: "true",
+    interim_results: "true",
     encoding: "linear16",
-    sample_rate: 16000,
-    endpointing: 500
+    sample_rate: "16000",
+    endpointing: "500"
   });
-  conn.on("open", () => {
+  const ws = new WebSocket(`wss://api.deepgram.com/v1/listen?${params.toString()}`, { headers: { Authorization: `Token ${DEEPGRAM_API_KEY}` } });
+  ws.onopen = () => {
     console.log("[Deepgram] Connection opened.");
     ready = true;
     try {
@@ -27535,51 +19640,424 @@ async function createDeepgramSession(clientWs) {
         log: "[Deepgram] STT Engine Ready (Nova-3 ID)"
       }));
     } catch {}
-  });
-  conn.on("transcript", (data) => {
-    const transcript = data.channel?.alternatives?.[0]?.transcript;
-    if (transcript && transcript.trim().length > 0) {
-      try {
-        clientWs.send(JSON.stringify({
-          type: "transcript",
-          role: "user",
-          text: transcript,
-          isFinal: data.is_final
-        }));
-      } catch {}
-      if (data.is_final) {
-        console.log(`[Deepgram] User (Final): "${transcript}"`);
+  };
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(typeof event.data === "string" ? event.data : Buffer.from(event.data).toString("utf-8"));
+      const transcript = data.channel?.alternatives?.[0]?.transcript;
+      if (transcript && transcript.trim().length > 0) {
+        try {
+          clientWs.send(JSON.stringify({
+            type: "transcript",
+            role: "user",
+            text: transcript,
+            isFinal: data.is_final
+          }));
+        } catch {}
+        if (data.is_final) {
+          console.log(`[Deepgram] User (Final): "${transcript}"`);
+          if (onFinalTranscript) {
+            onFinalTranscript(transcript.trim());
+          }
+        }
       }
-    }
-  });
-  conn.on("error", (err) => {
-    console.error("[Deepgram] Error:", err);
+    } catch {}
+  };
+  ws.onerror = (e) => {
+    console.error("[Deepgram] WS Error:", e);
     try {
       clientWs.send(JSON.stringify({ type: "error", error: "Deepgram STT Error" }));
     } catch {}
-  });
-  conn.on("close", () => {
-    console.log("[Deepgram] Connection closed.");
+  };
+  ws.onclose = () => {
+    console.log("[Deepgram] Connection closed — reconnecting...");
     ready = false;
-  });
+    setTimeout(() => {
+      if (!closed) {
+        console.log("[Deepgram] Reconnecting...");
+        reconnect();
+      }
+    }, 500);
+  };
+  let closed = false;
+  function reconnect() {
+    const newWs = new WebSocket(`wss://api.deepgram.com/v1/listen?${params.toString()}`, { headers: { Authorization: `Token ${DEEPGRAM_API_KEY}` } });
+    newWs.onopen = ws.onopen;
+    newWs.onmessage = ws.onmessage;
+    newWs.onerror = ws.onerror;
+    newWs.onclose = ws.onclose;
+    activeWs = newWs;
+  }
+  let activeWs = ws;
   return {
     isReady: () => ready,
     sendAudio: (base64Data) => {
-      if (!ready)
+      if (!ready || activeWs.readyState !== WebSocket.OPEN)
         return;
       const buffer = Buffer.from(base64Data, "base64");
-      conn.sendMedia(buffer);
+      activeWs.send(buffer);
     },
     close: () => {
-      if (ready) {
+      closed = true;
+      ready = false;
+      if (activeWs.readyState === WebSocket.OPEN) {
         try {
-          conn.sendFinalize();
+          activeWs.send(JSON.stringify({ type: "CloseStream" }));
         } catch {}
       }
-      ready = false;
       try {
-        conn.close();
+        activeWs.close();
       } catch {}
+    }
+  };
+}
+
+// src/hermes-bridge.ts
+var HERMES_BIN = process.env.HERMES_BIN || "hermes";
+function createHermesBridge() {
+  let currentProc = null;
+  let lastSessionId;
+  function abort() {
+    if (currentProc) {
+      try {
+        currentProc.kill();
+      } catch {}
+      currentProc = null;
+    }
+  }
+  async function* query(text, sessionId) {
+    abort();
+    const args = [
+      "-z",
+      text,
+      "--no-restore-cwd",
+      "--pass-session-id"
+    ];
+    if (sessionId) {
+      args.push("--resume", sessionId);
+    }
+    const proc = Bun.spawn([HERMES_BIN, ...args], {
+      stdout: "pipe",
+      stderr: "pipe",
+      stdin: "ignore"
+    });
+    currentProc = proc;
+    const stderrReader = proc.stderr.getReader();
+    let stderrBuf = "";
+    const stderrPromise = (async () => {
+      const dec = new TextDecoder;
+      try {
+        while (true) {
+          const { done, value } = await stderrReader.read();
+          if (done)
+            break;
+          stderrBuf += dec.decode(value, { stream: true });
+        }
+      } catch {}
+      stderrReader.releaseLock();
+      const lines = stderrBuf.trim().split(`
+`);
+      for (const line of lines.reverse()) {
+        const match = line.match(/SESSION:(\S+)/);
+        if (match) {
+          lastSessionId = match[1];
+          break;
+        }
+      }
+    })();
+    const reader = proc.stdout.getReader();
+    const decoder = new TextDecoder;
+    let lineBuffer = "";
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done)
+          break;
+        lineBuffer += decoder.decode(value, { stream: true });
+        const lines = lineBuffer.split(`
+`);
+        lineBuffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (line.trim()) {
+            yield line;
+          }
+        }
+      }
+      if (lineBuffer.trim()) {
+        yield lineBuffer.trim();
+      }
+    } finally {
+      reader.releaseLock();
+      await stderrPromise;
+      await proc.exited.catch(() => {});
+      currentProc = null;
+    }
+  }
+  async function queryFull(text, sessionId) {
+    const chunks = [];
+    for await (const chunk of query(text, sessionId)) {
+      chunks.push(chunk);
+    }
+    return {
+      text: chunks.join(`
+`),
+      sessionId: lastSessionId ?? sessionId ?? `jarvis-${Date.now()}`
+    };
+  }
+  return { query, queryFull, abort };
+}
+
+// src/gemini-tts.ts
+var TTS_MODEL = process.env.GEMINI_TTS_MODEL ?? "gemini-3.1-flash-tts-preview";
+var TTS_VOICE = process.env.GEMINI_TTS_VOICE ?? "Achernar";
+var TTS_API_URL = (model, apiKey, stream = false) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:${stream ? "streamGenerateContent?alt=sse" : "generateContent"}`;
+function createTTSSession(apiKey) {
+  if (!apiKey) {
+    console.error("[TTS] GEMINI_API_KEY not set — TTS disabled");
+    return {
+      synthesize: async () => Buffer.alloc(0),
+      synthesizeStream: async () => Buffer.alloc(0),
+      close: () => {}
+    };
+  }
+  function buildBody(text, voice) {
+    return {
+      contents: [{ parts: [{ text }] }],
+      generationConfig: {
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: voice }
+          }
+        }
+      }
+    };
+  }
+  async function requestWithRetry(url, body, maxRetries = 2) {
+    let delayMs = 1000;
+    for (let attempt = 0;; attempt++) {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify(body)
+      });
+      if (response.ok)
+        return response;
+      if (response.status === 429 && attempt < maxRetries) {
+        let waitMs = delayMs;
+        try {
+          const err = await response.clone().json();
+          const retryInfo = err?.error?.details?.find((d) => d.retryDelay);
+          if (retryInfo?.retryDelay) {
+            const secs = parseFloat(retryInfo.retryDelay.replace(/s$/, ""));
+            if (Number.isFinite(secs))
+              waitMs = Math.min(secs * 1000, 60000);
+          }
+        } catch {}
+        console.warn(`[TTS] 429, retrying in ${waitMs}ms (attempt ${attempt + 1})`);
+        await new Promise((r) => setTimeout(r, waitMs));
+        delayMs *= 2;
+        continue;
+      }
+      if (response.status >= 500 && attempt < maxRetries) {
+        console.warn(`[TTS] HTTP ${response.status}, retrying (attempt ${attempt + 1})`);
+        await new Promise((r) => setTimeout(r, delayMs));
+        delayMs *= 2;
+        continue;
+      }
+      return response;
+    }
+  }
+  async function synthesize(text, voice = TTS_VOICE) {
+    const url = TTS_API_URL(TTS_MODEL, apiKey);
+    const response = await requestWithRetry(url, buildBody(text, voice));
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[TTS] HTTP ${response.status}:`, errorText.slice(0, 300));
+      throw new Error(`TTS failed: ${response.status}`);
+    }
+    const data = await response.json();
+    const audioData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!audioData) {
+      console.error("[TTS] No audio in response:", JSON.stringify(data).slice(0, 200));
+      throw new Error("TTS: no audio data in response");
+    }
+    return Buffer.from(audioData, "base64");
+  }
+  async function synthesizeStream(text, voice = TTS_VOICE, onChunk) {
+    const url = TTS_API_URL(TTS_MODEL, apiKey, true);
+    const response = await requestWithRetry(url, buildBody(text, voice));
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[TTS] stream HTTP ${response.status}:`, errorText.slice(0, 300));
+      throw new Error(`TTS stream failed: ${response.status}`);
+    }
+    const chunks = [];
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder;
+    let buf = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done)
+        break;
+      buf += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf(`
+`)) >= 0) {
+        const line = buf.slice(0, idx).trim();
+        buf = buf.slice(idx + 1);
+        if (!line.startsWith("data:"))
+          continue;
+        try {
+          const ev = JSON.parse(line.slice(5));
+          const parts = ev.candidates?.[0]?.content?.parts ?? [];
+          for (const p of parts) {
+            if (p?.inlineData?.data) {
+              const chunk = Buffer.from(p.inlineData.data, "base64");
+              chunks.push(chunk);
+              onChunk?.(chunk);
+            }
+          }
+        } catch {}
+      }
+    }
+    return Buffer.concat(chunks);
+  }
+  function close() {}
+  return { synthesize, synthesizeStream, close };
+}
+
+// src/sentence-detector.ts
+var SENTENCE_END = new Set([".", "!", "?", "…"]);
+var ABBREVIATIONS = new Set([
+  "dr",
+  "mr",
+  "mrs",
+  "ms",
+  "sr",
+  "jr",
+  "st",
+  "vs",
+  "etc",
+  "no",
+  "nos",
+  "vol",
+  "fig",
+  "ref",
+  "op",
+  "inc",
+  "ltd",
+  "corp"
+]);
+function isUpper(c) {
+  return c >= "A" && c <= "Z" || c.charCodeAt(0) >= 192 && c.charCodeAt(0) <= 591;
+}
+function isSentenceStart(c) {
+  return isUpper(c) || isDigit(c);
+}
+function isDigit(c) {
+  return c >= "0" && c <= "9";
+}
+function splitSentences(text) {
+  if (!text.trim())
+    return [];
+  const results = [];
+  let buf = "";
+  for (let i = 0;i < text.length; i++) {
+    const ch = text[i];
+    buf += ch;
+    if (ch === "." && i + 2 < text.length && text[i + 1] === "." && text[i + 2] === ".") {
+      buf += "..";
+      i += 2;
+      continue;
+    }
+    if (!SENTENCE_END.has(ch))
+      continue;
+    if (ch === "." && i > 0 && isDigit(text[i - 1]) && i + 1 < text.length && isDigit(text[i + 1])) {
+      continue;
+    }
+    if (ch === ".") {
+      const wordEnd = buf.length - 1;
+      let wordStart = wordEnd - 1;
+      while (wordStart >= 0 && buf[wordStart] !== " " && buf[wordStart] !== `
+`)
+        wordStart--;
+      const word = buf.slice(wordStart + 1, wordEnd).toLowerCase();
+      if (word.length <= 3 && ABBREVIATIONS.has(word)) {
+        continue;
+      }
+    }
+    const rest = text.slice(i + 1);
+    const trimmed = rest.trimStart();
+    if (trimmed.length === 0) {
+      results.push(buf.trim());
+      buf = "";
+      continue;
+    }
+    if (trimmed.length > 0 && isSentenceStart(trimmed[0])) {
+      results.push(buf.trim());
+      buf = "";
+      const wsLen = rest.length - trimmed.length;
+      i += wsLen;
+    }
+  }
+  if (buf.trim())
+    results.push(buf.trim());
+  return results;
+}
+function createSentenceAccumulator() {
+  let buffer = "";
+  return {
+    feed(text) {
+      buffer += text;
+      const results = [];
+      let splitAt = -1;
+      for (let i = buffer.length - 1;i >= 1; i--) {
+        const ch = buffer[i];
+        if (ch !== " " && ch !== `
+`)
+          continue;
+        const prev = buffer[i - 1];
+        if (!SENTENCE_END.has(prev))
+          continue;
+        if (prev === "." && i >= 2 && isDigit(buffer[i - 2]) && i + 1 < buffer.length && isDigit(buffer[i + 1])) {
+          continue;
+        }
+        if (prev === ".") {
+          let ws = i - 2;
+          while (ws >= 0 && buffer[ws] !== " " && buffer[ws] !== `
+`)
+            ws--;
+          const word = buffer.slice(ws + 1, i - 1).toLowerCase();
+          if (word.length <= 3 && ABBREVIATIONS.has(word))
+            continue;
+        }
+        let j = i;
+        while (j < buffer.length && (buffer[j] === " " || buffer[j] === `
+`))
+          j++;
+        if (j < buffer.length && isSentenceStart(buffer[j])) {
+          splitAt = j;
+          break;
+        }
+      }
+      if (splitAt > 0) {
+        const ready = buffer.slice(0, splitAt).trim();
+        if (ready)
+          results.push(...splitSentences(ready));
+        buffer = buffer.slice(splitAt);
+      }
+      return results;
+    },
+    flush() {
+      const remaining = buffer.trim();
+      buffer = "";
+      if (!remaining)
+        return [];
+      return splitSentences(remaining);
+    },
+    peek() {
+      return buffer;
     }
   };
 }
@@ -27587,36 +20065,106 @@ async function createDeepgramSession(clientWs) {
 // src/index.ts
 var API_KEY = process.env.GEMINI_API_KEY || "";
 var MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-live-preview";
-var VOICE = process.env.GEMINI_VOICE || "Aoede";
+var DEFAULT_VOICE = process.env.GEMINI_VOICE || "Achernar";
 var conns = new WeakMap;
 var socketKey = (ws) => ws.raw ?? ws;
 if (!API_KEY) {
   console.error("Missing GEMINI_API_KEY. Set it in .env");
   process.exit(1);
 }
+async function processHermesResponse(ws, state, userText, voice) {
+  if (state.abortController) {
+    state.abortController.abort();
+  }
+  const abortController = new AbortController;
+  state.abortController = abortController;
+  state.isProcessing = true;
+  const acc = createSentenceAccumulator();
+  let fullResponse = "";
+  try {
+    for await (const chunk of state.hermes.query(userText, state.hermesSessionId)) {
+      if (abortController.signal.aborted) {
+        console.log("[Hermes] Aborted by barge-in");
+        break;
+      }
+      fullResponse += chunk + " ";
+      ws.send(JSON.stringify({
+        type: "transcript",
+        role: "assistant",
+        text: fullResponse.trim(),
+        isFinal: false
+      }));
+      const sentences = acc.feed(chunk + " ");
+      for (const sentence of sentences) {
+        if (abortController.signal.aborted)
+          break;
+        console.log(`[TTS] Synthesizing: "${sentence}"`);
+        try {
+          const audio = await state.tts.synthesize(sentence, voice);
+          if (abortController.signal.aborted)
+            break;
+          ws.send(JSON.stringify({
+            type: "audio",
+            data: audio.toString("base64")
+          }));
+        } catch (e) {
+          console.error("[TTS] Synthesis error:", e);
+        }
+      }
+    }
+    if (!abortController.signal.aborted) {
+      const remaining = acc.flush();
+      for (const sentence of remaining) {
+        console.log(`[TTS] Synthesizing (flush): "${sentence}"`);
+        try {
+          const audio = await state.tts.synthesize(sentence, voice);
+          ws.send(JSON.stringify({
+            type: "audio",
+            data: audio.toString("base64")
+          }));
+        } catch (e) {
+          console.error("[TTS] Synthesis error:", e);
+        }
+      }
+    }
+    ws.send(JSON.stringify({
+      type: "transcript",
+      role: "assistant",
+      text: fullResponse.trim(),
+      isFinal: true
+    }));
+    ws.send(JSON.stringify({ type: "turnComplete" }));
+  } catch (e) {
+    console.error("[Hermes] Query error:", e);
+    ws.send(JSON.stringify({ type: "error", error: "Hermes query failed" }));
+  } finally {
+    state.isProcessing = false;
+    state.abortController = undefined;
+  }
+}
 var app = new Elysia().ws("/ws", {
   async open(ws) {
-    console.log("[WS] Client connected \u2014 opening Gemini Live + Deepgram STT...");
+    console.log("[WS] Client connected — opening Gemini Live + Deepgram STT + Hermes Bridge...");
     const state = {
       audioChunks: 0,
       loggedClientFrame: false,
-      gemini: createGeminiSession(API_KEY, MODEL, VOICE, {
-        onAudio: (base64pcm) => {
-          ws.send(JSON.stringify({ type: "audio", data: base64pcm }));
-        },
+      hermes: createHermesBridge(),
+      tts: createTTSSession(API_KEY),
+      isProcessing: false,
+      selectedVoice: DEFAULT_VOICE,
+      gemini: createGeminiSession(API_KEY, MODEL, DEFAULT_VOICE, {
+        onAudio: (base64pcm) => {},
         onTranscript: (text, role) => {
-          ws.send(JSON.stringify({ type: "transcript", text, role }));
+          ws.send(JSON.stringify({ type: "transcript", text, role, source: "gemini" }));
         },
-        onTurnComplete: () => {
-          ws.send(JSON.stringify({ type: "turnComplete" }));
-        },
+        onTurnComplete: () => {},
         onError: (error) => {
           console.error("[Gemini] Error:", error);
           ws.send(JSON.stringify({ type: "error", error }));
         },
         onConnected: () => {
-          console.log("[Gemini] Session ready \u2014 voice:", VOICE);
-          ws.send(JSON.stringify({ type: "status", state: "ready", log: `[Gemini] Connected (${MODEL}, ${VOICE})` }));
+          console.log("[Gemini] Session ready (STT only) — voice:", DEFAULT_VOICE);
+          ws.send(JSON.stringify({ type: "status", state: "ready", log: `[Gemini] STT Connected (${MODEL})` }));
         },
         onDisconnected: () => {
           console.log("[Gemini] Session disconnected");
@@ -27625,7 +20173,15 @@ var app = new Elysia().ws("/ws", {
       })
     };
     try {
-      state.deepgram = await createDeepgramSession(ws.raw);
+      state.deepgram = await createDeepgramSession(ws.raw, (finalText) => {
+        console.log(`[Pipeline] Deepgram final → Hermes: "${finalText}"`);
+        if (!state.isProcessing) {
+          ws.send(JSON.stringify({ type: "status", state: "processing" }));
+          processHermesResponse(ws, state, finalText, state.selectedVoice);
+        } else {
+          console.log("[Pipeline] Hermes busy, queuing...");
+        }
+      });
     } catch (e) {
       console.error("[Deepgram] Failed to create session:", e);
       ws.send(JSON.stringify({ type: "error", error: "Deepgram init failed" }));
@@ -27633,6 +20189,16 @@ var app = new Elysia().ws("/ws", {
     if (state.gemini)
       state.gemini.connect();
     conns.set(socketKey(ws), state);
+    ws.send(JSON.stringify({
+      type: "status",
+      state: "ready",
+      log: "[Hermes] Bridge ready (CLI mode)"
+    }));
+    ws.send(JSON.stringify({
+      type: "status",
+      state: "ready",
+      log: `[TTS] Gemini TTS ready (voice: ${DEFAULT_VOICE})`
+    }));
   },
   async message(ws, message) {
     const state = conns.get(socketKey(ws));
@@ -27669,24 +20235,58 @@ var app = new Elysia().ws("/ws", {
         }
       } else if (msg.type === "diagnostic" && msg.message) {
         console.log(`[ClientDiag] ${msg.message}`);
+      } else if (msg.type === "voiceChange" && msg.voice) {
+        console.log(`[Voice] Switching to: ${msg.voice}`);
+        state.selectedVoice = msg.voice;
+        if (state.gemini)
+          state.gemini.close();
+        state.gemini = createGeminiSession(API_KEY, MODEL, msg.voice, {
+          onAudio: () => {},
+          onTranscript: (text, role) => {
+            ws.send(JSON.stringify({ type: "transcript", text, role, source: "gemini" }));
+          },
+          onTurnComplete: () => {},
+          onError: (error) => {
+            console.error("[Gemini] Error:", error);
+            ws.send(JSON.stringify({ type: "error", error }));
+          },
+          onConnected: () => {
+            console.log("[Gemini] Session ready — voice:", msg.voice);
+            ws.send(JSON.stringify({ type: "status", state: "ready", log: `[Gemini] Voice switched to ${msg.voice}` }));
+          },
+          onDisconnected: () => {
+            console.log("[Gemini] Session disconnected");
+            ws.send(JSON.stringify({ type: "status", state: "disconnected", log: "[Gemini] Disconnected" }));
+          }
+        });
+        state.gemini.connect();
       } else if (msg.type === "text" && msg.text) {
         if (state.gemini?.isReady()) {
           state.gemini.sendText(msg.text);
         }
+      } else if (msg.type === "hermesQuery" && msg.text) {
+        console.log(`[Hermes] Query: "${msg.text}"`);
+        ws.send(JSON.stringify({ type: "status", state: "processing" }));
+        processHermesResponse(ws, state, msg.text, msg.voice || state.selectedVoice);
       }
     } catch {}
   },
   close(ws) {
-    console.log("[WS] Client disconnected \u2014 closing Gemini session");
+    console.log("[WS] Client disconnected — cleaning up");
     const state = conns.get(socketKey(ws));
     if (state) {
       if (state.gemini)
         state.gemini.close();
       if (state.deepgram)
         state.deepgram.close();
+      if (state.tts)
+        state.tts.close();
+      if (state.hermes)
+        state.hermes.abort();
       conns.delete(socketKey(ws));
     }
   }
 }).listen(3002);
 console.log(`[Shorekeeper JARVIS] Running on http://${app.server?.hostname}:${app.server?.port}`);
-console.log(`[Shorekeeper JARVIS] Engine: Gemini Live (${MODEL}), Voice: ${VOICE}`);
+console.log(`[Shorekeeper JARVIS] Engine: Cascaded (Deepgram STT → Hermes → Gemini TTS)`);
+console.log(`[Shorekeeper JARVIS] Default Voice: ${DEFAULT_VOICE} | Gemini Live: ${MODEL} (STT fallback)`);

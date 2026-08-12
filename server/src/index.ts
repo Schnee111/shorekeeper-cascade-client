@@ -7,7 +7,7 @@ import { createSentenceAccumulator } from "./sentence-detector";
 
 const API_KEY = process.env.GEMINI_API_KEY || "";
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-live-preview";
-const VOICE = process.env.GEMINI_VOICE || "Aoede";
+const DEFAULT_VOICE = process.env.GEMINI_VOICE || "Achernar";
 
 /**
  * Connection state per WebSocket client.
@@ -24,6 +24,8 @@ type ConnState = {
   hermesSessionId?: string;
   isProcessing: boolean;
   abortController?: AbortController;
+  // Voice tracking
+  selectedVoice: string;
 };
 const conns = new WeakMap<object, ConnState>();
 const socketKey = (ws: any): object => ws.raw ?? ws;
@@ -139,7 +141,8 @@ const app = new Elysia()
         hermes: createHermesBridge(),
         tts: createTTSSession(API_KEY),
         isProcessing: false,
-        gemini: createGeminiSession(API_KEY, MODEL, VOICE, {
+        selectedVoice: DEFAULT_VOICE,
+        gemini: createGeminiSession(API_KEY, MODEL, DEFAULT_VOICE, {
           onAudio: (base64pcm) => {
             // In M3 cascaded mode, we don't use Gemini Live audio output
             // (Gemini Live is only for STT now). TTS comes from gemini-tts.ts.
@@ -159,7 +162,7 @@ const app = new Elysia()
             ws.send(JSON.stringify({ type: "error", error }));
           },
           onConnected: () => {
-            console.log("[Gemini] Session ready (STT only) — voice:", VOICE);
+            console.log("[Gemini] Session ready (STT only) — voice:", DEFAULT_VOICE);
             ws.send(JSON.stringify({ type: "status", state: "ready", log: `[Gemini] STT Connected (${MODEL})` }));
           },
           onDisconnected: () => {
@@ -178,7 +181,7 @@ const app = new Elysia()
             console.log(`[Pipeline] Deepgram final → Hermes: "${finalText}"`);
             if (!state.isProcessing) {
               ws.send(JSON.stringify({ type: "status", state: "processing" }));
-              processHermesResponse(ws, state, finalText, VOICE);
+              processHermesResponse(ws, state, finalText, state.selectedVoice);
             } else {
               console.log("[Pipeline] Hermes busy, queuing...");
               // TODO: queue or interrupt current response
@@ -201,7 +204,7 @@ const app = new Elysia()
       ws.send(JSON.stringify({
         type: "status",
         state: "ready",
-        log: `[TTS] Gemini TTS ready (voice: ${VOICE})`,
+        log: `[TTS] Gemini TTS ready (voice: ${DEFAULT_VOICE})`,
       }));
     },
 
@@ -245,6 +248,7 @@ const app = new Elysia()
           console.log(`[ClientDiag] ${msg.message}`);
         } else if (msg.type === "voiceChange" && msg.voice) {
           console.log(`[Voice] Switching to: ${msg.voice}`);
+          state.selectedVoice = msg.voice; // Update tracked voice
           // Close old Gemini session
           if (state.gemini) state.gemini.close();
           // Create new one with selected voice
@@ -279,7 +283,7 @@ const app = new Elysia()
           ws.send(JSON.stringify({ type: "status", state: "processing" }));
 
           // Process in background
-          processHermesResponse(ws, state, msg.text, msg.voice || VOICE);
+          processHermesResponse(ws, state, msg.text, msg.voice || state.selectedVoice);
         }
       } catch {
         // Not JSON or malformed, ignore
@@ -302,4 +306,4 @@ const app = new Elysia()
 
 console.log(`[Shorekeeper JARVIS] Running on http://${app.server?.hostname}:${app.server?.port}`);
 console.log(`[Shorekeeper JARVIS] Engine: Cascaded (Deepgram STT → Hermes → Gemini TTS)`);
-console.log(`[Shorekeeper JARVIS] TTS Voice: ${VOICE} | Gemini Live: ${MODEL} (STT fallback)`);
+console.log(`[Shorekeeper JARVIS] Default Voice: ${DEFAULT_VOICE} | Gemini Live: ${MODEL} (STT fallback)`);
