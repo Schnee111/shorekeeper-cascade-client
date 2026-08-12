@@ -17,6 +17,8 @@
   let status = $state<'idle' | 'listening' | 'processing' | 'speaking' | 'error'>('idle');
   let transcript = $state('');
   let response = $state('Schnee... welcome back. Shorekeeper JARVIS core is active.');
+  let subtitle = $state('');
+  let subtitleLanguage = $state<'en' | 'id' | 'jp'>('en');
 
   // Voice selector — female only (source: Google Gemini TTS API reference)
   const VOICES = [
@@ -80,9 +82,14 @@
         }
         switch (data.type) {
           case 'audio':
-            // PCM 24kHz base64 from Gemini TTS (cascade mode)
+            // MP3 base64 from Fish Audio TTS (cascade mode)
             player.play(data.data);
             status = 'speaking';
+            break;
+          case 'subtitle':
+            // Subtitle text from server (before TTS audio arrives)
+            subtitle = data.text || '';
+            subtitleLanguage = data.language || 'en';
             break;
           case 'transcript':
             if (data.role === 'assistant' || data.role === 'model') response = data.text;
@@ -99,6 +106,7 @@
             break;
           case 'turnComplete':
             player.stop();
+            subtitle = ''; // Clear subtitle when turn completes
             // Hands-free: stay armed, return to listening, and re-arm silence timer.
             if (mode === 'active') {
               status = 'listening';
@@ -381,6 +389,16 @@
       
       <!-- Live Transcript Subtitle -->
       <div class="w-full text-center mt-6">
+        {#if subtitle && status === 'speaking'}
+          <div class="mb-3 px-4 py-3 bg-emerald-900/20 rounded-xl border border-emerald-700/50 animate-fadeIn">
+            <div class="flex items-start gap-2 justify-center">
+              <span class="text-[10px] font-mono text-emerald-400 bg-emerald-900/30 px-2 py-0.5 rounded border border-emerald-700/50 shrink-0">
+                {subtitleLanguage.toUpperCase()}
+              </span>
+              <p class="text-sm text-emerald-200 font-medium whitespace-pre-wrap flex-1 text-left">{subtitle}</p>
+            </div>
+          </div>
+        {/if}
         <div class="min-h-[80px] w-full flex items-center justify-center bg-slate-950/50 rounded-2xl border border-slate-800/80 p-5 shadow-inner">
           <p class={`text-[15px] font-medium leading-relaxed transition-colors duration-300 ${transcript ? 'text-emerald-100' : 'text-slate-600 italic'}`}>
             {transcript || (mode === 'standby' ? 'Menunggu "Hey Jarvis"...' : mode === 'active' ? 'Mendengarkan suara...' : 'Ketuk orb untuk memulai.')}

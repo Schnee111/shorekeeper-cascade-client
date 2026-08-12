@@ -19807,124 +19807,59 @@ function createHermesBridge() {
   return { query, queryFull, abort };
 }
 
-// src/gemini-tts.ts
-var TTS_MODEL = process.env.GEMINI_TTS_MODEL ?? "gemini-3.1-flash-tts-preview";
-var TTS_VOICE = process.env.GEMINI_TTS_VOICE ?? "Achernar";
-var TTS_API_URL = (model, apiKey, stream = false) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:${stream ? "streamGenerateContent?alt=sse" : "generateContent"}`;
-function createTTSSession(apiKey) {
+// src/fish-audio-tts.ts
+var FISH_API_URL = "https://api.fish.audio/v1/tts";
+var FISH_MODEL = "s2.1-pro-free";
+var INDONESIAN_VOICE_ID = "3095f8e1d1fa4b82acaa8aca720a7f83";
+function detectLanguage(text) {
+  const japanesePattern = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/;
+  if (japanesePattern.test(text)) {
+    return "jp";
+  }
+  const indonesianKeywords = /\b(aku|kamu|dia|mereka|kita|ini|itu|dan|yang|dengan|untuk|dari|ke|di|adalah|tidak|sudah|belum|akan|bisa|mau|harus|jangan|sangat|lebih|juga|atau|tapi|karena|jika|kalau|bagaimana|mengapa|kapan|dimana|siapa|halo|selamat|terima kasih|maaf|tolong|baik|buruk|besar|kecil|baru|lama|cepat|lambat|siap|oke|ya|tidak)\b/i;
+  if (indonesianKeywords.test(text)) {
+    return "id";
+  }
+  return "en";
+}
+function createFishAudioSession(apiKey) {
   if (!apiKey) {
-    console.error("[TTS] GEMINI_API_KEY not set — TTS disabled");
+    console.error("[Fish TTS] FISH_API_KEY not set — TTS disabled");
     return {
       synthesize: async () => Buffer.alloc(0),
-      synthesizeStream: async () => Buffer.alloc(0),
       close: () => {}
     };
   }
-  function buildBody(text, voice) {
-    return {
-      contents: [{ parts: [{ text }] }],
-      generationConfig: {
-        responseModalities: ["AUDIO"],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: voice }
-          }
-        }
-      }
+  async function synthesize(text, language = "en") {
+    const requestBody = {
+      text,
+      format: "mp3",
+      mp3_bitrate: 128,
+      normalize: true,
+      latency: "normal"
     };
-  }
-  async function requestWithRetry(url, body, maxRetries = 2) {
-    let delayMs = 1000;
-    for (let attempt = 0;; attempt++) {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        body: JSON.stringify(body)
-      });
-      if (response.ok)
-        return response;
-      if (response.status === 429 && attempt < maxRetries) {
-        let waitMs = delayMs;
-        try {
-          const err = await response.clone().json();
-          const retryInfo = err?.error?.details?.find((d) => d.retryDelay);
-          if (retryInfo?.retryDelay) {
-            const secs = parseFloat(retryInfo.retryDelay.replace(/s$/, ""));
-            if (Number.isFinite(secs))
-              waitMs = Math.min(secs * 1000, 60000);
-          }
-        } catch {}
-        console.warn(`[TTS] 429, retrying in ${waitMs}ms (attempt ${attempt + 1})`);
-        await new Promise((r) => setTimeout(r, waitMs));
-        delayMs *= 2;
-        continue;
-      }
-      if (response.status >= 500 && attempt < maxRetries) {
-        console.warn(`[TTS] HTTP ${response.status}, retrying (attempt ${attempt + 1})`);
-        await new Promise((r) => setTimeout(r, delayMs));
-        delayMs *= 2;
-        continue;
-      }
-      return response;
+    if (language === "id") {
+      requestBody.reference_id = INDONESIAN_VOICE_ID;
     }
-  }
-  async function synthesize(text, voice = TTS_VOICE) {
-    const url = TTS_API_URL(TTS_MODEL, apiKey);
-    const response = await requestWithRetry(url, buildBody(text, voice));
+    const response = await fetch(FISH_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        model: FISH_MODEL
+      },
+      body: JSON.stringify(requestBody)
+    });
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[TTS] HTTP ${response.status}:`, errorText.slice(0, 300));
-      throw new Error(`TTS failed: ${response.status}`);
+      console.error(`[Fish TTS] HTTP ${response.status}:`, errorText.slice(0, 300));
+      throw new Error(`Fish TTS failed: ${response.status}`);
     }
-    const data = await response.json();
-    const audioData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    if (!audioData) {
-      console.error("[TTS] No audio in response:", JSON.stringify(data).slice(0, 200));
-      throw new Error("TTS: no audio data in response");
-    }
-    return Buffer.from(audioData, "base64");
-  }
-  async function synthesizeStream(text, voice = TTS_VOICE, onChunk) {
-    const url = TTS_API_URL(TTS_MODEL, apiKey, true);
-    const response = await requestWithRetry(url, buildBody(text, voice));
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[TTS] stream HTTP ${response.status}:`, errorText.slice(0, 300));
-      throw new Error(`TTS stream failed: ${response.status}`);
-    }
-    const chunks = [];
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder;
-    let buf = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done)
-        break;
-      buf += decoder.decode(value, { stream: true });
-      let idx;
-      while ((idx = buf.indexOf(`
-`)) >= 0) {
-        const line = buf.slice(0, idx).trim();
-        buf = buf.slice(idx + 1);
-        if (!line.startsWith("data:"))
-          continue;
-        try {
-          const ev = JSON.parse(line.slice(5));
-          const parts = ev.candidates?.[0]?.content?.parts ?? [];
-          for (const p of parts) {
-            if (p?.inlineData?.data) {
-              const chunk = Buffer.from(p.inlineData.data, "base64");
-              chunks.push(chunk);
-              onChunk?.(chunk);
-            }
-          }
-        } catch {}
-      }
-    }
-    return Buffer.concat(chunks);
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
   }
   function close() {}
-  return { synthesize, synthesizeStream, close };
+  return { synthesize, close };
 }
 
 // src/sentence-detector.ts
@@ -20072,7 +20007,7 @@ if (!API_KEY) {
   console.error("Missing GEMINI_API_KEY. Set it in .env");
   process.exit(1);
 }
-async function processHermesResponse(ws, state, userText, voice) {
+async function processHermesResponse(ws, state, userText) {
   if (state.abortController) {
     state.abortController.abort();
   }
@@ -20100,7 +20035,14 @@ async function processHermesResponse(ws, state, userText, voice) {
           break;
         console.log(`[TTS] Synthesizing: "${sentence}"`);
         try {
-          const audio = await state.tts.synthesize(sentence, voice);
+          const language = detectLanguage(sentence);
+          console.log(`[TTS] Sentence: "${sentence}" → ${language}`);
+          ws.send(JSON.stringify({
+            type: "subtitle",
+            text: sentence,
+            language
+          }));
+          const audio = await state.tts.synthesize(sentence, language);
           if (abortController.signal.aborted)
             break;
           ws.send(JSON.stringify({
@@ -20117,7 +20059,14 @@ async function processHermesResponse(ws, state, userText, voice) {
       for (const sentence of remaining) {
         console.log(`[TTS] Synthesizing (flush): "${sentence}"`);
         try {
-          const audio = await state.tts.synthesize(sentence, voice);
+          const language = detectLanguage(sentence);
+          console.log(`[TTS] Flush: "${sentence}" → ${language}`);
+          ws.send(JSON.stringify({
+            type: "subtitle",
+            text: sentence,
+            language
+          }));
+          const audio = await state.tts.synthesize(sentence, language);
           ws.send(JSON.stringify({
             type: "audio",
             data: audio.toString("base64")
@@ -20149,7 +20098,7 @@ var app = new Elysia().ws("/ws", {
       audioChunks: 0,
       loggedClientFrame: false,
       hermes: createHermesBridge(),
-      tts: createTTSSession(API_KEY),
+      tts: createFishAudioSession(process.env.FISH_API_KEY || ""),
       isProcessing: false,
       selectedVoice: DEFAULT_VOICE,
       gemini: createGeminiSession(API_KEY, MODEL, DEFAULT_VOICE, {
@@ -20177,7 +20126,7 @@ var app = new Elysia().ws("/ws", {
         console.log(`[Pipeline] Deepgram final → Hermes: "${finalText}"`);
         if (!state.isProcessing) {
           ws.send(JSON.stringify({ type: "status", state: "processing" }));
-          processHermesResponse(ws, state, finalText, state.selectedVoice);
+          processHermesResponse(ws, state, finalText);
         } else {
           console.log("[Pipeline] Hermes busy, queuing...");
         }
@@ -20197,7 +20146,7 @@ var app = new Elysia().ws("/ws", {
     ws.send(JSON.stringify({
       type: "status",
       state: "ready",
-      log: `[TTS] Gemini TTS ready (voice: ${DEFAULT_VOICE})`
+      log: `[TTS] Fish Audio TTS ready (model: s2.1-pro-free)`
     }));
   },
   async message(ws, message) {
@@ -20267,7 +20216,7 @@ var app = new Elysia().ws("/ws", {
       } else if (msg.type === "hermesQuery" && msg.text) {
         console.log(`[Hermes] Query: "${msg.text}"`);
         ws.send(JSON.stringify({ type: "status", state: "processing" }));
-        processHermesResponse(ws, state, msg.text, msg.voice || state.selectedVoice);
+        processHermesResponse(ws, state, msg.text);
       }
     } catch {}
   },

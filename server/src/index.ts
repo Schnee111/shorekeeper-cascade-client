@@ -2,7 +2,7 @@ import { Elysia } from "elysia";
 import { createGeminiSession, type GeminiSession } from "./gemini-live";
 import { createDeepgramSession, type DeepgramSession } from "./deepgram-stt";
 import { createHermesBridge, type HermesBridge } from "./hermes-bridge";
-import { createTTSSession, type TTSSession } from "./gemini-tts";
+import { createFishAudioSession, type FishAudioSession, detectLanguage } from "./fish-audio-tts";
 import { createSentenceAccumulator } from "./sentence-detector";
 
 const API_KEY = process.env.GEMINI_API_KEY || "";
@@ -17,7 +17,7 @@ type ConnState = {
   gemini?: GeminiSession;
   deepgram?: DeepgramSession;
   hermes: HermesBridge;
-  tts: TTSSession;
+  tts: FishAudioSession;
   audioChunks: number;
   loggedClientFrame: boolean;
   // Hermes pipeline state
@@ -42,8 +42,7 @@ if (!API_KEY) {
 async function processHermesResponse(
   ws: any,
   state: ConnState,
-  userText: string,
-  voice: string
+  userText: string
 ) {
   // Abort any previous Hermes query
   if (state.abortController) {
@@ -80,7 +79,17 @@ async function processHermesResponse(
 
         console.log(`[TTS] Synthesizing: "${sentence}"`);
         try {
-          const audio = await state.tts.synthesize(sentence, voice);
+          const language = detectLanguage(sentence);
+          console.log(`[TTS] Sentence: "${sentence}" → ${language}`);
+
+          // Send subtitle before TTS
+          ws.send(JSON.stringify({
+            type: "subtitle",
+            text: sentence,
+            language: language,
+          }));
+
+          const audio = await state.tts.synthesize(sentence, language);
           if (abortController.signal.aborted) break;
 
           // Send audio to client
@@ -100,7 +109,16 @@ async function processHermesResponse(
       for (const sentence of remaining) {
         console.log(`[TTS] Synthesizing (flush): "${sentence}"`);
         try {
-          const audio = await state.tts.synthesize(sentence, voice);
+          const language = detectLanguage(sentence);
+          console.log(`[TTS] Flush: "${sentence}" → ${language}`);
+
+          ws.send(JSON.stringify({
+            type: "subtitle",
+            text: sentence,
+            language: language,
+          }));
+
+          const audio = await state.tts.synthesize(sentence, language);
           ws.send(JSON.stringify({
             type: "audio",
             data: audio.toString("base64"),
@@ -139,7 +157,7 @@ const app = new Elysia()
         audioChunks: 0,
         loggedClientFrame: false,
         hermes: createHermesBridge(),
-        tts: createTTSSession(API_KEY),
+        tts: createFishAudioSession(process.env.FISH_API_KEY || ""),
         isProcessing: false,
         selectedVoice: DEFAULT_VOICE,
         gemini: createGeminiSession(API_KEY, MODEL, DEFAULT_VOICE, {
@@ -181,7 +199,7 @@ const app = new Elysia()
             console.log(`[Pipeline] Deepgram final → Hermes: "${finalText}"`);
             if (!state.isProcessing) {
               ws.send(JSON.stringify({ type: "status", state: "processing" }));
-              processHermesResponse(ws, state, finalText, state.selectedVoice);
+              processHermesResponse(ws, state, finalText);
             } else {
               console.log("[Pipeline] Hermes busy, queuing...");
               // TODO: queue or interrupt current response
@@ -204,7 +222,7 @@ const app = new Elysia()
       ws.send(JSON.stringify({
         type: "status",
         state: "ready",
-        log: `[TTS] Gemini TTS ready (voice: ${DEFAULT_VOICE})`,
+        log: `[TTS] Fish Audio TTS ready (model: s2.1-pro-free)`,
       }));
     },
 
@@ -283,7 +301,7 @@ const app = new Elysia()
           ws.send(JSON.stringify({ type: "status", state: "processing" }));
 
           // Process in background
-          processHermesResponse(ws, state, msg.text, msg.voice || state.selectedVoice);
+          processHermesResponse(ws, state, msg.text);
         }
       } catch {
         // Not JSON or malformed, ignore
