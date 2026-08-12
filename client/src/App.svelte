@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Mic, MicOff, Volume2, Sparkles, Activity, Shield, Terminal, Zap, Radio } from 'lucide-svelte';
+  import { Mic, MicOff, Volume2, Sparkles, Activity, Shield, Terminal } from 'lucide-svelte';
   import { startCapture } from './lib/audio-capture';
   import { createPlayer } from './lib/audio-playback';
   import { startWakeWord } from './lib/wakeword';
@@ -8,12 +8,44 @@
   // Svelte 5 Runes ($state)
   // mode = hands-free lifecycle: off (armed nothing) | standby (Porcupine listening for wake word)
   //        | active (Gemini capturing your speech)
+  let mode = $state<'off' | 'standby' | 'active'>('off');
+  let stopWake: (() => Promise<void>) | null = null;
+  let silenceTimer: ReturnType<typeof setTimeout> | null = null;
+  const SILENCE_MS = 8000;
+
   let isListening = $state(false);
   let status = $state<'idle' | 'listening' | 'speaking' | 'error'>('idle');
   let transcript = $state('');
   let response = $state('Schnee... welcome back. Shorekeeper JARVIS core is active.');
 
-  const SILENCE_MS = 8000;
+  // Voice selector — female only (source: Google Gemini TTS API reference)
+  const VOICES = [
+    { name: 'Aoede', desc: 'Breezy' },
+    { name: 'Kore', desc: 'Firm' },
+    { name: 'Leda', desc: 'Youthful' },
+    { name: 'Zephyr', desc: 'Bright' },
+    { name: 'Callirrhoe', desc: 'Easy-going' },
+    { name: 'Autonoe', desc: 'Bright' },
+    { name: 'Despina', desc: 'Smooth' },
+    { name: 'Erinome', desc: 'Clear' },
+    { name: 'Laomedeia', desc: 'Upbeat' },
+    { name: 'Achernar', desc: 'Soft' },
+    { name: 'Gacrux', desc: 'Mature' },
+    { name: 'Pulcherrima', desc: 'Forward' },
+    { name: 'Vindemiatrix', desc: 'Gentle' },
+    { name: 'Sulafat', desc: 'Warm' },
+  ];
+  let selectedVoice = $state('Achernar');
+  
+  function onVoiceChange(e: Event) {
+    const select = e.target as HTMLSelectElement;
+    selectedVoice = select.value;
+    logs = [...logs, `[Voice] Switching to: ${selectedVoice}`];
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: 'voiceChange', voice: selectedVoice }));
+    }
+  }
+  
   let logs = $state<string[]>([
     '[System] Tethys Core Initialized (Bun + Elysia.js + Svelte 5)',
     '[Network] WebSocket Bridge endpoint /jarvis/ws',
@@ -25,8 +57,6 @@
   let socket: WebSocket | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let stopCapture: (() => void) | null = null;
-  let stopWake: (() => Promise<void>) | null = null;
-  let silenceTimer: ReturnType<typeof setTimeout> | null = null;
   const player = createPlayer();
 
   onMount(() => {
@@ -112,12 +142,11 @@
     }
   }
 
-  // After a turn, if no further speech within SILENCE_MS, drop back to standby.
+  // After a turn, if no further speech within SILENCE_MS, stay active but
+  // just keep listening. In tap-to-talk mode we never auto-standby.
   function armSilenceTimer() {
     clearSilenceTimer();
-    silenceTimer = setTimeout(() => {
-      if (mode === 'active') returnToStandby();
-    }, SILENCE_MS);
+    // No auto-standby in tap-to-talk — keep mic open until user taps off.
   }
 
   // Stop Gemini capture, then re-arm Porcupine. Enforces single mic consumer.
@@ -133,16 +162,29 @@
     await armWakeWord();
   }
 
-  // Arm Porcupine wake-word listener (owns mic during standby).
+  // Arm openwakeword listener (owns mic during standby).
   async function armWakeWord() {
     if (stopWake) return; // already armed
+    logs = [...logs, '[WakeWord] Initializing microphone...'];
+    
+    // Request global mic permission directly in UI thread before any deep libraries
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      logs = [...logs, '[WakeWord] Mic permission granted'];
+    } catch (e) {
+      logs = [...logs, `[Error] Mic Access Denied: ${e instanceof Error ? e.message : String(e)}`];
+      status = 'error';
+      return; // Abort
+    }
+
     stopWake = await startWakeWord(
       () => onWake(),
       (message) => {
         logs = [...logs, `[WakeWord] ${message}`];
       }
     );
-    logs = [...logs, '[WakeWord] Standby — ucapkan "Jarvis" untuk mulai'];
+    logs = [...logs, '[WakeWord] Standby — ucapkan "Hey Jarvis" untuk mulai'];
   }
 
   // Wake word fired: release Porcupine mic, hand mic to Gemini capture.
@@ -193,11 +235,14 @@
     }
   }
 
-  // Main button: toggle the whole hands-free system on/off.
+  // Main button: tap-to-talk (direct capture, no wake word).
+  // Tap once = start listening (capture audio → Gemini + Deepgram).
+  // Tap again = stop and return to off.
   async function toggleStandby() {
     if (mode === 'off') {
-      await armWakeWord();
-      mode = 'standby';
+      // Skip wake word — go straight to capture
+      logs = [...logs, '[Voice] Tap-to-talk: langsung aktif'];
+      await startGeminiCapture();
     } else {
       // Tear everything down.
       clearSilenceTimer();
@@ -211,7 +256,7 @@
       }
       mode = 'off';
       status = 'idle';
-      logs = [...logs, '[Voice] Hands-free dimatikan'];
+      logs = [...logs, '[Voice] Dimatikan'];
     }
   }
 </script>
@@ -230,107 +275,142 @@
         <Sparkles class="w-5 h-5 text-white" />
       </div>
       <div>
-        <h1 class="font-bold tracking-wider text-base uppercase bg-gradient-to-r from-white via-slate-200 to-cyan-400 bg-clip-text text-transparent flex items-center gap-2">
-          SHOREKEEPER <span class="text-cyan-400 text-xs font-mono px-1.5 py-0.5 rounded border border-cyan-500/30 bg-cyan-500/10">SVELTE 5 + BUN</span>
+        <h1 class="font-bold tracking-wider text-base uppercase text-slate-100 flex items-center gap-2">
+          Shorekeeper <span class="text-emerald-400 text-[10px] font-mono px-2 py-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 tracking-widest">DEEPGRAM STT</span>
         </h1>
-        <p class="text-xs text-slate-400 font-mono">Tethys Realtime Voice Interface</p>
+        <p class="text-[11px] text-slate-500 font-mono tracking-wide mt-0.5">Tethys Voice Core</p>
       </div>
     </div>
 
-    <div class="flex items-center gap-4 text-xs font-mono text-slate-400">
-      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-800 bg-slate-900/50">
-        <Radio class={`w-3.5 h-3.5 ${wsConnected ? 'text-emerald-400 animate-pulse' : 'text-amber-400'}`} />
-        <span>Elysia Bridge: {wsConnected ? 'Online' : 'Connecting...'}</span>
+    <!-- Mobile: voice selector only -->
+    <div class="md:hidden">
+      <select 
+        bind:value={selectedVoice}
+        onchange={onVoiceChange}
+        class="bg-slate-900/80 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-cyan-500/50"
+      >
+        {#each VOICES as voice}
+          <option value={voice.name}>{voice.name}</option>
+        {/each}
+      </select>
+    </div>
+
+    <!-- Desktop: voice selector + status indicators -->
+    <div class="hidden md:flex items-center gap-3 text-xs font-mono text-slate-400">
+      <!-- Voice Selector -->
+      <select 
+        bind:value={selectedVoice}
+        onchange={onVoiceChange}
+        class="bg-slate-900/80 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-300 focus:outline-none focus:border-cyan-500/50"
+      >
+        {#each VOICES as voice}
+          <option value={voice.name}>{voice.name} — {voice.desc}</option>
+        {/each}
+      </select>
+      <div class="flex items-center gap-2 px-3 py-1 rounded-full border border-slate-800/60 bg-slate-900/40">
+        <div class={`w-2 h-2 rounded-full ${wsConnected ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-amber-400'}`}></div>
+        <span class="text-slate-300">Bridge</span>
       </div>
-      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-800 bg-slate-900/50">
-        <Shield class={`w-3.5 h-3.5 ${geminiReady ? 'text-emerald-400' : 'text-cyan-400'}`} />
-        <span>Gemini Live: {geminiReady ? 'Ready' : 'Standby'}</span>
+      <div class="flex items-center gap-2 px-3 py-1 rounded-full border border-slate-800/60 bg-slate-900/40">
+        <div class={`w-2 h-2 rounded-full ${geminiReady ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'bg-slate-600'}`}></div>
+        <span class="text-slate-300">Gemini</span>
       </div>
     </div>
   </header>
 
   <!-- Main Content Dashboard -->
-  <div class="flex-1 max-w-6xl w-full mx-auto p-6 grid grid-cols-1 md:grid-cols-12 gap-6 z-10">
+  <div class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 z-10 items-start">
     <!-- Left Visualizer Orb Panel -->
-    <div class="md:col-span-7 flex flex-col items-center justify-center border border-slate-800/80 rounded-2xl bg-slate-900/40 backdrop-blur-md p-8 relative overflow-hidden">
-      <div class="absolute top-4 left-4 flex items-center gap-2 text-xs font-mono text-slate-400">
-        <Activity class="w-4 h-4 text-cyan-400" />
-        <span>STELLAREALM VOICE CORE (SVELTE 5)</span>
+    <div class="lg:col-span-6 flex flex-col items-center justify-center min-h-[400px] border border-slate-800/60 rounded-3xl bg-slate-900/20 backdrop-blur-xl p-8 relative overflow-hidden shadow-2xl">
+      
+      <!-- Status Pill Top Right -->
+      <div class="absolute top-6 right-6 flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-800/60 bg-slate-950/50 backdrop-blur-md">
+        {#if mode === 'active' && status === 'listening'}
+          <div class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
+          <span class="text-[11px] font-mono text-cyan-400 uppercase tracking-wider">Listening</span>
+        {:else if mode === 'active' && status === 'speaking'}
+          <div class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
+          <span class="text-[11px] font-mono text-blue-400 uppercase tracking-wider">Speaking</span>
+        {:else if mode === 'standby'}
+          <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+          <span class="text-[11px] font-mono text-emerald-400 uppercase tracking-wider">Standby</span>
+        {:else}
+          <div class="w-2 h-2 rounded-full bg-slate-600"></div>
+          <span class="text-[11px] font-mono text-slate-500 uppercase tracking-wider">Offline</span>
+        {/if}
       </div>
 
       <!-- Glowing Voice Orb -->
-      <div class="relative my-12 flex items-center justify-center">
-        <div class={`absolute w-72 h-72 rounded-full border border-cyan-500/20 transition-all duration-700 ${status === 'listening' ? 'scale-125 border-cyan-400/50 animate-ping' : status === 'speaking' ? 'scale-110 border-blue-400/40 animate-pulse' : 'scale-100'}`}></div>
-        <div class={`absolute w-60 h-60 rounded-full border border-blue-500/30 transition-all duration-500 ${status === 'processing' ? 'rotate-180 scale-105 border-dashed' : ''}`}></div>
+      <div class="relative my-8 flex items-center justify-center">
+        <!-- Outer Ripples -->
+        <div class={`absolute w-64 h-64 rounded-full border border-cyan-500/10 transition-all duration-1000 ${mode === 'active' && status === 'listening' ? 'scale-150 opacity-50' : mode === 'standby' ? 'scale-110 opacity-30 border-emerald-500/20' : 'scale-90 opacity-0'}`}></div>
+        <div class={`absolute w-52 h-52 rounded-full border border-blue-500/20 transition-all duration-700 ${mode === 'active' && status === 'speaking' ? 'scale-125 opacity-70 animate-pulse' : 'scale-95 opacity-0'}`}></div>
 
         <button
           onclick={toggleStandby}
-          class={`w-44 h-44 rounded-full flex flex-col items-center justify-center transition-all duration-500 shadow-2xl relative z-10 group/btn ${
-            status === 'listening'
-              ? 'bg-gradient-to-br from-cyan-500 to-blue-600 shadow-cyan-500/50 scale-105'
-              : status === 'processing'
-              ? 'bg-gradient-to-br from-indigo-600 to-purple-600 shadow-purple-500/50 animate-pulse'
-              : status === 'speaking'
-              ? 'bg-gradient-to-br from-cyan-400 via-blue-600 to-indigo-600 shadow-blue-500/50'
+          class={`w-40 h-40 rounded-full flex flex-col items-center justify-center transition-all duration-500 relative z-10 group/btn outline-none ${
+            mode === 'active' && status === 'listening'
+              ? 'bg-gradient-to-b from-cyan-900 to-slate-900 border border-cyan-500/50 shadow-[0_0_40px_-10px_rgba(34,211,238,0.5)] scale-105'
+              : mode === 'active' && status === 'speaking'
+              ? 'bg-gradient-to-b from-blue-900 to-slate-900 border border-blue-500/50 shadow-[0_0_50px_-10px_rgba(59,130,246,0.5)]'
               : mode === 'standby'
-              ? 'bg-slate-900 border-2 border-cyan-500/50 shadow-cyan-500/20 animate-pulse'
-              : 'bg-slate-900 border-2 border-slate-700/80 hover:border-cyan-500/80 hover:shadow-cyan-500/20'
+              ? 'bg-slate-900 border border-emerald-500/40 shadow-[0_0_30px_-10px_rgba(16,185,129,0.3)] hover:scale-105'
+              : 'bg-slate-900/80 border border-slate-800 hover:border-slate-700 hover:bg-slate-800'
           }`}
         >
-          {#if status === 'listening'}
-            <Mic class="w-12 h-12 text-white animate-bounce" />
-          {:else if status === 'speaking'}
-            <Volume2 class="w-12 h-12 text-white animate-pulse" />
+          {#if mode === 'active' && status === 'listening'}
+            <div class="relative">
+              <Mic class="w-10 h-10 text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,1)]" />
+              <div class="absolute inset-0 bg-cyan-400 blur-xl opacity-40 animate-pulse"></div>
+            </div>
+          {:else if mode === 'active' && status === 'speaking'}
+            <div class="relative">
+              <Volume2 class="w-10 h-10 text-blue-400 drop-shadow-[0_0_12px_rgba(59,130,246,1)]" />
+              <div class="absolute inset-0 bg-blue-400 blur-xl opacity-40 animate-pulse"></div>
+            </div>
+          {:else if mode === 'standby'}
+            <Mic class="w-10 h-10 text-emerald-400/80 group-hover/btn:text-emerald-400 transition-colors" />
           {:else}
-            <MicOff class="w-12 h-12 text-slate-400 group-hover/btn:text-cyan-400 transition-colors" />
+            <MicOff class="w-10 h-10 text-slate-600 group-hover/btn:text-slate-400 transition-colors" />
           {/if}
-          <span class="text-xs font-mono mt-2 font-medium tracking-wider text-slate-200">
-            {status === 'listening'
-              ? 'LISTENING'
-              : status === 'speaking'
-              ? 'SPEAKING'
-              : mode === 'standby'
-              ? 'STANDBY — "JARVIS"'
-              : 'TAP TO ARM'}
-          </span>
         </button>
       </div>
-
+      
       <!-- Live Transcript Subtitle -->
-      <div class="w-full text-center space-y-2 max-w-lg">
-        <p class="text-xs font-mono text-slate-400 uppercase tracking-widest">Live Transcript</p>
-        <p class="text-sm font-medium text-slate-300 italic min-h-[40px] flex items-center justify-center">
-          "{transcript || 'Press the orb or speak to initiate realtime dialogue...'}"
-        </p>
+      <div class="w-full text-center mt-6">
+        <div class="min-h-[80px] w-full flex items-center justify-center bg-slate-950/50 rounded-2xl border border-slate-800/80 p-5 shadow-inner">
+          <p class={`text-[15px] font-medium leading-relaxed transition-colors duration-300 ${transcript ? 'text-emerald-100' : 'text-slate-600 italic'}`}>
+            {transcript || (mode === 'standby' ? 'Menunggu "Hey Jarvis"...' : mode === 'active' ? 'Mendengarkan suara...' : 'Ketuk orb untuk memulai.')}
+          </p>
+        </div>
       </div>
     </div>
 
     <!-- Right Logs & Response Panel -->
-    <div class="md:col-span-5 flex flex-col gap-6">
-      <div class="border border-slate-800/80 rounded-2xl bg-slate-900/40 backdrop-blur-md p-6 flex flex-col gap-3">
-        <div class="flex items-center justify-between text-xs font-mono text-slate-400">
-          <span class="flex items-center gap-1.5 text-cyan-400">
-            <Zap class="w-4 h-4" /> SHOREKEEPER RESPONSE
-          </span>
-          <span class="text-slate-400">Spectro Mode</span>
+    <div class="lg:col-span-6 flex flex-col gap-6 w-full">
+      <div class="bg-slate-900/30 border border-slate-800/60 rounded-3xl p-6 backdrop-blur-xl flex flex-col flex-1 min-h-[400px] relative">
+        <div class="flex items-center justify-between mb-4 border-b border-slate-800/50 pb-4">
+          <h3 class="text-xs font-mono text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            <Terminal class="w-4 h-4" />
+            System Logs
+          </h3>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-mono text-emerald-500/70 border border-emerald-900/50 bg-emerald-950/20 px-2 py-0.5 rounded-md">Deepgram Nova-3</span>
+            <span class="text-[10px] font-mono text-slate-500 border border-slate-800 bg-slate-900 px-2 py-0.5 rounded-md">v2.0</span>
+          </div>
         </div>
-        <p class="text-sm text-slate-200 leading-relaxed font-sans bg-slate-950/40 p-4 rounded-xl border border-slate-800/60">
-          {response}
-        </p>
-      </div>
-
-      <div class="flex-1 border border-slate-800/80 rounded-2xl bg-slate-950/80 backdrop-blur-md p-5 flex flex-col font-mono text-xs overflow-hidden">
-        <div class="flex items-center gap-2 pb-3 border-b border-slate-800 text-slate-400 mb-3">
-          <Terminal class="w-4 h-4 text-cyan-400" />
-          <span>Realtime Execution Log</span>
-        </div>
-        <div class="flex-1 overflow-y-auto space-y-2 text-slate-300 pr-2">
-          {#each logs as log}
-            <div class="flex gap-2">
-              <span class="text-slate-400 select-none">&gt;</span>
-              <span class={log.includes('Executing') ? 'text-cyan-400' : log.includes('Voice') || log.includes('WS') ? 'text-emerald-400' : 'text-slate-300'}>
-                {log}
-              </span>
+        
+        <div class="flex-1 overflow-y-auto space-y-2 font-mono text-xs pr-2 custom-scrollbar flex flex-col-reverse" style="max-height: 400px;">
+          {#each [...logs].reverse() as log}
+            <div class="py-1.5 border-b border-slate-800/30 break-words">
+              <span class="text-slate-600 mr-2">›</span>
+              <span class={
+                log.includes('[Error]') ? 'text-rose-400' : 
+                log.includes('[Wake]') ? 'text-emerald-400' :
+                log.includes('Deepgram') ? 'text-emerald-300' : 
+                log.includes('[Gemini]') ? 'text-cyan-400' : 
+                'text-slate-400'
+              }>{log}</span>
             </div>
           {/each}
         </div>

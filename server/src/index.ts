@@ -1,11 +1,10 @@
 import { Elysia } from "elysia";
-import { createGeminiSession } from "./gemini-live";
+import { createGeminiSession, type GeminiSession } from "./gemini-live";
+import { createDeepgramSession, type DeepgramSession } from "./deepgram-stt";
 
-const API_KEY = Bun.env.GEMINI_API_KEY ?? "";
-const MODEL = Bun.env.GEMINI_MODEL ?? "gemini-2.0-flash-live-001";
-const VOICE = Bun.env.GEMINI_VOICE ?? "Aoede";
-
-type GeminiSession = ReturnType<typeof createGeminiSession>;
+const API_KEY = process.env.GEMINI_API_KEY || "";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-live-preview";
+const VOICE = process.env.GEMINI_VOICE || "Aoede";
 
 /**
  * Elysia (verified in elysia@1.4.29 dist/adapter/bun/index.js) constructs a NEW
@@ -23,7 +22,8 @@ type GeminiSession = ReturnType<typeof createGeminiSession>;
  * survives across callbacks and is garbage-collected with the socket.
  */
 type ConnState = {
-  session: GeminiSession;
+  gemini?: GeminiSession;
+  deepgram?: DeepgramSession;
   audioChunks: number;
   loggedClientFrame: boolean;
 };
@@ -31,30 +31,19 @@ const conns = new WeakMap<object, ConnState>();
 const socketKey = (ws: any): object => ws.raw ?? ws;
 
 if (!API_KEY) {
-  console.error("[FATAL] GEMINI_API_KEY not set. Copy .env.example to .env and fill in your key.");
+  console.error("Missing GEMINI_API_KEY. Set it in .env");
   process.exit(1);
 }
 
 const app = new Elysia()
-  .get("/", () => ({
-    status: "online",
-    system: "Shorekeeper JARVIS — Gemini Live Voice Engine",
-    version: "2.0.0",
-  }))
-  .get("/api/health", () => ({
-    status: "ok",
-    engine: "gemini-live",
-    model: MODEL,
-    voice: VOICE,
-  }))
   .ws("/ws", {
-    open(ws) {
-      console.log("[WS] Client connected — opening Gemini Live session...");
+    async open(ws) {
+      console.log("[WS] Client connected — opening Gemini Live + Deepgram STT...");
 
       const state: ConnState = {
         audioChunks: 0,
         loggedClientFrame: false,
-        session: createGeminiSession(API_KEY, MODEL, VOICE, {
+        gemini: createGeminiSession(API_KEY, MODEL, VOICE, {
           onAudio: (base64pcm) => {
             ws.send(JSON.stringify({ type: "audio", data: base64pcm }));
           },
@@ -79,7 +68,15 @@ const app = new Elysia()
         }),
       };
 
-      state.session.connect();
+      // Deepgram createSession is async (SDK v5) — await it, don't block Gemini
+      try {
+        state.deepgram = await createDeepgramSession(ws.raw as any);
+      } catch (e) {
+        console.error("[Deepgram] Failed to create session:", e);
+        ws.send(JSON.stringify({ type: "error", error: "Deepgram init failed" }));
+      }
+
+      if (state.gemini) state.gemini.connect();
       conns.set(socketKey(ws), state);
     },
 
@@ -110,15 +107,50 @@ const app = new Elysia()
           state.audioChunks += 1;
           const count = state.audioChunks;
           if (count === 1 || count % 100 === 0) {
-            console.log(`[Audio] Browser chunk #${count}, base64 bytes=${msg.data.length}, geminiReady=${state.session.isReady()}`);
+            console.log(`[Audio] Browser chunk #${count}, base64 bytes=${msg.data.length}, deepgramReady=${state.deepgram?.isReady() ?? false}`);
           }
-          // PCM base64 audio from browser (dropped internally until Gemini setupComplete)
-          state.session.sendAudio(msg.data);
+          // PCM base64 audio from browser
+          if (state.deepgram?.isReady()) {
+            state.deepgram.sendAudio(msg.data);
+          }
+          if (state.gemini?.isReady()) {
+            state.gemini.sendAudio(msg.data);
+          }
         } else if (msg.type === "diagnostic" && msg.message) {
           console.log(`[ClientDiag] ${msg.message}`);
+        } else if (msg.type === "voiceChange" && msg.voice) {
+          console.log(`[Voice] Switching to: ${msg.voice}`);
+          // Close old Gemini session
+          if (state.gemini) state.gemini.close();
+          // Create new one with selected voice
+          state.gemini = createGeminiSession(API_KEY, MODEL, msg.voice, {
+            onAudio: (base64pcm) => {
+              ws.send(JSON.stringify({ type: "audio", data: base64pcm }));
+            },
+            onTranscript: (text, role) => {
+              ws.send(JSON.stringify({ type: "transcript", text, role }));
+            },
+            onTurnComplete: () => {
+              ws.send(JSON.stringify({ type: "turnComplete" }));
+            },
+            onError: (error) => {
+              console.error("[Gemini] Error:", error);
+              ws.send(JSON.stringify({ type: "error", error }));
+            },
+            onConnected: () => {
+              console.log("[Gemini] Session ready — voice:", msg.voice);
+              ws.send(JSON.stringify({ type: "status", state: "ready", log: `[Gemini] Voice switched to ${msg.voice}` }));
+            },
+            onDisconnected: () => {
+              console.log("[Gemini] Session disconnected");
+              ws.send(JSON.stringify({ type: "status", state: "disconnected", log: "[Gemini] Disconnected" }));
+            },
+          });
+          state.gemini.connect();
         } else if (msg.type === "text" && msg.text) {
-          // Text input (optional — for typing mode)
-          state.session.sendText(msg.text);
+          if (state.gemini?.isReady()) {
+            state.gemini.sendText(msg.text);
+          }
         }
       } catch {
         // Not JSON or malformed, ignore
@@ -129,7 +161,8 @@ const app = new Elysia()
       console.log("[WS] Client disconnected — closing Gemini session");
       const state = conns.get(socketKey(ws));
       if (state) {
-        state.session.close();
+        if (state.gemini) state.gemini.close();
+        if (state.deepgram) state.deepgram.close();
         conns.delete(socketKey(ws));
       }
     },
