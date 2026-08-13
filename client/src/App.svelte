@@ -60,6 +60,9 @@
 
   let lkHandle: LivekitHandle | null = null;
 
+  // Conversation panel container — bound for auto-scroll-to-newest.
+  let conversationEl: HTMLDivElement | undefined = $state();
+
   // Conversation history
   type Message = { role: 'user' | 'assistant'; text: string; time: string; language?: string };
   let messages = $state<Message[]>([]);
@@ -114,6 +117,19 @@
     }, 1500);
   }
 
+  // Auto-scroll the Conversation panel to the newest message whenever new
+  // content arrives — sealed history OR the live agent bubble growing.
+  $effect(() => {
+    messages.length; // dependency
+    liveAgentText;   // dependency
+    const el = conversationEl;
+    if (!el) return;
+    // Defer to the next frame so the DOM reflects the new content first.
+    requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+    });
+  });
+
   function refreshStatus() {
     if (mode !== 'active') return;
     const hasLiveAgentSegment = [...segmentsMap.values()].some((s) => s.fromAgent && !s.final);
@@ -135,10 +151,11 @@
         if (text) {
           rebuildLiveAgentText();
           liveAgentLanguage = seg.language || 'id';
-          if (!seg.final) {
-            subtitle = text;
-            subtitleLanguage = seg.language || 'id';
-          }
+          // Set subtitle on BOTH interim and final segments: fast one-shot
+          // replies arrive already-final with no interim update, and the old
+          // interim-only assignment left the caption blank for them.
+          subtitle = text;
+          subtitleLanguage = seg.language || 'id';
         }
         armSealWatcher();
         continue;
@@ -790,8 +807,9 @@
         </button>
       {/if}
 
-      <!-- Live Subtitle (when JARVIS speaking) -->
-      {#if subtitle && (status === 'speaking' || status === 'processing')}
+      <!-- Live Subtitle (when JARVIS speaking) — also shown while listening
+           because a final transcript can arrive after the status flips back. -->
+      {#if subtitle && status !== 'idle' && status !== 'error'}
         <div class="mt-6 w-full px-4 py-3 rounded-xl bg-violet-500/10 border border-violet-500/20 fade-in-up">
           <div class="flex items-start gap-2">
             <span class="text-[10px] font-mono text-violet-400 bg-violet-500/20 px-2 py-0.5 rounded shrink-0">
@@ -831,7 +849,7 @@
           <span class="text-xs text-zinc-600 font-mono">{messages.length} messages</span>
         </div>
 
-        <div class="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
+        <div bind:this={conversationEl} class="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
           {#if messages.length === 0}
             <div class="h-full flex items-center justify-center">
               <p class="text-zinc-600 text-sm text-center">
