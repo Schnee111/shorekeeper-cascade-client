@@ -50,6 +50,11 @@ const ZERO_WIDTH_RE = /[\u200B-\u200F\u2060\uFEFF\u00AD]/g;
 const CONTROL_RE = /[\u0000-\u0008\u000B-\u001F\u007F]/g;
 /** Repeated punctuation: !!! → !, ??? → ?, ... stays (ellipsis is speech-ok). */
 const REPEAT_PUNCT_RE = /([!?])\1+/g;
+/** Fish Audio bracket prosody cues — e.g. [soft], [warm], [laugh],
+ * [long-break]. They shape the TTS delivery but must never appear in
+ * subtitles/history. Lowercase letters/spaces/hyphens only and at least
+ * two chars, so numeric citations like [1] or [3] survive. */
+const BRACKET_CUE_RE = /\[[a-z][a-z -]{1,30}\]/g;
 
 /**
  * Clean one piece of voice-oriented text. Pure, synchronous, idempotent-ish.
@@ -61,6 +66,12 @@ export function cleanVoiceText(input: string): string {
 
   // 1. Fix mojibake first (before any stripping touches the sequences).
   for (const [re, rep] of MOJIBAKE_MAP) s = s.replace(re, rep);
+
+  // 1b. Strip Fish Audio prosody cues ([soft], [warm]...) BEFORE markdown
+  // processing — the greeting uses them for delivery variety and they must
+  // not reach subtitles/history. Runs before the code-fence placeholder so
+  // "[potongan kode]" inserted in step 2 survives.
+  s = s.replace(BRACKET_CUE_RE, '');
 
   // 2. Code fences → placeholder; inline code keeps its text.
   s = s.replace(CODE_FENCE_RE, ' [potongan kode] ');

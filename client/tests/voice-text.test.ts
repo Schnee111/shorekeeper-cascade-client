@@ -107,3 +107,25 @@ test('long URL broken safely, word "link" once', () => {
   const out = cleanVoiceText(input);
   assert.match(out, /^Referensi: link$/);
 });
+
+test('strips Fish Audio bracket prosody cues from greeting', () => {
+  const input = '[warm][soft] Hey, Schnee. Good to hear you — what are we getting into?';
+  const out = cleanVoiceText(input);
+  assert.equal(out, 'Hey, Schnee. Good to hear you — what are we getting into?');
+  assert.ok(!out.includes('['));
+  assert.ok(!out.includes('warm'));
+});
+
+test('bracket cues with spaces/hyphens stripped, text preserved', () => {
+  const input = '[long-break] Hi Schnee. [very happy] Great to see you!';
+  const out = cleanVoiceText(input);
+  assert.equal(out, 'Hi Schnee. Great to see you!');
+});
+
+test('numeric citations in brackets are NOT stripped', () => {
+  // Cue regex requires lowercase letters, so [1], [12] survive.
+  const input = 'Data tercatat di [1] dan [42].';
+  const out = cleanVoiceText(input);
+  assert.ok(out.includes('[1]'), `expected [1] preserved, got: ${out}`);
+  assert.ok(out.includes('[42]'), `expected [42] preserved, got: ${out}`);
+});
