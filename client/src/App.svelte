@@ -419,8 +419,8 @@
     }
 
     @keyframes orb-ripple {
-      0% { transform: scale(0.8); opacity: 0.5; }
-      100% { transform: scale(1.5); opacity: 0; }
+      0% { transform: scale(0.62); opacity: 0.5; }
+      100% { transform: scale(1); opacity: 0; }
     }
 
     @keyframes orb-glow-rotate {
@@ -450,6 +450,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      /* Safety clip: ripple/glow never bleed into the section below. */
+      overflow: hidden;
     }
 
     .orb-core {
