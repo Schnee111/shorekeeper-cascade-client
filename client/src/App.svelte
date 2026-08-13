@@ -16,7 +16,6 @@
   let status = $state<'idle' | 'connecting' | 'listening' | 'processing' | 'speaking' | 'error'>('idle');
   let transcript = $state('');
   let subtitle = $state('');
-  let subtitleLanguage = $state<string>('id');
 
   // Voice selector (cosmetic placeholder — plan §2: only Vestia Zeta for now)
   const VOICES = [
@@ -47,6 +46,22 @@
   type LogEntry = { type: 'info' | 'warn' | 'error' | 'success'; text: string; time: string };
   function getTime() {
     return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  // The caption bar shows only the CURRENT sentence of the agent's reply
+  // (per-sentence subtitles), not the whole growing text — full replies
+  // overflow the fixed slot and get truncated. Splits on .!? + whitespace
+  // or newlines; if the reply ends on a boundary, the just-finished
+  // sentence lingers until the next one starts.
+  function lastSentence(text: string): string {
+    const trimmed = text.trim();
+    if (!trimmed) return '';
+    const parts = trimmed.split(/([.!?][\s\n]+|\n+)/);
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i].trim();
+      if (p && !/^[.!?]+$/.test(p)) return p;
+    }
+    return trimmed;
   }
   function addLog(type: LogEntry['type'], text: string) {
     logs = [...logs, { type, text, time: getTime() }];
@@ -157,11 +172,11 @@
         if (text) {
           rebuildLiveAgentText();
           liveAgentLanguage = seg.language || 'id';
-          // Set subtitle on BOTH interim and final segments: fast one-shot
-          // replies arrive already-final with no interim update, and the old
-          // interim-only assignment left the caption blank for them.
-          subtitle = text;
-          subtitleLanguage = seg.language || 'id';
+          // Subtitle shows only the CURRENT sentence, not the whole growing
+          // reply — full replies overflow the fixed caption slot and get
+          // truncated mid-sentence. The full text lives in the conversation
+          // bubble/history instead.
+          subtitle = lastSentence(text);
         }
         armSealWatcher();
         continue;
@@ -849,20 +864,20 @@
            the user transcript paints on top. -->
       <div class="mt-3 lg:mt-6 w-full h-[50px] lg:h-[64px] grid">
         {#if subtitle && status !== 'idle' && status !== 'error'}
-          <div class="[grid-area:1/1] w-full h-full px-3 py-2 rounded-xl bg-violet-500/10 border border-violet-500/20 overflow-hidden flex items-start gap-2">
-            <span class="text-[10px] font-mono text-violet-400 bg-violet-500/20 px-2 py-0.5 rounded shrink-0">
-              {subtitleLanguage.toUpperCase()}
+          <div class="[grid-area:1/1] w-full h-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.06] overflow-hidden flex items-start gap-2">
+            <span class="text-[9px] font-mono tracking-widest text-violet-300/70 pt-0.5 shrink-0">
+              SHOREKEEPER
             </span>
-            <p class="text-xs text-violet-200 flex-1 message-text leading-snug caption-clamp">{subtitle}</p>
+            <p class="text-xs text-zinc-200 flex-1 message-text leading-snug caption-clamp">{subtitle}</p>
           </div>
         {/if}
         {#if transcript && (status === 'listening' || status === 'processing')}
-          <div class="[grid-area:1/1] w-full h-full px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 overflow-hidden flex items-start gap-2">
-            <span class="text-[10px] font-mono text-cyan-400 bg-cyan-500/20 px-2 py-0.5 rounded shrink-0 flex items-center gap-1.5">
+          <div class="[grid-area:1/1] w-full h-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.06] overflow-hidden flex items-start gap-2">
+            <span class="text-[9px] font-mono tracking-widest text-cyan-300/70 pt-0.5 shrink-0 flex items-center gap-1.5">
               <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
               YOU
             </span>
-            <p class="text-xs text-cyan-100/80 flex-1 italic message-text leading-snug caption-clamp">{transcript}</p>
+            <p class="text-xs text-zinc-200 flex-1 message-text leading-snug caption-clamp">{transcript}</p>
           </div>
         {/if}
       </div>
@@ -897,7 +912,7 @@
               <div class="flex {msg.role === 'user' ? 'justify-end' : 'justify-start'}">
                 <div class="max-w-[80%] {msg.role === 'user' ? 'message-user' : 'message-assistant'} rounded-2xl px-3 py-2 lg:px-4 lg:py-3">
                   <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{msg.text}</p>
-                  <p class="text-[10px] text-zinc-600 font-mono mt-1">{msg.time}{msg.language ? ` · ${msg.language}` : ''}</p>
+                  <p class="text-[10px] text-zinc-600 font-mono mt-1">{msg.time}</p>
                 </div>
               </div>
             {/each}
@@ -907,7 +922,7 @@
             <div class="flex justify-start">
               <div class="max-w-[80%] message-assistant rounded-2xl px-3 py-2 lg:px-4 lg:py-3 border-violet-500/20">
                 <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{liveAgentText}{#if agentSpeaking}<span class="inline-block w-1.5 h-4 bg-violet-400/80 ml-1 animate-pulse align-middle"></span>{/if}</p>
-                <p class="text-[10px] text-zinc-600 font-mono mt-1">speaking · {liveAgentLanguage}</p>
+                <p class="text-[10px] text-zinc-600 font-mono mt-1">speaking</p>
               </div>
             </div>
           {/if}
