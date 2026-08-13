@@ -130,3 +130,32 @@ test('numeric citations in brackets are NOT stripped', () => {
   assert.ok(out.includes('[1]'), `expected [1] preserved, got: ${out}`);
   assert.ok(out.includes('[42]'), `expected [42] preserved, got: ${out}`);
 });
+
+test('strips Hermes steering scaffold text', () => {
+  const input = '[This response was interrupted by a user correction.]';
+  const out = cleanVoiceText(input);
+  assert.ok(!out.toLowerCase().includes('interrupted'), `scaffold leaked: ${out}`);
+  assert.equal(out, '', 'scaffold-only text must clean to empty');
+});
+
+test('strips scaffold inline with real prose', () => {
+  const input = 'Sorry about that. [Visible response before the interruption: partial text] Let me redo it.';
+  const out = cleanVoiceText(input);
+  assert.ok(!out.toLowerCase().includes('visible response'), `scaffold leaked: ${out}`);
+  assert.match(out, /Sorry about that/);
+  assert.match(out, /Let me redo it/);
+});
+
+test('strips capitalized bracket delivery cues', () => {
+  const input = '[Warm] Hello there, Schnee.';
+  const out = cleanVoiceText(input);
+  assert.ok(!out.includes('[Warm]'), `capped cue leaked: ${out}`);
+  assert.match(out, /Hello there, Schnee/);
+});
+
+test('keeps all-caps acronyms in brackets', () => {
+  const input = 'Cek [API] dan [USA] dulu.';
+  const out = cleanVoiceText(input);
+  assert.ok(out.includes('[API]'), `[API] must survive: ${out}`);
+  assert.ok(out.includes('[USA]'), `[USA] must survive: ${out}`);
+});

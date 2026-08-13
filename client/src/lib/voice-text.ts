@@ -55,6 +55,17 @@ const REPEAT_PUNCT_RE = /([!?])\1+/g;
  * subtitles/history. Lowercase letters/spaces/hyphens only and at least
  * two chars, so numeric citations like [1] or [3] survive. */
 const BRACKET_CUE_RE = /\[[a-z][a-z -]{1,30}\]/g;
+/** Capitalized short delivery cues ([Warm], [Soft smile]) — same contract as
+ * the lowercase cues, the LLM sometimes capitalizes them. Must contain at
+ * least one lowercase letter so all-caps acronyms like [API] or [USA] survive. */
+const BRACKET_CUE_CAP_RE = /\[[A-Z][A-Za-z -]*[a-z][A-Za-z -]*\]/g;
+/** Hermes gateway steering scaffolds — internal machinery written into the
+ * conversation when a live turn gets redirected/interrupted mid-flight. The
+ * server bridge filters them, but a stray one must never paint in the chat
+ * (2026-08-14: observed "[This response was interrupted by a user
+ * correction.] leaking into the UI). Drop the whole bracketed sentence. */
+const SCAFFOLD_RE =
+  /\[?(?:This response was interrupted by a user correction|Visible response before the interruption|Context from the interrupted assistant response)[^\]\n]*\]?\.?/gi;
 
 /**
  * Clean one piece of voice-oriented text. Pure, synchronous, idempotent-ish.
@@ -72,11 +83,14 @@ export function cleanVoiceText(input: string): string {
   // Absorb surrounding spaces so "you — what" becomes "you, what".
   s = s.replace(/\s*[\u2014\u2013]\s*/g, ', ');
 
-  // 1b. Strip Fish Audio prosody cues ([soft], [warm]...) BEFORE markdown
-  // processing — the greeting uses them for delivery variety and they must
-  // not reach subtitles/history. Runs before the code-fence placeholder so
-  // "[potongan kode]" inserted in step 2 survives.
+  // 1b. Strip Fish Audio prosody cues ([soft], [warm]...) and Hermes
+  // steering scaffolds BEFORE markdown processing — the greeting uses cues
+  // for delivery variety and they must not reach subtitles/history. Runs
+  // before the code-fence placeholder so "[potongan kode]" inserted in
+  // step 2 survives.
+  s = s.replace(SCAFFOLD_RE, '');
   s = s.replace(BRACKET_CUE_RE, '');
+  s = s.replace(BRACKET_CUE_CAP_RE, '');
 
   // 2. Code fences → placeholder; inline code keeps its text.
   s = s.replace(CODE_FENCE_RE, ' [potongan kode] ');

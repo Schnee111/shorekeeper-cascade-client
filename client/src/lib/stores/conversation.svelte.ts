@@ -104,7 +104,27 @@ class ConversationStore {
       if (seg.final) {
         this.segmentsMap.delete(key);
         if (!text) continue;
-        this.messages.push({ role: 'user', text, time: getTime(), language: seg.language });
+
+        // Redirect merge: when the user keeps speaking past a premature
+        // end-of-turn commit, the bridge re-submits the FULL accumulated
+        // transcript (gateway status 'redirected'). Without this, the chat
+        // shows the partial bubble ("Tes.") AND the full bubble ("Tes. Live
+        // TTS-nya doang tapi"). If the last message is a user message that is
+        // a leading prefix of the new text, fold it into the new one.
+        const prev = this.messages[this.messages.length - 1];
+        if (
+          prev &&
+          prev.role === 'user' &&
+          prev.text.length < text.length &&
+          text.toLowerCase().startsWith(prev.text.toLowerCase().replace(/[.,!?]+\s*$/, ''))
+        ) {
+          prev.text = text; // in-place — Svelte 5 array item mutation is reactive
+          prev.time = getTime();
+          prev.language = seg.language;
+        } else {
+          this.messages.push({ role: 'user', text, time: getTime(), language: seg.language });
+        }
+
         // Keep the last interim text on the bar so it doesn't blink out the
         // moment the turn commits; a timer clears it after a hold period.
         this.transcript = text;
