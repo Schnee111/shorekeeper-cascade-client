@@ -697,30 +697,21 @@
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     }
 
+    /* Caption slots are fixed-height; clamp long text to 2 lines so it
+       never overflows the reserved box (layout stays static). */
+    .caption-clamp {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
     /* Reduced motion */
     @media (prefers-reduced-motion: reduce) {
       .orb-core,
       .orb-ripple,
       .orb-glow-ring {
         animation: none !important;
-      }
-    }
-
-    /* Mobile: slightly shrink the orb so orb + conversation + logs fit one
-       viewport, while keeping the orb visually prominent. Desktop keeps the
-       original 200px container / 120px core / 160px glow ring. */
-    @media (max-width: 1023px) {
-      .orb-container {
-        width: 160px;
-        height: 160px;
-      }
-      .orb-core {
-        width: 100px;
-        height: 100px;
-      }
-      .orb-glow-ring {
-        width: 136px;
-        height: 136px;
       }
     }
   </style>
@@ -732,11 +723,11 @@
   <div class="noise-overlay"></div>
 
   <!-- Header -->
-  <header class="relative z-10 px-6 py-5 flex items-center justify-between fade-in-up stagger-1">
+  <header class="relative z-10 px-6 py-3 lg:py-5 flex items-center justify-between fade-in-up stagger-1">
     <div class="flex items-center gap-4">
       <div>
-        <h1 class="text-lg font-semibold tracking-tight text-white">Shorekeeper</h1>
-        <p class="text-xs text-zinc-500 font-mono tracking-wide">JARVIS v2.0</p>
+        <h1 class="text-base lg:text-lg font-semibold tracking-tight text-white">Shorekeeper</h1>
+        <p class="text-[10px] lg:text-xs text-zinc-500 font-mono tracking-wide">JARVIS v2.0</p>
       </div>
     </div>
 
@@ -851,31 +842,30 @@
         </button>
       {/if}
 
-      <!-- Live Subtitle (when JARVIS speaking) — also shown while listening
-           because a final transcript can arrive after the status flips back. -->
-      {#if subtitle && status !== 'idle' && status !== 'error'}
-        <div class="mt-3 lg:mt-6 w-full px-4 py-3 rounded-xl bg-violet-500/10 border border-violet-500/20 fade-in-up">
-          <div class="flex items-start gap-2">
+      <!-- Live caption slot: ONE fixed-height box shared by the agent
+           subtitle and the user transcript (grid-stacked). The box is always
+           reserved, so captions appearing/disappearing never resize the card
+           — the layout stays completely static. When both exist (rare),
+           the user transcript paints on top. -->
+      <div class="mt-3 lg:mt-6 w-full h-[50px] lg:h-[64px] grid">
+        {#if subtitle && status !== 'idle' && status !== 'error'}
+          <div class="[grid-area:1/1] w-full h-full px-3 py-2 rounded-xl bg-violet-500/10 border border-violet-500/20 overflow-hidden flex items-start gap-2">
             <span class="text-[10px] font-mono text-violet-400 bg-violet-500/20 px-2 py-0.5 rounded shrink-0">
               {subtitleLanguage.toUpperCase()}
             </span>
-            <p class="text-sm text-violet-200 flex-1 message-text">{subtitle}</p>
+            <p class="text-xs text-violet-200 flex-1 message-text leading-snug caption-clamp">{subtitle}</p>
           </div>
-        </div>
-      {/if}
-
-      <!-- Live User Transcript (interim results while listening) -->
-      {#if transcript && (status === 'listening' || status === 'processing')}
-        <div class="mt-3 lg:mt-6 w-full px-4 py-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 fade-in-up">
-          <div class="flex items-start gap-2">
+        {/if}
+        {#if transcript && (status === 'listening' || status === 'processing')}
+          <div class="[grid-area:1/1] w-full h-full px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 overflow-hidden flex items-start gap-2">
             <span class="text-[10px] font-mono text-cyan-400 bg-cyan-500/20 px-2 py-0.5 rounded shrink-0 flex items-center gap-1.5">
               <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
               YOU
             </span>
-            <p class="text-sm text-cyan-100/80 flex-1 italic message-text">{transcript}</p>
+            <p class="text-xs text-cyan-100/80 flex-1 italic message-text leading-snug caption-clamp">{transcript}</p>
           </div>
-        </div>
-      {/if}
+        {/if}
+      </div>
     </div>
 
     <!-- Right: Conversation & Logs -->
@@ -905,8 +895,8 @@
           {:else}
             {#each messages as msg}
               <div class="flex {msg.role === 'user' ? 'justify-end' : 'justify-start'}">
-                <div class="max-w-[80%] {msg.role === 'user' ? 'message-user' : 'message-assistant'} rounded-2xl px-4 py-3">
-                  <p class="text-sm text-zinc-200 leading-relaxed message-text">{msg.text}</p>
+                <div class="max-w-[80%] {msg.role === 'user' ? 'message-user' : 'message-assistant'} rounded-2xl px-3 py-2 lg:px-4 lg:py-3">
+                  <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{msg.text}</p>
                   <p class="text-[10px] text-zinc-600 font-mono mt-1">{msg.time}{msg.language ? ` · ${msg.language}` : ''}</p>
                 </div>
               </div>
@@ -915,8 +905,8 @@
           <!-- Live agent reply bubble (sealed into history after speech ends) -->
           {#if liveAgentText}
             <div class="flex justify-start">
-              <div class="max-w-[80%] message-assistant rounded-2xl px-4 py-3 border-violet-500/20">
-                <p class="text-sm text-zinc-200 leading-relaxed message-text">{liveAgentText}{#if agentSpeaking}<span class="inline-block w-1.5 h-4 bg-violet-400/80 ml-1 animate-pulse align-middle"></span>{/if}</p>
+              <div class="max-w-[80%] message-assistant rounded-2xl px-3 py-2 lg:px-4 lg:py-3 border-violet-500/20">
+                <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{liveAgentText}{#if agentSpeaking}<span class="inline-block w-1.5 h-4 bg-violet-400/80 ml-1 animate-pulse align-middle"></span>{/if}</p>
                 <p class="text-[10px] text-zinc-600 font-mono mt-1">speaking · {liveAgentLanguage}</p>
               </div>
             </div>
