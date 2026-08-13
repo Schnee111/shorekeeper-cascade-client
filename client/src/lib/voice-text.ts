@@ -67,6 +67,11 @@ export function cleanVoiceText(input: string): string {
   // 1. Fix mojibake first (before any stripping touches the sequences).
   for (const [re, rep] of MOJIBAKE_MAP) s = s.replace(re, rep);
 
+  // 1a. Em/en dashes → comma. Fish S2.1 Pro reads them with no pause, so the
+  // audio uses a comma; mirror it in the display so text matches speech.
+  // Absorb surrounding spaces so "you — what" becomes "you, what".
+  s = s.replace(/\s*[\u2014\u2013]\s*/g, ', ');
+
   // 1b. Strip Fish Audio prosody cues ([soft], [warm]...) BEFORE markdown
   // processing — the greeting uses them for delivery variety and they must
   // not reach subtitles/history. Runs before the code-fence placeholder so

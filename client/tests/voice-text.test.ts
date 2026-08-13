@@ -111,9 +111,10 @@ test('long URL broken safely, word "link" once', () => {
 test('strips Fish Audio bracket prosody cues from greeting', () => {
   const input = '[warm][soft] Hey, Schnee. Good to hear you — what are we getting into?';
   const out = cleanVoiceText(input);
-  assert.equal(out, 'Hey, Schnee. Good to hear you — what are we getting into?');
+  assert.equal(out, 'Hey, Schnee. Good to hear you, what are we getting into?');
   assert.ok(!out.includes('['));
   assert.ok(!out.includes('warm'));
+  assert.ok(!out.includes('—'), 'em dash must become a comma for TTS pausing');
 });
 
 test('bracket cues with spaces/hyphens stripped, text preserved', () => {
