@@ -125,14 +125,16 @@
   // Conversation panel container — bound for auto-scroll-to-newest.
   let conversationEl: HTMLDivElement | undefined = $state();
 
-  // Conversation history. `group` ties bubbles from the same agent turn so
-  // the template can separate them with a subtle divider ("jeda sedikit").
+  // Conversation history. `group` ties segments from the same agent turn;
+  // `tools` carries the PERMANENT tool-progress log for that turn
+  // (Gemini/Claude style — stays visible after the turn completes).
   type Message = {
     role: 'user' | 'assistant';
     text: string;
     time: string;
     language?: string;
     group?: number;
+    tools?: ToolCallInfo[];
   };
   let messages = $state<Message[]>([]);
   let turnGroupCounter = 0;
@@ -151,14 +153,20 @@
   let liveAgentStartTime = '';
   let sealTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // Tool activity (Gemini/Claude-style chip). The bridge publishes
-  // jarvis.tool data events; we render "Searching the web…" while active
-  // and expand the raw call list on click.
+  // Tool activity — PERMANENT progress rows (Gemini/Claude style). They
+  // never disappear: the live turn shows them with a spinner, and once the
+  // turn seals they stay in history attached to their group. Click a block
+  // to expand raw tool names + timestamps.
   type ToolCallInfo = { name: string; label: string; time: string; done: boolean };
   let toolCalls = $state<ToolCallInfo[]>([]);
   let toolActive = $state(false);
-  let toolDetailOpen = $state(false);
-  let toolClearTimer: ReturnType<typeof setTimeout> | null = null;
+  let expandedToolGroups = $state(new Set<number | string>());
+  function toggleToolDetail(key: number | string) {
+    const next = new Set(expandedToolGroups);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    expandedToolGroups = next;
+  }
   const TOOL_LABELS: Record<string, string> = {
     web_search: 'Searching the web',
     web_extract: 'Reading a page',
@@ -173,15 +181,8 @@
     clarify: 'Thinking',
   };
   const toolLabel = (name: string) => TOOL_LABELS[name] || 'Working on it';
-  let currentToolLabel = $derived(
-    (toolCalls.filter((c) => !c.done).at(-1) || toolCalls.at(-1))?.label || 'Working on it'
-  );
 
   function handleToolActivity(ev: { state: 'start' | 'complete'; name: string }) {
-    if (toolClearTimer) {
-      clearTimeout(toolClearTimer);
-      toolClearTimer = null;
-    }
     if (ev.state === 'start') {
       toolCalls = [...toolCalls, { name: ev.name, label: toolLabel(ev.name), time: getTime(), done: false }];
       toolActive = true;
@@ -191,13 +192,8 @@
       if (idx >= 0) {
         toolCalls = toolCalls.map((c, i) => (i === idx ? { ...c, done: true } : c));
       }
-      if (!toolCalls.some((c) => !c.done)) {
-        // Linger briefly so the chip doesn't flash out between chained tools.
-        toolClearTimer = setTimeout(() => {
-          toolActive = false;
-          toolClearTimer = null;
-        }, 800);
-      }
+      // Rows stay visible (permanent log) — only the spinner stops.
+      if (!toolCalls.some((c) => !c.done)) toolActive = false;
     }
     refreshStatus();
   }
@@ -225,24 +221,28 @@
     if (bubbles.length === 0) return;
     const group = turnGroupCounter;
     turnGroupCounter += 1;
+    // Snapshot the tool log so it persists in history (Gemini/Claude style:
+    // progress rows never vanish after the turn completes).
+    const toolsSnapshot = toolCalls.map((c) => ({ ...c, done: true }));
     messages = [
       ...messages,
-      // Each segment becomes its own sealed bubble — fillers ("one
-      // moment...") and the final answer stay visually separated, and the
-      // template adds a subtle divider between bubbles of the same group
-      // instead of cramming everything into one block.
-      ...bubbles.map((b) => ({
+      ...bubbles.map((b, i) => ({
         role: 'assistant' as const,
         text: b.text,
         time: liveAgentStartTime || getTime(), // first-token time, not seal time
         language: liveAgentLanguage,
         group,
+        // attach the tool log to the FIRST sealed segment of the turn only
+        tools: i === 0 && toolsSnapshot.length ? toolsSnapshot : undefined,
       })),
     ];
     liveAgentBubbles = [];
     liveAgentStartTime = '';
     subtitle = '';
     segmentsMap.clear(); // agent segments already rendered — drop the map copy
+    // Reset the live tool log — the snapshot above already lives in history.
+    toolCalls = [];
+    toolActive = false;
     refreshStatus();
   }
 
@@ -260,7 +260,7 @@
   $effect(() => {
     messages.length; // dependency
     liveAgentText;   // dependency
-    toolActive;      // dependency — chip appearance scrolls into view
+    toolCalls.length; // dependency — progress rows scroll into view
     const el = conversationEl;
     if (!el) return;
     // Defer to the next frame so the DOM reflects the new content first.
@@ -377,10 +377,6 @@
       clearTimeout(transcriptHoldTimer);
       transcriptHoldTimer = null;
     }
-    if (toolClearTimer) {
-      clearTimeout(toolClearTimer);
-      toolClearTimer = null;
-    }
     segmentsMap.clear();
     liveAgentBubbles = [];
     liveAgentStartTime = '';
@@ -390,7 +386,7 @@
     agentSpeaking = false;
     toolCalls = [];
     toolActive = false;
-    toolDetailOpen = false;
+    expandedToolGroups = new Set();
   }
 
   async function connectLivekit() {
@@ -894,31 +890,83 @@
       overflow-wrap: break-word;   /* long URLs / tokens wrap safely */
     }
 
-    /* Tool activity chip (Gemini/Claude-style) */
-    .tool-chip {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      backdrop-filter: blur(10px);
-      transition: background 0.15s ease, border-color 0.15s ease;
-      animation: chip-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      cursor: pointer;
-    }
-
-    .tool-chip:hover {
-      background: rgba(255, 255, 255, 0.07);
-      border-color: rgba(255, 255, 255, 0.16);
-    }
-
-    .tool-chip-detail {
-      background: rgba(10, 12, 18, 0.75);
+    /* Tool progress rows (Gemini/Claude style) — PERMANENT in the
+       conversation: spinner while running, ✓ when done, stays in history. */
+    .tool-progress {
+      background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.07);
-      backdrop-filter: blur(10px);
-      animation: chip-in 0.25s ease-out;
+      overflow: hidden;
+      animation: chip-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .tool-progress-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.375rem 0.65rem;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      text-align: left;
+      transition: background 0.15s ease;
+    }
+
+    .tool-progress-header:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tool-progress-text {
+      font-size: 11px;
+      color: rgb(161 161 170);
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tool-progress-count {
+      font-size: 10px;
+      font-family: var(--font-mono, ui-monospace, monospace);
+      color: rgb(113 113 122);
+      flex-shrink: 0;
+    }
+
+    .tool-progress-chevron {
+      color: rgb(113 113 122);
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+
+    .tool-progress-detail {
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 0.4rem 0.65rem;
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      animation: chip-in 0.2s ease-out;
+    }
+
+    .tool-progress-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .tool-done-dot {
+      color: rgb(52 211 153);
+      font-size: 10px;
+      width: 12px;
+      text-align: center;
+      flex-shrink: 0;
     }
 
     .tool-chip-spinner {
-      width: 12px;
-      height: 12px;
+      width: 11px;
+      height: 11px;
       flex-shrink: 0;
       border-radius: 50%;
       border: 1.5px solid rgba(139, 92, 246, 0.25);
@@ -931,8 +979,8 @@
     }
 
     @keyframes chip-in {
-      from { opacity: 0; transform: translateY(6px) scale(0.96); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     /* Scrollbar */
@@ -1211,6 +1259,48 @@
     <!-- Right: Conversation & Logs -->
     <div class="flex-1 min-h-0 flex flex-col gap-3 lg:gap-6 min-w-0 fade-in-up stagger-3">
       
+      <!-- Reusable: permanent tool-progress block (Gemini/Claude style).
+           Collapsed by default — a compact header with the running spinner;
+           click to expand the full row list with raw tool names. `key`
+           scopes the expand state per turn ('live' or the group number). -->
+      {#snippet toolRows(rows, key)}
+        {@const expanded = expandedToolGroups.has(key)}
+        <div class="tool-progress max-w-[90%] rounded-xl">
+          <button type="button" class="tool-progress-header" onclick={() => toggleToolDetail(key)}>
+            {#if rows.some((r) => !r.done)}
+              <span class="tool-chip-spinner"></span>
+            {:else}
+              <span class="tool-done-dot">✓</span>
+            {/if}
+            <span class="tool-progress-text">
+              {rows.filter((r) => !r.done).length > 0
+                ? rows.filter((r) => !r.done).at(-1).label + '…'
+                : 'Used ' + rows.length + (rows.length > 1 ? ' tools' : ' tool')}
+            </span>
+            <span class="tool-progress-count">{rows.filter((r) => r.done).length}/{rows.length}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tool-progress-chevron {expanded ? 'rotate-180' : ''}">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+          {#if expanded}
+            <div class="tool-progress-detail">
+              {#each rows as call}
+                <div class="tool-progress-row">
+                  {#if call.done}
+                    <span class="text-emerald-400">✓</span>
+                  {:else}
+                    <span class="tool-chip-spinner"></span>
+                  {/if}
+                  <span class="text-zinc-400">{call.label}</span>
+                  <span class="text-zinc-600">({call.name})</span>
+                  <span class="text-zinc-700 ml-auto">{call.time}</span>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/snippet}
+
       <!-- Conversation Panel -->
       <div class="flex-1 min-h-0 lg:min-h-[300px] glass-card p-4 lg:p-6 flex flex-col">
         <div class="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
@@ -1223,13 +1313,9 @@
           <span class="text-xs text-zinc-600 font-mono">{messages.length} messages</span>
         </div>
 
-        <div bind:this={conversationEl} class="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
-          <!-- Placeholder only when there is truly nothing to show: no sealed
-               history AND no live bubble growing. Previously the greeting
-               (liveAgentText) rendered BELOW the placeholder because the two
-               were independent conditions — the bubble sat mid-screen until
-               it sealed into history. -->
-          {#if messages.length === 0 && !liveAgentText}
+        <div bind:this={conversationEl} class="flex-1 overflow-y-auto custom-scrollbar pr-2 pt-1">
+          <!-- Placeholder only when there is truly nothing to show. -->
+          {#if messages.length === 0 && !liveAgentText && toolCalls.length === 0}
             <div class="h-full flex items-center justify-center">
               <p class="text-zinc-600 text-sm text-center">
                 {mode === 'off' 
@@ -1239,68 +1325,42 @@
             </div>
           {:else}
             {#each messages as msg, i}
-              <!-- Subtle divider between consecutive bubbles of the SAME agent
-                   turn (filler → answer): they stay separate bubbles with a
-                   little breathing room instead of one glued block. -->
-              {#if i > 0 && msg.group !== undefined && messages[i - 1].group === msg.group}
-                <div class="flex justify-start pl-2">
-                  <div class="w-8 border-t border-violet-500/20"></div>
+              {@const sameGroup = i > 0 && msg.group !== undefined && messages[i - 1].group === msg.group}
+              <!-- History tool-progress rows (PERMANENT — Gemini/Claude
+                   style). Attached to the first assistant segment of the
+                   turn; click to expand raw tool names + timestamps. -->
+              {#if msg.tools?.length}
+                <div class="{sameGroup ? 'mt-1.5' : 'mt-5'} flex justify-start">
+                  {@render toolRows(msg.tools, msg.group ?? i)}
                 </div>
               {/if}
-              <div class="flex {msg.role === 'user' ? 'justify-end' : 'justify-start'}">
-                <div class="max-w-[80%] {msg.role === 'user' ? 'message-user' : 'message-assistant'} rounded-2xl px-3 py-2 lg:px-4 lg:py-3">
-                  <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{msg.text}</p>
-                  <p class="text-[10px] text-zinc-600 font-mono mt-1">{msg.time}</p>
+              {#if msg.role === 'user'}
+                <div class="{sameGroup ? 'mt-1.5' : 'mt-5'} flex justify-end">
+                  <div class="max-w-[80%] message-user rounded-2xl px-3 py-2 lg:px-4 lg:py-3">
+                    <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{msg.text}</p>
+                  </div>
                 </div>
-              </div>
+              {:else}
+                <!-- Agent replies: CLEAN text, no bubble (ChatGPT style).
+                     Consecutive segments of the same turn (opening sentence
+                     + final result) stay separate paragraphs with a small
+                     gap instead of one glued block. -->
+                <div class="{sameGroup ? 'mt-1.5' : (msg.tools?.length ? 'mt-1.5' : 'mt-5')} flex justify-start">
+                  <p class="max-w-[85%] text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{msg.text}</p>
+                </div>
+              {/if}
             {/each}
           {/if}
-          <!-- Tool activity chip (Gemini/Claude-style): appears while the
-               agent runs tools. Click to expand the call log. -->
-          {#if toolActive && toolCalls.length > 0}
-            <div class="flex justify-start">
-              <button
-                type="button"
-                class="tool-chip max-w-[80%] rounded-full px-3 py-1.5 flex items-center gap-2"
-                onclick={() => (toolDetailOpen = !toolDetailOpen)}
-              >
-                <span class="tool-chip-spinner"></span>
-                <span class="text-[11px] lg:text-xs text-zinc-300">{currentToolLabel}…</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-zinc-600 transition-transform {toolDetailOpen ? 'rotate-180' : ''}">
-                  <path d="M6 9l6 6 6-6"/>
-                </svg>
-              </button>
+          <!-- Live turn: PERMANENT tool rows (spinner while running, check
+               when done — they stay after completion) + clean reply text. -->
+          {#if toolCalls.length > 0}
+            <div class="{messages.length > 0 || liveAgentText ? 'mt-1.5' : 'mt-1'} flex justify-start">
+              {@render toolRows(toolCalls, 'live')}
             </div>
-            {#if toolDetailOpen}
-              <div class="flex justify-start">
-                <div class="max-w-[80%] tool-chip-detail rounded-xl px-3 py-2 font-mono text-[10px] lg:text-[11px] space-y-1">
-                  {#each toolCalls as call}
-                    <div class="flex items-center gap-2">
-                      <span class="{call.done ? 'text-emerald-400' : 'text-amber-400'}">{call.done ? '✓' : '⋯'}</span>
-                      <span class="text-zinc-400">{call.label}</span>
-                      <span class="text-zinc-600">({call.name})</span>
-                      <span class="text-zinc-700 ml-auto">{call.time}</span>
-                    </div>
-                  {/each}
-                </div>
-              </div>
-            {/if}
           {/if}
-          <!-- Live agent reply bubbles: ONE bubble per speech segment
-               (filler, ack, answer) — the bridge flushes each segment, so
-               they arrive as distinct utterances and get distinct bubbles. -->
           {#each liveAgentBubbles as bubble, bi}
-            {#if bi > 0}
-              <!-- visual breathing between same-turn bubbles -->
-              <div class="flex justify-start pl-2">
-                <div class="w-8 border-t border-violet-500/20"></div>
-              </div>
-            {/if}
-            <div class="flex justify-start">
-              <div class="max-w-[80%] message-assistant rounded-2xl px-3 py-2 lg:px-4 lg:py-3 border-violet-500/20">
-                <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{bubble.text}{#if agentSpeaking && bi === liveAgentBubbles.length - 1 && !bubble.final}<span class="inline-block w-1.5 h-4 bg-violet-400/80 ml-1 animate-pulse align-middle"></span>{/if}</p>
-                <p class="text-[10px] text-zinc-600 font-mono mt-1">speaking</p>
-              </div>
+            <div class="{bi === 0 && toolCalls.length === 0 && messages.length === 0 ? 'mt-1' : 'mt-1.5'} flex justify-start">
+              <p class="max-w-[85%] text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{bubble.text}{#if agentSpeaking && bi === liveAgentBubbles.length - 1 && !bubble.final}<span class="inline-block w-1.5 h-4 bg-violet-400/80 ml-1 animate-pulse align-middle"></span>{/if}</p>
             </div>
           {/each}
         </div>
