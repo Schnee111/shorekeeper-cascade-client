@@ -17,30 +17,58 @@
   let transcript = $state('');
   let subtitle = $state('');
 
-  // Voice selector (cosmetic placeholder — plan §2: only Vestia Zeta for now)
-  const VOICES = [
-    { name: 'Vestia Zeta', desc: 'Indonesian' },
-    { name: 'Aoede', desc: 'Breezy' },
-    { name: 'Kore', desc: 'Firm' },
-    { name: 'Leda', desc: 'Youthful' },
-    { name: 'Zephyr', desc: 'Bright' },
-    { name: 'Callirrhoe', desc: 'Easy-going' },
-    { name: 'Autonoe', desc: 'Bright' },
-    { name: 'Despina', desc: 'Smooth' },
-    { name: 'Erinome', desc: 'Clear' },
-    { name: 'Laomedeia', desc: 'Upbeat' },
-    { name: 'Achernar', desc: 'Soft' },
-    { name: 'Gacrux', desc: 'Mature' },
-    { name: 'Pulcherrima', desc: 'Forward' },
-    { name: 'Vindemiatrix', desc: 'Gentle' },
-    { name: 'Sulafat', desc: 'Warm' },
-  ];
-  let selectedVoice = $state('Vestia Zeta');
+  // Voice selector — live: the token server embeds the chosen Fish Audio
+  // voice ID into the JWT, the agent reads it at session start. Switching
+  // mid-session reconnects the room (no TTS hot-swap in livekit-agents).
+  interface VoiceOption { id: string; label: string; default: boolean }
+  let voiceOptions = $state<VoiceOption[]>([
+    { id: 'gura', label: 'Gura', default: true },
+    { id: 'gura2', label: 'Gura (alt)', default: false },
+    { id: 'zeta', label: 'Zeta', default: false },
+  ]);
+  const savedVoice = typeof localStorage !== 'undefined' ? localStorage.getItem('jarvis-voice') : null;
+  let selectedVoice = $state(savedVoice || 'gura');
+  let voiceSwitching = false;
 
-  function onVoiceChange(e: Event) {
+  // Fetch the real registry (falls back to the hard-coded list on error).
+  fetch('/jarvis-livekit/voices')
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+    .then((data: { voices?: VoiceOption[] }) => {
+      if (data.voices && data.voices.length) {
+        voiceOptions = data.voices;
+        if (!voiceOptions.some((v) => v.id === selectedVoice)) {
+          selectedVoice = voiceOptions.find((v) => v.default)?.id ?? voiceOptions[0].id;
+        }
+      }
+    })
+    .catch(() => { /* keep the static fallback list */ });
+
+  async function onVoiceChange(e: Event) {
     const select = e.target as HTMLSelectElement;
-    selectedVoice = select.value;
-    logs = [...logs, { type: 'info', text: `Voice: ${selectedVoice} (cosmetic — V1 single voice)`, time: getTime() }];
+    const next = select.value;
+    if (next === selectedVoice || voiceSwitching) return;
+    selectedVoice = next;
+    localStorage.setItem('jarvis-voice', next);
+    const label = voiceOptions.find((v) => v.id === next)?.label ?? next;
+    addLog('info', `Voice → ${label}${mode === 'active' ? ' (reconnecting…)' : ''}`);
+
+    // Active session: reconnect so the agent restarts with the new voice.
+    if (mode === 'active' && lkHandle) {
+      voiceSwitching = true;
+      try {
+        const handle = lkHandle;
+        lkHandle = null;
+        await handle.stop();
+        sealAgentBubble();
+        resetSession();
+        await connectLivekit();
+        addLog('success', `Voice switched to ${label}`);
+      } catch (err) {
+        addLog('error', `Voice switch failed: ${err instanceof Error ? err.message : err}`);
+      } finally {
+        voiceSwitching = false;
+      }
+    }
   }
 
   type LogEntry = { type: 'info' | 'warn' | 'error' | 'success'; text: string; time: string };
@@ -276,6 +304,7 @@
         onSpeakingChanged: handleSpeakingChanged,
         onStateChange: handleStateChange,
         onLog: (m) => addLog('info', m),
+        voice: selectedVoice,
       });
       status = 'listening';
       addLog('success', `Session ${lkHandle.roomName} — listening`);
@@ -772,14 +801,15 @@
     </div>
 
     <div class="flex items-center gap-4">
-      <!-- Voice Selector (cosmetic — V1) -->
-      <select 
+      <!-- Voice Selector — live: switches the agent's Fish Audio voice -->
+      <select
         bind:value={selectedVoice}
         onchange={onVoiceChange}
-        class="bg-white/5 border border-white/10 rounded-full px-4 py-2 text-sm text-zinc-300 focus:outline-none focus:border-cyan-500/50 transition-colors"
+        disabled={voiceSwitching}
+        class="bg-white/5 border border-white/10 rounded-full px-3 py-1.5 lg:px-4 lg:py-2 text-xs lg:text-sm text-zinc-300 focus:outline-none focus:border-cyan-500/50 transition-colors disabled:opacity-50"
       >
-        {#each VOICES as voice}
-          <option value={voice.name}>{voice.name}</option>
+        {#each voiceOptions as voice}
+          <option value={voice.id}>{voice.label}</option>
         {/each}
       </select>
 

@@ -35,6 +35,8 @@ export interface LivekitVoiceOptions {
   onSpeakingChanged: (speaking: boolean) => void;
   onStateChange: (state: LkState) => void;
   onLog: (message: string) => void;
+  /** Fish Audio voice key (token_server registry); default "gura". */
+  voice?: string;
 }
 
 export interface LivekitHandle {
@@ -52,8 +54,9 @@ function makeRoomName(): string {
   return `jarvis-${suffix}`;
 }
 
-async function fetchToken(roomName: string): Promise<string> {
-  const url = `/jarvis-livekit/token?room=${encodeURIComponent(roomName)}&identity=${IDENTITY}`;
+async function fetchToken(roomName: string, voice?: string): Promise<string> {
+  let url = `/jarvis-livekit/token?room=${encodeURIComponent(roomName)}&identity=${IDENTITY}`;
+  if (voice) url += `&voice=${encodeURIComponent(voice)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Token endpoint ${res.status}`);
   const data = (await res.json()) as { token?: string };
@@ -67,7 +70,7 @@ async function fetchToken(roomName: string): Promise<string> {
  */
 export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<LivekitHandle> {
   const roomName = makeRoomName();
-  const token = await fetchToken(roomName);
+  const token = await fetchToken(roomName, opts.voice);
 
   const room = new Room({
     adaptiveStream: true,
