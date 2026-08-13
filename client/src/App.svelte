@@ -64,12 +64,55 @@
   type Message = { role: 'user' | 'assistant'; text: string; time: string; language?: string };
   let messages = $state<Message[]>([]);
 
+  // Live agent reply bubble: grows while the agent speaks, sealed into
+  // `messages` right after speech ends (not only on disconnect).
+  let liveAgentText = $state('');
+  let liveAgentLanguage = $state<string>('id');
+  let sealTimer: ReturnType<typeof setTimeout> | null = null;
+
   // Segment accumulation (plan §4 Lapis 4): Map key = owner + segmentId;
-  // update only when text changes (anti-flicker); final → push to history.
+  // update only when text changes (anti-flicker).
   type LiveSegment = { text: string; language: string; final: boolean; fromAgent: boolean };
   const segmentsMap = new Map<string, LiveSegment>();
   let awaitingReply = false;
   let agentSpeaking = false;
+
+  function rebuildLiveAgentText() {
+    // Segments are kept in insertion order; join on a space so consecutive
+    // segments never glue into "satu.Dua".
+    const parts = [...segmentsMap.values()]
+      .filter((s) => s.fromAgent && s.text)
+      .map((s) => s.text);
+    liveAgentText = parts.join(' ').replace(/[ \t]{2,}/g, ' ').trim();
+  }
+
+  function sealAgentBubble() {
+    if (sealTimer) {
+      clearTimeout(sealTimer);
+      sealTimer = null;
+    }
+    if (!liveAgentText) return;
+    messages = [...messages, {
+      role: 'assistant',
+      text: liveAgentText,
+      time: getTime(),
+      language: liveAgentLanguage,
+    }];
+    liveAgentText = '';
+    subtitle = '';
+    for (const [k, s] of segmentsMap) if (s.fromAgent) segmentsMap.delete(k);
+    refreshStatus();
+  }
+
+  function armSealWatcher() {
+    // Seal ~1.5s after the last activity once the agent stops speaking.
+    if (sealTimer) clearTimeout(sealTimer);
+    sealTimer = setTimeout(() => {
+      const agentSegs = [...segmentsMap.values()].filter((s) => s.fromAgent);
+      const allFinal = agentSegs.length > 0 && agentSegs.every((s) => s.final);
+      if (allFinal && !agentSpeaking) sealAgentBubble();
+    }, 1500);
+  }
 
   function refreshStatus() {
     if (mode !== 'active') return;
@@ -84,33 +127,39 @@
       const text = cleanVoiceText(seg.text);
       const key = `${fromAgent ? 'agent' : 'user'}:${seg.id}`;
 
+      if (fromAgent) {
+        const prev = segmentsMap.get(key);
+        if (prev && prev.text === text && prev.final === seg.final) continue; // anti-flicker
+        segmentsMap.set(key, { text, language: seg.language, final: seg.final, fromAgent: true });
+        awaitingReply = false;
+        if (text) {
+          rebuildLiveAgentText();
+          liveAgentLanguage = seg.language || 'id';
+          if (!seg.final) {
+            subtitle = text;
+            subtitleLanguage = seg.language || 'id';
+          }
+        }
+        armSealWatcher();
+        continue;
+      }
+
+      // User segment: the previous agent reply is definitely over — seal it
+      // into history right now (before the new user message lands).
+      sealAgentBubble();
+
       if (seg.final) {
         segmentsMap.delete(key);
         if (!text) continue;
-        messages = [...messages, {
-          role: fromAgent ? 'assistant' : 'user',
-          text,
-          time: getTime(),
-          language: seg.language,
-        }];
-        if (fromAgent) {
-          if (subtitle === text) subtitle = '';
-        } else {
-          transcript = '';
-          awaitingReply = true; // final user transcript → wait for agent
-        }
+        messages = [...messages, { role: 'user', text, time: getTime(), language: seg.language }];
+        transcript = '';
+        awaitingReply = true; // final user transcript → wait for agent
       } else {
         const prev = segmentsMap.get(key);
         if (prev && prev.text === seg.text) continue; // anti-flicker
         segmentsMap.set(key, { text: seg.text, language: seg.language, final: false, fromAgent });
         if (!text) continue;
-        if (fromAgent) {
-          subtitle = text;
-          subtitleLanguage = seg.language || 'id';
-          awaitingReply = false;
-        } else {
-          transcript = text;
-        }
+        transcript = text;
       }
     }
     refreshStatus();
@@ -118,6 +167,7 @@
 
   function handleSpeakingChanged(speaking: boolean) {
     agentSpeaking = speaking;
+    if (!speaking) armSealWatcher();
     refreshStatus();
   }
 
@@ -137,7 +187,12 @@
   }
 
   function resetSession() {
+    if (sealTimer) {
+      clearTimeout(sealTimer);
+      sealTimer = null;
+    }
     segmentsMap.clear();
+    liveAgentText = '';
     subtitle = '';
     transcript = '';
     awaitingReply = false;
@@ -221,6 +276,8 @@
     const handle = lkHandle;
     lkHandle = null;
     if (handle) await handle.stop();
+    // Seal any in-flight agent reply into history before the session ends.
+    sealAgentBubble();
     resetSession();
     mode = 'off';
     status = 'idle';
@@ -792,6 +849,15 @@
                 </div>
               </div>
             {/each}
+          {/if}
+          <!-- Live agent reply bubble (sealed into history after speech ends) -->
+          {#if liveAgentText}
+            <div class="flex justify-start">
+              <div class="max-w-[80%] message-assistant rounded-2xl px-4 py-3 border-violet-500/20">
+                <p class="text-sm text-zinc-200 leading-relaxed message-text">{liveAgentText}{#if agentSpeaking}<span class="inline-block w-1.5 h-4 bg-violet-400/80 ml-1 animate-pulse align-middle"></span>{/if}</p>
+                <p class="text-[10px] text-zinc-600 font-mono mt-1">speaking · {liveAgentLanguage}</p>
+              </div>
+            </div>
           {/if}
         </div>
       </div>
