@@ -706,20 +706,21 @@
       }
     }
 
-    /* Mobile: shrink the orb so the control strip stays compact and the
-       conversation panel gets the remaining viewport height. */
+    /* Mobile: slightly shrink the orb so orb + conversation + logs fit one
+       viewport, while keeping the orb visually prominent. Desktop keeps the
+       original 200px container / 120px core / 160px glow ring. */
     @media (max-width: 1023px) {
       .orb-container {
-        width: 120px;
-        height: 120px;
+        width: 160px;
+        height: 160px;
       }
       .orb-core {
-        width: 76px;
-        height: 76px;
+        width: 100px;
+        height: 100px;
       }
       .orb-glow-ring {
-        width: 104px;
-        height: 104px;
+        width: 136px;
+        height: 136px;
       }
     }
   </style>
@@ -769,36 +770,12 @@
        scroll so nothing needs page-level scrolling on mobile. -->
   <div class="relative z-10 flex-1 min-h-0 flex flex-col lg:flex-row items-stretch gap-3 lg:gap-6 px-4 lg:px-6 pb-4 lg:pb-6">
     
-    <!-- Left: Orb & Controls — compact horizontal strip on mobile -->
-    <div class="lg:w-[400px] glass-card p-4 lg:p-8 fade-in-up stagger-2 lg:flex lg:flex-col lg:items-center lg:justify-center shrink-0">
-      <div class="flex items-center gap-3 lg:flex-col lg:gap-0 lg:w-full">
-        <!-- Orb -->
-        <div class="orb-container shrink-0 lg:mb-8">
-          <!-- Ripples -->
-          {#if mode !== 'off'}
-            <div class="orb-ripple {status}"></div>
-            <div class="orb-ripple {status}"></div>
-            <div class="orb-ripple {status}"></div>
-          {/if}
-          
-          <!-- Glow Ring -->
-          {#if mode === 'active'}
-            <div class="orb-glow-ring active"></div>
-          {:else if mode === 'standby'}
-            <div class="orb-glow-ring"></div>
-          {/if}
-
-          <!-- Core Orb -->
-          <button 
-            onclick={toggleSession}
-            class="orb-core {mode === 'off' ? (status === 'error' ? 'error' : 'off') : mode === 'standby' ? 'standby' : status}"
-            aria-label={mode === 'off' ? 'Start session' : 'End session'}
-          ></button>
-        </div>
-
-        <div class="flex-1 min-w-0 flex flex-col items-start gap-1.5 lg:items-center lg:gap-0">
-          <!-- Status Label -->
-          <div class="flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 rounded-full bg-white/5 border border-white/10 lg:mb-8">
+    <!-- Left: Orb & Controls — vertical stack (orb centered), compact on
+         mobile so orb + conversation + logs all fit in one viewport. -->
+    <div class="lg:w-[400px] shrink-0 glass-card p-4 lg:p-8 fade-in-up stagger-2 flex flex-col items-center justify-center">
+      
+      <!-- Status Label -->
+      <div class="mb-2 lg:mb-8 flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 rounded-full bg-white/5 border border-white/10">
         {#if mode === 'active' && status === 'connecting'}
           <div class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></div>
           <span class="text-sm font-medium text-amber-400">Connecting</span>
@@ -820,8 +797,32 @@
         {/if}
       </div>
 
+      <!-- Orb -->
+      <div class="orb-container mb-1 lg:mb-8">
+        <!-- Ripples -->
+        {#if mode !== 'off'}
+          <div class="orb-ripple {status}"></div>
+          <div class="orb-ripple {status}"></div>
+          <div class="orb-ripple {status}"></div>
+        {/if}
+
+        <!-- Glow Ring -->
+        {#if mode === 'active'}
+          <div class="orb-glow-ring active"></div>
+        {:else if mode === 'standby'}
+          <div class="orb-glow-ring"></div>
+        {/if}
+
+        <!-- Core Orb -->
+        <button 
+          onclick={toggleSession}
+          class="orb-core {mode === 'off' ? (status === 'error' ? 'error' : 'off') : mode === 'standby' ? 'standby' : status}"
+          aria-label={mode === 'off' ? 'Start session' : 'End session'}
+        ></button>
+      </div>
+
       <!-- Hint Text -->
-      <p class="text-sm text-zinc-500 text-center">
+      <p class="text-xs lg:text-sm text-zinc-500 text-center">
         {#if mode === 'off'}
           Tap the orb to begin
         {:else if mode === 'standby'}
@@ -841,7 +842,7 @@
       {#if mode === 'off' || mode === 'standby'}
         <button
           onclick={toggleWake}
-          class="mt-4 px-4 py-1.5 rounded-full text-xs font-mono transition-colors border
+          class="mt-2 lg:mt-4 px-4 py-1.5 rounded-full text-xs font-mono transition-colors border
             {mode === 'standby'
               ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
               : 'bg-white/5 border-white/10 text-zinc-500 hover:text-zinc-300 hover:border-white/20'}"
@@ -849,13 +850,11 @@
           {mode === 'standby' ? 'Voice wake armed' : 'Arm voice wake'}
         </button>
       {/if}
-        </div>
-      </div>
 
       <!-- Live Subtitle (when JARVIS speaking) — also shown while listening
            because a final transcript can arrive after the status flips back. -->
       {#if subtitle && status !== 'idle' && status !== 'error'}
-        <div class="mt-6 w-full px-4 py-3 rounded-xl bg-violet-500/10 border border-violet-500/20 fade-in-up">
+        <div class="mt-3 lg:mt-6 w-full px-4 py-3 rounded-xl bg-violet-500/10 border border-violet-500/20 fade-in-up">
           <div class="flex items-start gap-2">
             <span class="text-[10px] font-mono text-violet-400 bg-violet-500/20 px-2 py-0.5 rounded shrink-0">
               {subtitleLanguage.toUpperCase()}
@@ -867,7 +866,7 @@
 
       <!-- Live User Transcript (interim results while listening) -->
       {#if transcript && (status === 'listening' || status === 'processing')}
-        <div class="mt-6 w-full px-4 py-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 fade-in-up">
+        <div class="mt-3 lg:mt-6 w-full px-4 py-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 fade-in-up">
           <div class="flex items-start gap-2">
             <span class="text-[10px] font-mono text-cyan-400 bg-cyan-500/20 px-2 py-0.5 rounded shrink-0 flex items-center gap-1.5">
               <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
