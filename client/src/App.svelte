@@ -705,10 +705,27 @@
         animation: none !important;
       }
     }
+
+    /* Mobile: shrink the orb so the control strip stays compact and the
+       conversation panel gets the remaining viewport height. */
+    @media (max-width: 1023px) {
+      .orb-container {
+        width: 120px;
+        height: 120px;
+      }
+      .orb-core {
+        width: 76px;
+        height: 76px;
+      }
+      .orb-glow-ring {
+        width: 104px;
+        height: 104px;
+      }
+    }
   </style>
 </svelte:head>
 
-<main class="min-h-screen relative overflow-hidden">
+<main class="h-screen relative overflow-hidden flex flex-col">
   <!-- Background -->
   <div class="bg-mesh"></div>
   <div class="noise-overlay"></div>
@@ -748,14 +765,40 @@
     </div>
   </header>
 
-  <!-- Main Content -->
-  <div class="relative z-10 flex flex-col lg:flex-row items-stretch gap-6 px-6 pb-6 min-h-[calc(100vh-88px)]">
+  <!-- Main Content: fills the viewport below the header; internal panels
+       scroll so nothing needs page-level scrolling on mobile. -->
+  <div class="relative z-10 flex-1 min-h-0 flex flex-col lg:flex-row items-stretch gap-3 lg:gap-6 px-4 lg:px-6 pb-4 lg:pb-6">
     
-    <!-- Left: Orb & Controls -->
-    <div class="lg:w-[400px] flex flex-col items-center justify-center glass-card p-8 fade-in-up stagger-2">
-      
-      <!-- Status Label -->
-      <div class="mb-8 flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+    <!-- Left: Orb & Controls — compact horizontal strip on mobile -->
+    <div class="lg:w-[400px] glass-card p-4 lg:p-8 fade-in-up stagger-2 lg:flex lg:flex-col lg:items-center lg:justify-center shrink-0">
+      <div class="flex items-center gap-3 lg:flex-col lg:gap-0 lg:w-full">
+        <!-- Orb -->
+        <div class="orb-container shrink-0 lg:mb-8">
+          <!-- Ripples -->
+          {#if mode !== 'off'}
+            <div class="orb-ripple {status}"></div>
+            <div class="orb-ripple {status}"></div>
+            <div class="orb-ripple {status}"></div>
+          {/if}
+          
+          <!-- Glow Ring -->
+          {#if mode === 'active'}
+            <div class="orb-glow-ring active"></div>
+          {:else if mode === 'standby'}
+            <div class="orb-glow-ring"></div>
+          {/if}
+
+          <!-- Core Orb -->
+          <button 
+            onclick={toggleSession}
+            class="orb-core {mode === 'off' ? (status === 'error' ? 'error' : 'off') : mode === 'standby' ? 'standby' : status}"
+            aria-label={mode === 'off' ? 'Start session' : 'End session'}
+          ></button>
+        </div>
+
+        <div class="flex-1 min-w-0 flex flex-col items-start gap-1.5 lg:items-center lg:gap-0">
+          <!-- Status Label -->
+          <div class="flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 rounded-full bg-white/5 border border-white/10 lg:mb-8">
         {#if mode === 'active' && status === 'connecting'}
           <div class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></div>
           <span class="text-sm font-medium text-amber-400">Connecting</span>
@@ -775,30 +818,6 @@
           <div class="w-2 h-2 rounded-full bg-zinc-600"></div>
           <span class="text-sm font-medium text-zinc-500">Ready</span>
         {/if}
-      </div>
-
-      <!-- Orb -->
-      <div class="orb-container mb-8">
-        <!-- Ripples -->
-        {#if mode !== 'off'}
-          <div class="orb-ripple {status}"></div>
-          <div class="orb-ripple {status}"></div>
-          <div class="orb-ripple {status}"></div>
-        {/if}
-        
-        <!-- Glow Ring -->
-        {#if mode === 'active'}
-          <div class="orb-glow-ring active"></div>
-        {:else if mode === 'standby'}
-          <div class="orb-glow-ring"></div>
-        {/if}
-
-        <!-- Core Orb -->
-        <button 
-          onclick={toggleSession}
-          class="orb-core {mode === 'off' ? (status === 'error' ? 'error' : 'off') : mode === 'standby' ? 'standby' : status}"
-          aria-label={mode === 'off' ? 'Start session' : 'End session'}
-        ></button>
       </div>
 
       <!-- Hint Text -->
@@ -830,6 +849,8 @@
           {mode === 'standby' ? 'Voice wake armed' : 'Arm voice wake'}
         </button>
       {/if}
+        </div>
+      </div>
 
       <!-- Live Subtitle (when JARVIS speaking) — also shown while listening
            because a final transcript can arrive after the status flips back. -->
@@ -859,10 +880,10 @@
     </div>
 
     <!-- Right: Conversation & Logs -->
-    <div class="flex-1 flex flex-col gap-6 min-w-0 fade-in-up stagger-3">
+    <div class="flex-1 min-h-0 flex flex-col gap-3 lg:gap-6 min-w-0 fade-in-up stagger-3">
       
       <!-- Conversation Panel -->
-      <div class="flex-1 glass-card p-6 flex flex-col min-h-[300px]">
+      <div class="flex-1 min-h-0 lg:min-h-[300px] glass-card p-4 lg:p-6 flex flex-col">
         <div class="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
           <h3 class="text-sm font-medium text-zinc-300 flex items-center gap-2">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-zinc-500">
@@ -905,7 +926,7 @@
       </div>
 
       <!-- System Logs -->
-      <div class="glass-card-elevated p-4 h-[180px] flex flex-col">
+      <div class="glass-card-elevated p-3 lg:p-4 h-[120px] lg:h-[180px] flex flex-col shrink-0">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-xs font-medium text-zinc-400 flex items-center gap-2">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-zinc-600">
