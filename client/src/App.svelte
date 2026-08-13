@@ -86,6 +86,9 @@
   // `messages` right after speech ends (not only on disconnect).
   let liveAgentText = $state('');
   let liveAgentLanguage = $state<string>('id');
+  // Timestamp captured at FIRST TOKEN (first agent segment arrives), not at
+  // seal time — the bubble's clock reflects when the reply started.
+  let liveAgentStartTime = '';
   let sealTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Hold the user subtitle bar for a few seconds after the turn commits so
@@ -119,10 +122,11 @@
     messages = [...messages, {
       role: 'assistant',
       text: liveAgentText,
-      time: getTime(),
+      time: liveAgentStartTime || getTime(), // first-token time, not seal time
       language: liveAgentLanguage,
     }];
     liveAgentText = '';
+    liveAgentStartTime = '';
     subtitle = '';
     for (const [k, s] of segmentsMap) if (s.fromAgent) segmentsMap.delete(k);
     refreshStatus();
@@ -170,6 +174,9 @@
         segmentsMap.set(key, { text, language: seg.language, final: seg.final, fromAgent: true });
         awaitingReply = false;
         if (text) {
+          // Stamp the reply clock at FIRST TOKEN, so the sealed bubble's
+          // timestamp reflects when the answer started, not when it sealed.
+          if (!liveAgentStartTime) liveAgentStartTime = getTime();
           rebuildLiveAgentText();
           liveAgentLanguage = seg.language || 'id';
           // Subtitle shows only the CURRENT sentence, not the whole growing
@@ -249,6 +256,7 @@
     }
     segmentsMap.clear();
     liveAgentText = '';
+    liveAgentStartTime = '';
     subtitle = '';
     transcript = '';
     awaitingReply = false;
