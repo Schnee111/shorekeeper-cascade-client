@@ -899,7 +899,12 @@
         </div>
 
         <div bind:this={conversationEl} class="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
-          {#if messages.length === 0}
+          <!-- Placeholder only when there is truly nothing to show: no sealed
+               history AND no live bubble growing. Previously the greeting
+               (liveAgentText) rendered BELOW the placeholder because the two
+               were independent conditions — the bubble sat mid-screen until
+               it sealed into history. -->
+          {#if messages.length === 0 && !liveAgentText}
             <div class="h-full flex items-center justify-center">
               <p class="text-zinc-600 text-sm text-center">
                 {mode === 'off' 
