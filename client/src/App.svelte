@@ -857,27 +857,20 @@
         </button>
       {/if}
 
-      <!-- Live caption slot: ONE fixed-height box shared by the agent
-           subtitle and the user transcript (grid-stacked). The box is always
-           reserved, so captions appearing/disappearing never resize the card
-           — the layout stays completely static. When both exist (rare),
-           the user transcript paints on top. -->
-      <div class="mt-3 lg:mt-6 w-full h-[50px] lg:h-[64px] grid">
+      <!-- Live caption slot: ONE fixed-height, borderless, label-less line
+           shared by the agent subtitle and the user transcript (grid-stacked).
+           The box is always reserved so captions appearing/disappearing never
+           resize the card — layout stays completely static. When both exist
+           (rare), the user transcript paints on top. -->
+      <div class="mt-3 lg:mt-6 w-full h-[36px] lg:h-[44px] grid">
         {#if subtitle && status !== 'idle' && status !== 'error'}
-          <div class="[grid-area:1/1] w-full h-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.06] overflow-hidden flex items-start gap-2">
-            <span class="text-[9px] font-mono tracking-widest text-violet-300/70 pt-0.5 shrink-0">
-              SHOREKEEPER
-            </span>
-            <p class="text-xs text-zinc-200 flex-1 message-text leading-snug caption-clamp">{subtitle}</p>
+          <div class="[grid-area:1/1] w-full h-full flex items-center justify-center overflow-hidden">
+            <p class="text-xs text-zinc-300 message-text leading-snug caption-clamp text-center">{subtitle}</p>
           </div>
         {/if}
         {#if transcript && (status === 'listening' || status === 'processing')}
-          <div class="[grid-area:1/1] w-full h-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.06] overflow-hidden flex items-start gap-2">
-            <span class="text-[9px] font-mono tracking-widest text-cyan-300/70 pt-0.5 shrink-0 flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-              YOU
-            </span>
-            <p class="text-xs text-zinc-200 flex-1 message-text leading-snug caption-clamp">{transcript}</p>
+          <div class="[grid-area:1/1] w-full h-full flex items-center justify-center overflow-hidden">
+            <p class="text-xs text-zinc-400 message-text leading-snug caption-clamp text-center">{transcript}</p>
           </div>
         {/if}
       </div>
