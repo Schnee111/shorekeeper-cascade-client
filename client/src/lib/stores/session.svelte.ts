@@ -54,7 +54,10 @@ class SessionStore {
   /** Fetch the real registry (falls back to the hard-coded list on error). */
   async loadVoices(): Promise<void> {
     try {
-      const res = await fetch(VOICES_ENDPOINT);
+      // no-store: before the nginx /voices proxy existed this URL returned the
+      // SPA HTML with 200, which browsers heuristic-cached — stale copies
+      // survived even hard refreshes and loadVoices silently fell back.
+      const res = await fetch(VOICES_ENDPOINT, { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as { voices?: VoiceOption[] };
       if (data.voices?.length) {
