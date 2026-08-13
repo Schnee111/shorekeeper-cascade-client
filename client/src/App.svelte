@@ -419,6 +419,14 @@
     }
 
     @keyframes orb-ripple {
+      0% { transform: scale(0.8); opacity: 0.5; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+
+    /* Mobile-only: cap ripple at the container edge so the glow doesn't
+       bleed into the section below on the stacked layout. Separate keyframe
+       (no clipping) so it stays a smooth circle — never boxy. */
+    @keyframes orb-ripple-mobile {
       0% { transform: scale(0.62); opacity: 0.5; }
       100% { transform: scale(1); opacity: 0; }
     }
@@ -450,8 +458,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      /* Safety clip: ripple/glow never bleed into the section below. */
-      overflow: hidden;
     }
 
     .orb-core {
@@ -737,6 +743,15 @@
       .orb-ripple,
       .orb-glow-ring {
         animation: none !important;
+      }
+    }
+
+    /* Mobile: ripple uses the capped keyframe so the glow stays inside the
+       orb area on the stacked single-screen layout. Desktop keeps the
+       original wider ripple untouched. */
+    @media (max-width: 1023px) {
+      .orb-ripple {
+        animation-name: orb-ripple-mobile;
       }
     }
   </style>
