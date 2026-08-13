@@ -73,6 +73,12 @@
   let liveAgentLanguage = $state<string>('id');
   let sealTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // Hold the user subtitle bar for a few seconds after the turn commits so
+  // the user can finish reading it (previously it vanished the instant the
+  // final transcript landed).
+  let transcriptHoldTimer: ReturnType<typeof setTimeout> | null = null;
+  const TRANSCRIPT_HOLD_MS = 3500;
+
   // Segment accumulation (plan §4 Lapis 4): Map key = owner + segmentId;
   // update only when text changes (anti-flicker).
   type LiveSegment = { text: string; language: string; final: boolean; fromAgent: boolean };
@@ -169,13 +175,27 @@
         segmentsMap.delete(key);
         if (!text) continue;
         messages = [...messages, { role: 'user', text, time: getTime(), language: seg.language }];
-        transcript = '';
+        // Keep the last interim text on the bar so it doesn't blink out the
+        // moment the turn commits; a timer clears it after a hold period (and
+        // it hides naturally once the agent starts speaking → status flips).
+        transcript = text;
+        if (transcriptHoldTimer) clearTimeout(transcriptHoldTimer);
+        transcriptHoldTimer = setTimeout(() => {
+          transcript = '';
+          transcriptHoldTimer = null;
+        }, TRANSCRIPT_HOLD_MS);
         awaitingReply = true; // final user transcript → wait for agent
       } else {
         const prev = segmentsMap.get(key);
         if (prev && prev.text === seg.text) continue; // anti-flicker
         segmentsMap.set(key, { text: seg.text, language: seg.language, final: false, fromAgent });
         if (!text) continue;
+        // New speech is arriving — cancel any pending hold-clear so the bar
+        // reflects the fresh interim text instead of an old held string.
+        if (transcriptHoldTimer) {
+          clearTimeout(transcriptHoldTimer);
+          transcriptHoldTimer = null;
+        }
         transcript = text;
       }
     }
@@ -207,6 +227,10 @@
     if (sealTimer) {
       clearTimeout(sealTimer);
       sealTimer = null;
+    }
+    if (transcriptHoldTimer) {
+      clearTimeout(transcriptHoldTimer);
+      transcriptHoldTimer = null;
     }
     segmentsMap.clear();
     liveAgentText = '';
