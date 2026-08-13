@@ -22,9 +22,9 @@ import {
   type RemoteTrackPublication,
   type TranscriptionSegment,
 } from 'livekit-client';
+import { IDENTITY, LIVEKIT_URL, TOKEN_ENDPOINT } from './config';
 
-export const LIVEKIT_URL = 'wss://shore-eoiag4jd.livekit.cloud';
-export const IDENTITY = 'schnee';
+export { LIVEKIT_URL, IDENTITY };
 
 export type LkState = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
 
@@ -57,7 +57,7 @@ function makeRoomName(): string {
 }
 
 async function fetchToken(roomName: string, voice?: string): Promise<string> {
-  let url = `/jarvis-livekit/token?room=${encodeURIComponent(roomName)}&identity=${IDENTITY}`;
+  let url = `${TOKEN_ENDPOINT}?room=${encodeURIComponent(roomName)}&identity=${IDENTITY}`;
   if (voice) url += `&voice=${encodeURIComponent(voice)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Token endpoint ${res.status}`);
