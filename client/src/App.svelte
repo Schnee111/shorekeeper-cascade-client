@@ -125,18 +125,82 @@
   // Conversation panel container — bound for auto-scroll-to-newest.
   let conversationEl: HTMLDivElement | undefined = $state();
 
-  // Conversation history
-  type Message = { role: 'user' | 'assistant'; text: string; time: string; language?: string };
+  // Conversation history. `group` ties bubbles from the same agent turn so
+  // the template can separate them with a subtle divider ("jeda sedikit").
+  type Message = {
+    role: 'user' | 'assistant';
+    text: string;
+    time: string;
+    language?: string;
+    group?: number;
+  };
   let messages = $state<Message[]>([]);
+  let turnGroupCounter = 0;
 
-  // Live agent reply bubble: grows while the agent speaks, sealed into
-  // `messages` right after speech ends (not only on disconnect).
-  let liveAgentText = $state('');
+  // Live agent bubbles: one bubble per transcription segment (fillers, acks
+  // and answer parts are distinct segments since the bridge flushes each).
+  // Previously all segments were joined into one bubble, gluing "one
+  // moment..." onto the final answer visually.
+  type LiveBubble = { key: string; text: string; final: boolean };
+  let liveAgentBubbles = $state<LiveBubble[]>([]);
+  // Joined copy — drives placeholder visibility + auto-scroll effect.
+  let liveAgentText = $derived(liveAgentBubbles.map((b) => b.text).join(' ').trim());
   let liveAgentLanguage = $state<string>('id');
   // Timestamp captured at FIRST TOKEN (first agent segment arrives), not at
   // seal time — the bubble's clock reflects when the reply started.
   let liveAgentStartTime = '';
   let sealTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Tool activity (Gemini/Claude-style chip). The bridge publishes
+  // jarvis.tool data events; we render "Searching the web…" while active
+  // and expand the raw call list on click.
+  type ToolCallInfo = { name: string; label: string; time: string; done: boolean };
+  let toolCalls = $state<ToolCallInfo[]>([]);
+  let toolActive = $state(false);
+  let toolDetailOpen = $state(false);
+  let toolClearTimer: ReturnType<typeof setTimeout> | null = null;
+  const TOOL_LABELS: Record<string, string> = {
+    web_search: 'Searching the web',
+    web_extract: 'Reading a page',
+    terminal: 'Running a command',
+    read_file: 'Reading a file',
+    write_file: 'Writing a file',
+    search_files: 'Searching files',
+    session_search: 'Searching memory',
+    cronjob: 'Scheduling a task',
+    memory: 'Updating memory',
+    delegate_task: 'Delegating a task',
+    clarify: 'Thinking',
+  };
+  const toolLabel = (name: string) => TOOL_LABELS[name] || 'Working on it';
+  let currentToolLabel = $derived(
+    (toolCalls.filter((c) => !c.done).at(-1) || toolCalls.at(-1))?.label || 'Working on it'
+  );
+
+  function handleToolActivity(ev: { state: 'start' | 'complete'; name: string }) {
+    if (toolClearTimer) {
+      clearTimeout(toolClearTimer);
+      toolClearTimer = null;
+    }
+    if (ev.state === 'start') {
+      toolCalls = [...toolCalls, { name: ev.name, label: toolLabel(ev.name), time: getTime(), done: false }];
+      toolActive = true;
+    } else {
+      // complete events carry no name — close the oldest unfinished call.
+      const idx = toolCalls.findIndex((c) => !c.done);
+      if (idx >= 0) {
+        toolCalls = toolCalls.map((c, i) => (i === idx ? { ...c, done: true } : c));
+      }
+      if (!toolCalls.some((c) => !c.done)) {
+        // Linger briefly so the chip doesn't flash out between chained tools.
+        toolClearTimer = setTimeout(() => {
+          toolActive = false;
+          toolClearTimer = null;
+        }, 800);
+      }
+    }
+    refreshStatus();
+  }
 
   // Hold the user subtitle bar for a few seconds after the turn commits so
   // the user can finish reading it (previously it vanished the instant the
@@ -144,38 +208,41 @@
   let transcriptHoldTimer: ReturnType<typeof setTimeout> | null = null;
   const TRANSCRIPT_HOLD_MS = 3500;
 
-  // Segment accumulation (plan §4 Lapis 4): Map key = owner + segmentId;
-  // update only when text changes (anti-flicker).
+  // Segment accumulation (plan §4 Lapis 4): Map key = owner + segmentId.
+  // Agent segments are mirrored into `liveAgentBubbles` (one bubble per
+  // segment); the map itself only dedupes user interim updates now.
   type LiveSegment = { text: string; language: string; final: boolean; fromAgent: boolean };
   const segmentsMap = new Map<string, LiveSegment>();
   let awaitingReply = false;
   let agentSpeaking = false;
-
-  function rebuildLiveAgentText() {
-    // Segments are kept in insertion order; join on a space so consecutive
-    // segments never glue into "satu.Dua".
-    const parts = [...segmentsMap.values()]
-      .filter((s) => s.fromAgent && s.text)
-      .map((s) => s.text);
-    liveAgentText = parts.join(' ').replace(/[ \t]{2,}/g, ' ').trim();
-  }
 
   function sealAgentBubble() {
     if (sealTimer) {
       clearTimeout(sealTimer);
       sealTimer = null;
     }
-    if (!liveAgentText) return;
-    messages = [...messages, {
-      role: 'assistant',
-      text: liveAgentText,
-      time: liveAgentStartTime || getTime(), // first-token time, not seal time
-      language: liveAgentLanguage,
-    }];
-    liveAgentText = '';
+    const bubbles = liveAgentBubbles.filter((b) => b.text);
+    if (bubbles.length === 0) return;
+    const group = turnGroupCounter;
+    turnGroupCounter += 1;
+    messages = [
+      ...messages,
+      // Each segment becomes its own sealed bubble — fillers ("one
+      // moment...") and the final answer stay visually separated, and the
+      // template adds a subtle divider between bubbles of the same group
+      // instead of cramming everything into one block.
+      ...bubbles.map((b) => ({
+        role: 'assistant' as const,
+        text: b.text,
+        time: liveAgentStartTime || getTime(), // first-token time, not seal time
+        language: liveAgentLanguage,
+        group,
+      })),
+    ];
+    liveAgentBubbles = [];
     liveAgentStartTime = '';
     subtitle = '';
-    for (const [k, s] of segmentsMap) if (s.fromAgent) segmentsMap.delete(k);
+    segmentsMap.clear(); // agent segments already rendered — drop the map copy
     refreshStatus();
   }
 
@@ -183,8 +250,7 @@
     // Seal ~1.5s after the last activity once the agent stops speaking.
     if (sealTimer) clearTimeout(sealTimer);
     sealTimer = setTimeout(() => {
-      const agentSegs = [...segmentsMap.values()].filter((s) => s.fromAgent);
-      const allFinal = agentSegs.length > 0 && agentSegs.every((s) => s.final);
+      const allFinal = liveAgentBubbles.length > 0 && liveAgentBubbles.every((b) => b.final);
       if (allFinal && !agentSpeaking) sealAgentBubble();
     }, 1500);
   }
@@ -194,6 +260,7 @@
   $effect(() => {
     messages.length; // dependency
     liveAgentText;   // dependency
+    toolActive;      // dependency — chip appearance scrolls into view
     const el = conversationEl;
     if (!el) return;
     // Defer to the next frame so the DOM reflects the new content first.
@@ -206,7 +273,7 @@
     if (mode !== 'active') return;
     const hasLiveAgentSegment = [...segmentsMap.values()].some((s) => s.fromAgent && !s.final);
     if (agentSpeaking || hasLiveAgentSegment) status = 'speaking';
-    else if (awaitingReply) status = 'processing';
+    else if (awaitingReply || toolActive) status = 'processing';
     else status = 'listening';
   }
 
@@ -224,7 +291,16 @@
           // Stamp the reply clock at FIRST TOKEN, so the sealed bubble's
           // timestamp reflects when the answer started, not when it sealed.
           if (!liveAgentStartTime) liveAgentStartTime = getTime();
-          rebuildLiveAgentText();
+          // Mirror into the bubble list — one bubble per segment, upsert by
+          // key so streaming updates replace in place (no duplicates).
+          const existing = liveAgentBubbles.find((b) => b.key === key);
+          if (existing) {
+            liveAgentBubbles = liveAgentBubbles.map((b) =>
+              b.key === key ? { ...b, text, final: seg.final } : b
+            );
+          } else {
+            liveAgentBubbles = [...liveAgentBubbles, { key, text, final: seg.final }];
+          }
           liveAgentLanguage = seg.language || 'id';
           // Subtitle shows only the CURRENT sentence, not the whole growing
           // reply — full replies overflow the fixed caption slot and get
@@ -301,13 +377,20 @@
       clearTimeout(transcriptHoldTimer);
       transcriptHoldTimer = null;
     }
+    if (toolClearTimer) {
+      clearTimeout(toolClearTimer);
+      toolClearTimer = null;
+    }
     segmentsMap.clear();
-    liveAgentText = '';
+    liveAgentBubbles = [];
     liveAgentStartTime = '';
     subtitle = '';
     transcript = '';
     awaitingReply = false;
     agentSpeaking = false;
+    toolCalls = [];
+    toolActive = false;
+    toolDetailOpen = false;
   }
 
   async function connectLivekit() {
@@ -323,6 +406,7 @@
         onSpeakingChanged: handleSpeakingChanged,
         onStateChange: handleStateChange,
         onLog: (m) => addLog('info', m),
+        onToolActivity: handleToolActivity,
         voice: selectedVoice,
       });
       status = 'listening';
@@ -810,6 +894,47 @@
       overflow-wrap: break-word;   /* long URLs / tokens wrap safely */
     }
 
+    /* Tool activity chip (Gemini/Claude-style) */
+    .tool-chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      backdrop-filter: blur(10px);
+      transition: background 0.15s ease, border-color 0.15s ease;
+      animation: chip-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+    }
+
+    .tool-chip:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .tool-chip-detail {
+      background: rgba(10, 12, 18, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(10px);
+      animation: chip-in 0.25s ease-out;
+    }
+
+    .tool-chip-spinner {
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      border: 1.5px solid rgba(139, 92, 246, 0.25);
+      border-top-color: rgba(167, 139, 250, 0.9);
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes chip-in {
+      from { opacity: 0; transform: translateY(6px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
     /* Scrollbar */
     .custom-scrollbar::-webkit-scrollbar {
       width: 4px;
@@ -1113,7 +1238,15 @@
               </p>
             </div>
           {:else}
-            {#each messages as msg}
+            {#each messages as msg, i}
+              <!-- Subtle divider between consecutive bubbles of the SAME agent
+                   turn (filler → answer): they stay separate bubbles with a
+                   little breathing room instead of one glued block. -->
+              {#if i > 0 && msg.group !== undefined && messages[i - 1].group === msg.group}
+                <div class="flex justify-start pl-2">
+                  <div class="w-8 border-t border-violet-500/20"></div>
+                </div>
+              {/if}
               <div class="flex {msg.role === 'user' ? 'justify-end' : 'justify-start'}">
                 <div class="max-w-[80%] {msg.role === 'user' ? 'message-user' : 'message-assistant'} rounded-2xl px-3 py-2 lg:px-4 lg:py-3">
                   <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{msg.text}</p>
@@ -1122,15 +1255,54 @@
               </div>
             {/each}
           {/if}
-          <!-- Live agent reply bubble (sealed into history after speech ends) -->
-          {#if liveAgentText}
+          <!-- Tool activity chip (Gemini/Claude-style): appears while the
+               agent runs tools. Click to expand the call log. -->
+          {#if toolActive && toolCalls.length > 0}
+            <div class="flex justify-start">
+              <button
+                type="button"
+                class="tool-chip max-w-[80%] rounded-full px-3 py-1.5 flex items-center gap-2"
+                onclick={() => (toolDetailOpen = !toolDetailOpen)}
+              >
+                <span class="tool-chip-spinner"></span>
+                <span class="text-[11px] lg:text-xs text-zinc-300">{currentToolLabel}…</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-zinc-600 transition-transform {toolDetailOpen ? 'rotate-180' : ''}">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+            </div>
+            {#if toolDetailOpen}
+              <div class="flex justify-start">
+                <div class="max-w-[80%] tool-chip-detail rounded-xl px-3 py-2 font-mono text-[10px] lg:text-[11px] space-y-1">
+                  {#each toolCalls as call}
+                    <div class="flex items-center gap-2">
+                      <span class="{call.done ? 'text-emerald-400' : 'text-amber-400'}">{call.done ? '✓' : '⋯'}</span>
+                      <span class="text-zinc-400">{call.label}</span>
+                      <span class="text-zinc-600">({call.name})</span>
+                      <span class="text-zinc-700 ml-auto">{call.time}</span>
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            {/if}
+          {/if}
+          <!-- Live agent reply bubbles: ONE bubble per speech segment
+               (filler, ack, answer) — the bridge flushes each segment, so
+               they arrive as distinct utterances and get distinct bubbles. -->
+          {#each liveAgentBubbles as bubble, bi}
+            {#if bi > 0}
+              <!-- visual breathing between same-turn bubbles -->
+              <div class="flex justify-start pl-2">
+                <div class="w-8 border-t border-violet-500/20"></div>
+              </div>
+            {/if}
             <div class="flex justify-start">
               <div class="max-w-[80%] message-assistant rounded-2xl px-3 py-2 lg:px-4 lg:py-3 border-violet-500/20">
-                <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{liveAgentText}{#if agentSpeaking}<span class="inline-block w-1.5 h-4 bg-violet-400/80 ml-1 animate-pulse align-middle"></span>{/if}</p>
+                <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{bubble.text}{#if agentSpeaking && bi === liveAgentBubbles.length - 1 && !bubble.final}<span class="inline-block w-1.5 h-4 bg-violet-400/80 ml-1 animate-pulse align-middle"></span>{/if}</p>
                 <p class="text-[10px] text-zinc-600 font-mono mt-1">speaking</p>
               </div>
             </div>
-          {/if}
+          {/each}
         </div>
       </div>
 

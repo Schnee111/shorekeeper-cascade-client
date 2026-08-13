@@ -57,3 +57,8 @@ server/dist/
 *.log
 *.tmp
 .cache/
+
+# Python venvs
+.venv/
+venv/
+__pycache__/
