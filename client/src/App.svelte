@@ -20,15 +20,35 @@
   // Voice selector — live: the token server embeds the chosen Fish Audio
   // voice ID into the JWT, the agent reads it at session start. Switching
   // mid-session reconnects the room (no TTS hot-swap in livekit-agents).
-  interface VoiceOption { id: string; label: string; default: boolean }
+  interface VoiceOption { id: string; label: string; desc?: string; default: boolean }
   let voiceOptions = $state<VoiceOption[]>([
-    { id: 'gura', label: 'Gura', default: true },
-    { id: 'gura2', label: 'Gura (alt)', default: false },
-    { id: 'zeta', label: 'Zeta', default: false },
+    { id: 'gura', label: 'Gura', desc: 'Energetic · EN', default: true },
+    { id: 'gura2', label: 'Gura (alt)', desc: 'Alt clone · EN', default: false },
+    { id: 'zeta', label: 'Zeta', desc: 'Calm · ID/EN', default: false },
   ]);
   const savedVoice = typeof localStorage !== 'undefined' ? localStorage.getItem('jarvis-voice') : null;
   let selectedVoice = $state(savedVoice || 'gura');
-  let voiceSwitching = false;
+  let voiceSwitching = $state(false);
+  let voiceMenuOpen = $state(false);
+  let voiceMenuEl: HTMLElement | undefined = $state();
+  let currentVoiceLabel = $derived(voiceOptions.find((v) => v.id === selectedVoice)?.label ?? selectedVoice);
+
+  // Close the dropdown on outside click / Escape.
+  $effect(() => {
+    if (!voiceMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (voiceMenuEl && !voiceMenuEl.contains(e.target as Node)) voiceMenuOpen = false;
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') voiceMenuOpen = false;
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  });
 
   // Fetch the real registry (falls back to the hard-coded list on error).
   fetch('/jarvis-livekit/voices')
@@ -43,13 +63,12 @@
     })
     .catch(() => { /* keep the static fallback list */ });
 
-  async function onVoiceChange(e: Event) {
-    const select = e.target as HTMLSelectElement;
-    const next = select.value;
-    if (next === selectedVoice || voiceSwitching) return;
-    selectedVoice = next;
-    localStorage.setItem('jarvis-voice', next);
-    const label = voiceOptions.find((v) => v.id === next)?.label ?? next;
+  async function pickVoice(id: string) {
+    voiceMenuOpen = false;
+    if (id === selectedVoice || voiceSwitching) return;
+    selectedVoice = id;
+    localStorage.setItem('jarvis-voice', id);
+    const label = voiceOptions.find((v) => v.id === id)?.label ?? id;
     addLog('info', `Voice → ${label}${mode === 'active' ? ' (reconnecting…)' : ''}`);
 
     // Active session: reconnect so the agent restarts with the new voice.
@@ -683,6 +702,98 @@
       background: var(--text-muted);
     }
 
+    /* Voice selector — custom glass dropdown */
+    .voice-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.42rem 0.8rem;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+      border: 1px solid var(--border-medium);
+      backdrop-filter: blur(20px);
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    @media (min-width: 1024px) {
+      .voice-btn {
+        padding: 0.55rem 1rem;
+      }
+    }
+
+    .voice-btn:hover:not(:disabled),
+    .voice-btn.open {
+      border-color: rgba(103, 232, 249, 0.4);
+      box-shadow: 0 0 16px rgba(103, 232, 249, 0.08);
+    }
+
+    .voice-btn:disabled {
+      cursor: wait;
+      opacity: 0.75;
+    }
+
+    .voice-spinner {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid rgba(251, 191, 36, 0.25);
+      border-top-color: var(--accent-amber);
+      animation: voice-spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes voice-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .voice-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 220px;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 6px;
+      border-radius: 16px;
+      background: rgba(10, 11, 16, 0.92);
+      border: 1px solid var(--border-medium);
+      backdrop-filter: blur(30px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+      animation: voice-menu-in 0.16s ease-out;
+      transform-origin: top right;
+    }
+
+    @keyframes voice-menu-in {
+      from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .voice-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      width: 100%;
+      padding: 0.5rem 0.65rem;
+      border-radius: 10px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s ease;
+    }
+
+    .voice-option:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .voice-option.active {
+      background: var(--accent-cyan-dim);
+    }
+
     /* Message bubbles */
     .message-user {
       background: linear-gradient(135deg, rgba(103, 232, 249, 0.1) 0%, rgba(96, 165, 250, 0.05) 100%);
@@ -801,17 +912,57 @@
     </div>
 
     <div class="flex items-center gap-4">
-      <!-- Voice Selector — live: switches the agent's Fish Audio voice -->
-      <select
-        bind:value={selectedVoice}
-        onchange={onVoiceChange}
-        disabled={voiceSwitching}
-        class="bg-white/5 border border-white/10 rounded-full px-3 py-1.5 lg:px-4 lg:py-2 text-xs lg:text-sm text-zinc-300 focus:outline-none focus:border-cyan-500/50 transition-colors disabled:opacity-50"
-      >
-        {#each voiceOptions as voice}
-          <option value={voice.id}>{voice.label}</option>
-        {/each}
-      </select>
+      <!-- Voice Selector — custom glass dropdown (switches the agent's Fish Audio voice) -->
+      <div class="relative" bind:this={voiceMenuEl}>
+        <button
+          type="button"
+          class="voice-btn {voiceMenuOpen ? 'open' : ''}"
+          disabled={voiceSwitching}
+          onclick={() => (voiceMenuOpen = !voiceMenuOpen)}
+          aria-haspopup="listbox"
+          aria-expanded={voiceMenuOpen}
+        >
+          {#if voiceSwitching}
+            <span class="voice-spinner" aria-hidden="true"></span>
+            <span class="text-xs lg:text-sm text-amber-300/90">Switching…</span>
+          {:else}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-300/80 shrink-0" aria-hidden="true">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>
+            </svg>
+            <span class="text-xs lg:text-sm text-zinc-200 font-medium">{currentVoiceLabel}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-500 transition-transform duration-200 {voiceMenuOpen ? 'rotate-180' : ''}" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          {/if}
+        </button>
+
+        {#if voiceMenuOpen}
+          <div class="voice-menu" role="listbox">
+            {#each voiceOptions as voice}
+              <button
+                type="button"
+                role="option"
+                aria-selected={voice.id === selectedVoice}
+                class="voice-option {voice.id === selectedVoice ? 'active' : ''}"
+                onclick={() => pickVoice(voice.id)}
+              >
+                <span class="flex items-center gap-2 min-w-0">
+                  <span class="text-xs lg:text-sm text-zinc-100 font-medium">{voice.label}</span>
+                  {#if voice.desc}
+                    <span class="text-[10px] text-zinc-500 font-mono truncate">{voice.desc}</span>
+                  {/if}
+                </span>
+                {#if voice.id === selectedVoice}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-300 shrink-0" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                {/if}
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
 
       <!-- Status Indicators -->
       <div class="hidden sm:flex items-center gap-3">
