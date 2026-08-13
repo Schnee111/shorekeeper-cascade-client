@@ -1,170 +1,138 @@
 /**
- * deepgram-stt.ts — Deepgram Nova-3 live STT for user subtitle overlay.
+ * deepgram-stt.ts — Deepgram Nova-3 real-time STT session.
  *
- * Uses raw WebSocket instead of Deepgram SDK to avoid Bun compatibility
- * issues (SDK v5 sets binaryType="blob" which Bun doesn't support).
+ * WebSocket API: wss://api.deepgram.com/v1/listen
+ *   - model=nova-3
+ *   - encoding=linear16
+ *   - sample_rate=16000
+ *   - channels=1
+ *   - interim_results=true
+ *   - endpointing=500
  *
- * Deepgram Live STT v1 WebSocket API:
- *   wss://api.deepgram.com/v1/listen?model=nova-3&language=id&...
- *   Auth: token=<API_KEY> query param or Authorization header
- *   Send: raw PCM bytes
- *   Receive: JSON with channel.alternatives[0].transcript
+ * Input: base64-encoded PCM 16kHz mono Int16 LE
+ * Output: JSON transcript events
  */
 
-import type { ServerWebSocket } from "bun";
-
-const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY || "";
+// language=id: Indonesian on Nova-3 (verified working via direct WS test)
+// Do NOT combine with smart_format=true — that breaks Indonesian transcription
+// endpointing=1500: wait 1.5s of silence before finalizing
+const DEEPGRAM_WS_URL = `wss://api.deepgram.com/v1/listen?model=nova-3&language=id&encoding=linear16&sample_rate=16000&channels=1&interim_results=true&endpointing=800`;
 
 export interface DeepgramSession {
-  isReady: () => boolean;
-  sendAudio: (base64Data: string) => void;
+  sendAudio: (base64pcm: string) => void;
   close: () => void;
-  onFinalTranscript?: (text: string) => void;
+  onTranscript: (cb: (text: string, isFinal: boolean) => void) => void;
 }
 
-export async function createDeepgramSession(
-  clientWs: ServerWebSocket<any>,
-  onFinalTranscript?: (text: string) => void
-): Promise<DeepgramSession> {
-  if (!DEEPGRAM_API_KEY) {
-    console.error("[Deepgram] DEEPGRAM_API_KEY not set — STT disabled");
-    return {
-      isReady: () => false,
-      sendAudio: () => {},
-      close: () => {},
-    };
-  }
-
-  let ready = false;
-
-  const params = new URLSearchParams({
-    model: "nova-3",
-    language: "id",
-    smart_format: "true",
-    interim_results: "true",
-    encoding: "linear16",
-    sample_rate: "16000",
-    endpointing: "500",
+export function createDeepgramSession(apiKey: string): DeepgramSession {
+  const ws = new WebSocket(DEEPGRAM_WS_URL, {
+    headers: {
+      Authorization: `Token ${apiKey}`,
+    },
   });
 
-  const ws = new WebSocket(
-    `wss://api.deepgram.com/v1/listen?${params.toString()}`,
-    { headers: { Authorization: `Token ${DEEPGRAM_API_KEY}` } } as any
-  );
+  let transcriptCallback: ((text: string, isFinal: boolean) => void) | null = null;
+  let keepaliveInterval: ReturnType<typeof setInterval> | null = null;
+  // Track last interim transcript for final-empty fallback
+  let lastInterimTranscript = "";
+  let lastInterimTime = 0;
+
+  ws.binaryType = "arraybuffer";
 
   ws.onopen = () => {
-    console.log("[Deepgram] Connection opened.");
-    ready = true;
-    try {
-      clientWs.send(
-        JSON.stringify({
-          type: "status",
-          state: "ready",
-          log: "[Deepgram] STT Engine Ready (Nova-3 ID)",
-        })
-      );
-    } catch {
-      // clientWs may have closed
-    }
+    console.log("[Deepgram] WebSocket connected");
+    // Keepalive ping every 2s to prevent idle timeout
+    keepaliveInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        // Send silence as keepalive (16000 Hz * 0.1s * 2 bytes = 3200 bytes of zeros)
+        const silence = new ArrayBuffer(3200);
+        ws.send(silence);
+      }
+    }, 2000);
   };
 
   ws.onmessage = (event) => {
     try {
-      const data = JSON.parse(
-        typeof event.data === "string"
-          ? event.data
-          : Buffer.from(event.data).toString("utf-8")
-      );
-      const transcript = data.channel?.alternatives?.[0]?.transcript;
-      if (transcript && transcript.trim().length > 0) {
-        try {
-          clientWs.send(
-            JSON.stringify({
-              type: "transcript",
-              role: "user",
-              text: transcript,
-              isFinal: data.is_final,
-            })
-          );
-        } catch {
-          // clientWs may have closed
+      const msg = JSON.parse(event.data as string);
+      
+      if (msg.type === 'Results') {
+        const transcript = msg.channel?.alternatives?.[0]?.transcript;
+        const isFinal = msg.is_final === true;
+        const speechFinal = msg.speech_final === true;
+        
+        console.log(`[Deepgram] Results: final=${isFinal}, speech_final=${speechFinal}, transcript="${transcript}"`);
+        
+        // Track last non-empty interim transcript
+        if (transcript && transcript.trim()) {
+          lastInterimTranscript = transcript;
+          lastInterimTime = Date.now();
         }
-
-        if (data.is_final) {
-          console.log(`[Deepgram] User (Final): "${transcript}"`);
-          // Trigger Hermes pipeline with final transcript
-          if (onFinalTranscript) {
-            onFinalTranscript(transcript.trim());
+        
+        if (transcriptCallback) {
+          // Send interim results as-is
+          if (!isFinal && transcript) {
+            transcriptCallback(transcript, false);
+          }
+          
+          // On final: if transcript empty, fall back to last interim
+          // (Nova-3 + language=id bug: final often returns empty while interim has content)
+          if (isFinal) {
+            const finalText = transcript?.trim() 
+              ? transcript 
+              : (lastInterimTranscript && (Date.now() - lastInterimTime < 3000) 
+                  ? lastInterimTranscript 
+                  : "");
+            
+            if (finalText.trim()) {
+              console.log(`[Deepgram] Final (corrected): "${finalText}"${!transcript?.trim() ? " [from interim fallback]" : ""}`);
+              transcriptCallback(finalText, true);
+              lastInterimTranscript = ""; // reset after final
+            }
           }
         }
+      } else {
+        console.log(`[Deepgram] Message type=${msg.type}`, JSON.stringify(msg).substring(0, 200));
       }
-    } catch {
-      // non-JSON, ignore
+    } catch (e) {
+      console.error("[Deepgram] Parse error:", e, "Raw:", event.data);
     }
   };
 
   ws.onerror = (e) => {
-    console.error("[Deepgram] WS Error:", e);
-    try {
-      clientWs.send(
-        JSON.stringify({ type: "error", error: "Deepgram STT Error" })
-      );
-    } catch {
-      // clientWs may have closed
+    console.error("[Deepgram] WebSocket error:", e);
+  };
+
+  ws.onclose = (e) => {
+    console.log(`[Deepgram] WebSocket closed: code=${e.code}`);
+    if (keepaliveInterval) {
+      clearInterval(keepaliveInterval);
     }
   };
 
-  ws.onclose = () => {
-    console.log("[Deepgram] Connection closed — reconnecting...");
-    ready = false;
-    // Auto-reconnect after brief delay
-    setTimeout(() => {
-      if (!closed) {
-        console.log("[Deepgram] Reconnecting...");
-        reconnect();
-      }
-    }, 500);
-  };
-
-  let closed = false;
-
-  function reconnect() {
-    const newWs = new WebSocket(
-      `wss://api.deepgram.com/v1/listen?${params.toString()}`,
-      { headers: { Authorization: `Token ${DEEPGRAM_API_KEY}` } } as any
-    );
-    newWs.onopen = ws.onopen;
-    newWs.onmessage = ws.onmessage;
-    newWs.onerror = ws.onerror;
-    newWs.onclose = ws.onclose;
-    // Replace the reference used by sendAudio/close
-    activeWs = newWs;
-  }
-
-  let activeWs = ws;
-
   return {
-    isReady: () => ready,
-    sendAudio: (base64Data: string) => {
-      if (!ready || activeWs.readyState !== WebSocket.OPEN) return;
-      const buffer = Buffer.from(base64Data, "base64");
-      activeWs.send(buffer);
-    },
-    close: () => {
-      closed = true;
-      ready = false;
-      if (activeWs.readyState === WebSocket.OPEN) {
-        try {
-          activeWs.send(JSON.stringify({ type: "CloseStream" }));
-        } catch {
-          // ignore
+    sendAudio(base64pcm: string) {
+      if (ws.readyState === WebSocket.OPEN) {
+        // Decode base64 to binary PCM
+        const binary = atob(base64pcm);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
         }
+        ws.send(bytes.buffer);
       }
-      try {
-        activeWs.close();
-      } catch {
-        // ignore
+    },
+
+    close() {
+      if (keepaliveInterval) {
+        clearInterval(keepaliveInterval);
       }
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    },
+
+    onTranscript(cb: (text: string, isFinal: boolean) => void) {
+      transcriptCallback = cb;
     },
   };
 }

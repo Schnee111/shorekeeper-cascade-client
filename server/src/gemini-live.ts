@@ -57,6 +57,7 @@ export function createGeminiSession(
           systemInstruction: {
             parts: [{ text: SYSTEM_INSTRUCTION }],
           },
+          inputAudioTranscription: {},
         },
       };
       ws!.send(JSON.stringify(setup));
@@ -97,6 +98,15 @@ export function createGeminiSession(
               }
               if (part.text) {
                 events.onTranscript(part.text, "model");
+              }
+            }
+          }
+
+          // Input transcript (user speech)
+          if (sc.inputTranscript) {
+            for (const part of sc.inputTranscript.parts || []) {
+              if (part.text) {
+                events.onTranscript(part.text, "user");
               }
             }
           }

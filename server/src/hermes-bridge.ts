@@ -3,56 +3,70 @@
  *
  * Spawns `hermes -z <prompt>` as a subprocess, captures streaming stdout.
  * Session continuity via --resume <sessionId>.
- * Persona (SOUL.md) auto-loaded by Hermes — no manual injection needed.
  *
- * Why CLI over HTTP: Hermes doesn't expose a public REST API by default.
- * The CLI is battle-tested, has full tool/memory/skill access, and
- * the Shorekeeper persona is already configured in SOUL.md.
- *
- * Session ID: `--pass-session-id` outputs the session ID to **stderr**
- * as the last line (e.g., "SESSION:abc123def"). We capture stderr in
- * parallel with stdout streaming.
+ * Voice mode: prepends brevity instruction to every query so Hermes
+ * keeps responses short (1-2 sentences) for TTS playback.
  */
 
 import { type Subprocess } from "bun";
 
 export interface HermesBridge {
-  /** Send user text, get streaming response. Returns full text when done. */
   query(text: string, sessionId?: string): AsyncIterable<string>;
-  /** Send user text, get full response + session ID. */
   queryFull(text: string, sessionId?: string): Promise<{ text: string; sessionId: string }>;
-  /** Kill any running subprocess. */
   abort(): void;
+  isProcessing(): boolean;
+  getLastSessionId(): string | undefined;
 }
 
 const HERMES_BIN = process.env.HERMES_BIN || "hermes";
 
+// Voice-mode instruction: keep responses SHORT for TTS playback + verbal thinking
+const VOICE_PREFIX = `[VOICE MODE INSTRUCTIONS]
+1. Keep your response to 1-2 short sentences maximum. Be direct. No lists, no markdown, no code blocks.
+2. ALWAYS start by verbally acknowledging what you're about to do BEFORE executing any tools or actions.
+   - Example: "Oke, aku cek status cron job di VPS" → then execute tool
+   - Example: "Baik, aku lihat anime update terbaru untukmu" → then check
+   - Example: "Hmm, biarkan aku hitung dulu..." → then calculate
+3. Never stay silent while processing. Always verbalize your intent first.
+4. Just speak naturally and briefly.
+
+User says: `;
+
 export function createHermesBridge(): HermesBridge {
   let currentProc: Subprocess | null = null;
   let lastSessionId: string | undefined;
+  let processing = false;
+  // Use a named session for reliable continuity across queries
+  // --continue <name> finds or creates a session with this name
+  const connectionSessionName = `jarvis-voice-${Date.now()}`;
 
   function abort() {
     if (currentProc) {
       try {
         currentProc.kill();
-      } catch {
-        // already dead
-      }
+        console.log("[Hermes] Aborted current query");
+      } catch {}
       currentProc = null;
+      processing = false;
     }
   }
 
   async function* query(text: string, sessionId?: string): AsyncIterable<string> {
-    abort(); // kill any previous query
+    abort();
+    processing = true;
+
+    // Prepend voice-mode instruction for brevity
+    const prompt = VOICE_PREFIX + text;
 
     const args = [
-      "-z", text,
+      "-z", prompt,
       "--no-restore-cwd",
-      "--pass-session-id",
     ];
-    if (sessionId) {
-      args.push("--resume", sessionId);
-    }
+    
+    // Use named session for reliable continuity
+    // --continue <name> finds existing session by name, or creates new one
+    args.push("--continue", connectionSessionName);
+    console.log(`[Hermes] Session: ${connectionSessionName}`);
 
     const proc = Bun.spawn([HERMES_BIN, ...args], {
       stdout: "pipe",
@@ -61,8 +75,6 @@ export function createHermesBridge(): HermesBridge {
     });
     currentProc = proc;
 
-    // Read stderr in background to capture session ID
-    // --pass-session-id outputs "SESSION:<id>" to stderr
     const stderrReader = proc.stderr.getReader();
     let stderrBuf = "";
     const stderrPromise = (async () => {
@@ -73,11 +85,8 @@ export function createHermesBridge(): HermesBridge {
           if (done) break;
           stderrBuf += dec.decode(value, { stream: true });
         }
-      } catch {
-        // reader closed
-      }
+      } catch {}
       stderrReader.releaseLock();
-      // Extract session ID from stderr — last line matching "SESSION:..."
       const lines = stderrBuf.trim().split("\n");
       for (const line of lines.reverse()) {
         const match = line.match(/SESSION:(\S+)/);
@@ -96,30 +105,20 @@ export function createHermesBridge(): HermesBridge {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         lineBuffer += decoder.decode(value, { stream: true });
-
-        // Emit complete lines
         const lines = lineBuffer.split("\n");
         lineBuffer = lines.pop() ?? "";
-
         for (const line of lines) {
-          if (line.trim()) {
-            yield line;
-          }
+          if (line.trim()) yield line;
         }
       }
-
-      // Emit remaining
-      if (lineBuffer.trim()) {
-        yield lineBuffer.trim();
-      }
+      if (lineBuffer.trim()) yield lineBuffer.trim();
     } finally {
       reader.releaseLock();
-      // Wait for stderr to finish draining
       await stderrPromise;
       await proc.exited.catch(() => {});
       currentProc = null;
+      processing = false;
     }
   }
 
@@ -130,9 +129,9 @@ export function createHermesBridge(): HermesBridge {
     }
     return {
       text: chunks.join("\n"),
-      sessionId: lastSessionId ?? sessionId ?? `jarvis-${Date.now()}`,
+      sessionId: lastSessionId ?? connectionSessionName,
     };
   }
 
-  return { query, queryFull, abort };
+  return { query, queryFull, abort, isProcessing: () => processing, getLastSessionId: () => lastSessionId };
 }

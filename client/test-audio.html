@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Capture Test</title>
+</head>
+<body>
+    <h1>Audio Capture Test</h1>
+    <button id="start">Start Capture</button>
+    <button id="stop">Stop Capture</button>
+    <div id="log"></div>
+
+    <script>
+        let audioContext, workletNode, mediaStream;
+        let chunksSent = 0;
+
+        document.getElementById('start').onclick = async () => {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    audio: { sampleRate: 16000, channelCount: 1 }
+                });
+                
+                audioContext = new AudioContext();
+                await audioContext.resume();
+                
+                // Load worklet
+                await audioContext.audioWorklet.addModule('/pcm-worklet.js');
+                
+                const source = audioContext.createMediaStreamSource(mediaStream);
+                workletNode = new AudioWorkletNode(audioContext, 'pcm-processor');
+                
+                workletNode.port.onmessage = (e) => {
+                    const samples = e.data;
+                    chunksSent++;
+                    document.getElementById('log').innerHTML += 
+                        `Chunk ${chunksSent}: ${samples.length} samples, first=${samples[0]}, max=${Math.max(...samples)}<br>`;
+                    
+                    if (chunksSent >= 5) {
+                        document.getElementById('stop').click();
+                    }
+                };
+                
+                source.connect(workletNode);
+                workletNode.connect(audioContext.destination);
+                
+                document.getElementById('log').innerHTML += 'Capture started...<br>';
+            } catch (err) {
+                document.getElementById('log').innerHTML += `Error: ${err.message}<br>`;
+            }
+        };
+
+        document.getElementById('stop').onclick = () => {
+            if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+            if (audioContext) audioContext.close();
+            document.getElementById('log').innerHTML += 'Capture stopped.<br>';
+        };
+    </script>
+</body>
+</html>

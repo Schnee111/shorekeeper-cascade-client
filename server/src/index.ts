@@ -1,9 +1,10 @@
 import { Elysia } from "elysia";
 import { createGeminiSession, type GeminiSession } from "./gemini-live";
 import { createDeepgramSession, type DeepgramSession } from "./deepgram-stt";
-import { createHermesBridge, type HermesBridge } from "./hermes-bridge";
-import { createFishAudioSession, type FishAudioSession, detectLanguage } from "./fish-audio-tts";
-import { createSentenceAccumulator } from "./sentence-detector";
+import { createHermesWSBridge, type HermesWSBridge } from "./hermes-ws-bridge";
+import { createFishAudioSession, type FishAudioSession } from "./fish-audio-tts";
+import { SentenceDetector, splitSentences, detectLanguage } from "./sentence-detector";
+import { normalizeNumbersForTTS } from "./id-number-words";
 
 const API_KEY = process.env.GEMINI_API_KEY || "";
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-live-preview";
@@ -16,7 +17,7 @@ const DEFAULT_VOICE = process.env.GEMINI_VOICE || "Achernar";
 type ConnState = {
   gemini?: GeminiSession;
   deepgram?: DeepgramSession;
-  hermes: HermesBridge;
+  hermes: HermesWSBridge;
   tts: FishAudioSession;
   audioChunks: number;
   loggedClientFrame: boolean;
@@ -24,6 +25,8 @@ type ConnState = {
   hermesSessionId?: string;
   isProcessing: boolean;
   abortController?: AbortController;
+  // Safety: auto-reset isProcessing if audioPlaybackDone never arrives (mobile bg, reconnect, etc.)
+  processingTimeout?: ReturnType<typeof setTimeout>;
   // Voice tracking
   selectedVoice: string;
 };
@@ -36,8 +39,8 @@ if (!API_KEY) {
 }
 
 /**
- * Process Hermes response: stream tokens → sentence detection → TTS → audio to client.
- * Handles barge-in via abortController.
+ * Process Hermes response: stream tokens → sentence detection → parallel TTS → audio to client.
+ * Uses sentence-level chunking for natural prosody.
  */
 async function processHermesResponse(
   ws: any,
@@ -52,8 +55,21 @@ async function processHermesResponse(
   state.abortController = abortController;
   state.isProcessing = true;
 
-  const acc = createSentenceAccumulator();
+  // Safety net: if audioPlaybackDone never arrives (mobile background, reconnect, etc.),
+  // auto-reset isProcessing after 30s so audio gate doesn't stay closed forever
+  if (state.processingTimeout) clearTimeout(state.processingTimeout);
+  state.processingTimeout = setTimeout(() => {
+    if (state.isProcessing) {
+      console.log("[Safety] isProcessing stuck for 30s — auto-resetting (audioPlaybackDone never arrived)");
+      state.isProcessing = false;
+      state.abortController = undefined;
+    }
+  }, 30000);
+
+  const detector = new SentenceDetector();
   let fullResponse = "";
+  const ttsPromises: Promise<{ index: number; audio: Buffer }>[] = [];
+  let chunkIndex = 0;
 
   try {
     // Stream from Hermes
@@ -64,6 +80,7 @@ async function processHermesResponse(
       }
 
       fullResponse += chunk + " ";
+      
       // Send partial transcript to client
       ws.send(JSON.stringify({
         type: "transcript",
@@ -72,61 +89,88 @@ async function processHermesResponse(
         isFinal: false,
       }));
 
-      // Check for complete sentences
-      const sentences = acc.feed(chunk + " ");
+      // Detect complete sentences
+      const sentences = detector.addText(chunk + " ");
+      
+      // Start TTS generation for complete sentences in parallel
       for (const sentence of sentences) {
         if (abortController.signal.aborted) break;
+        
+        const currentIndex = chunkIndex++;
+        // Normalize numbers to Indonesian words for natural TTS pronunciation
+        const ttsText = normalizeNumbersForTTS(sentence);
+        console.log(`[TTS] Sentence ${currentIndex + 1} (${sentence.length} chars): "${sentence}"`);
+        if (ttsText !== sentence) {
+          console.log(`[TTS] Number-normalized: "${ttsText}"`);
+        }
+        const language = detectLanguage(sentence);
 
-        console.log(`[TTS] Synthesizing: "${sentence}"`);
-        try {
-          const language = detectLanguage(sentence);
-          console.log(`[TTS] Sentence: "${sentence}" → ${language}`);
+        // Start TTS generation (non-blocking)
+        const promise = state.tts.synthesize(ttsText, language)
+          .then(audio => ({ index: currentIndex, audio }))
+          .catch(e => {
+            console.error(`[TTS] Synthesis error for sentence ${currentIndex + 1}:`, e);
+            return { index: currentIndex, audio: Buffer.alloc(0) };
+          });
+        
+        ttsPromises.push(promise);
+      }
+    }
 
-          // Send subtitle before TTS
-          ws.send(JSON.stringify({
-            type: "subtitle",
-            text: sentence,
-            language: language,
-          }));
+    // Flush any remaining text in detector buffer
+    if (!abortController.signal.aborted) {
+      const finalSentence = detector.flush();
+      if (finalSentence) {
+        const currentIndex = chunkIndex++;
+        const ttsText = normalizeNumbersForTTS(finalSentence);
+        console.log(`[TTS] Final sentence (${finalSentence.length} chars): "${finalSentence}"`);
+        if (ttsText !== finalSentence) {
+          console.log(`[TTS] Number-normalized: "${ttsText}"`);
+        }
+        const language = detectLanguage(finalSentence);
 
-          const audio = await state.tts.synthesize(sentence, language);
-          if (abortController.signal.aborted) break;
+        const promise = state.tts.synthesize(ttsText, language)
+          .then(audio => ({ index: currentIndex, audio }))
+          .catch(e => {
+            console.error(`[TTS] Synthesis error for final sentence:`, e);
+            return { index: currentIndex, audio: Buffer.alloc(0) };
+          });
+        
+        ttsPromises.push(promise);
+      }
+    }
 
-          // Send audio to client
+    // Wait for all TTS chunks to complete
+    if (ttsPromises.length > 0 && !abortController.signal.aborted) {
+      console.log(`[TTS] Waiting for ${ttsPromises.length} parallel TTS sentences...`);
+      const results = await Promise.all(ttsPromises);
+      
+      // Sort by index to maintain order
+      results.sort((a, b) => a.index - b.index);
+      
+      // Update status to speaking before sending audio
+      ws.send(JSON.stringify({ type: "status", state: "speaking" }));
+      
+      // Send audio chunks to client in order with small delay
+      for (const result of results) {
+        if (abortController.signal.aborted) break;
+        if (result.audio.length > 0) {
           ws.send(JSON.stringify({
             type: "audio",
-            data: audio.toString("base64"),
+            data: result.audio.toString("base64"),
           }));
-        } catch (e) {
-          console.error("[TTS] Synthesis error:", e);
+          console.log(`[TTS] Sent audio sentence ${result.index + 1} (${result.audio.length} bytes)`);
+          
+          // Small delay to prevent WebSocket message burst
+          await new Promise(resolve => setTimeout(resolve, 50));
         }
       }
     }
 
-    // Flush remaining buffer
-    if (!abortController.signal.aborted) {
-      const remaining = acc.flush();
-      for (const sentence of remaining) {
-        console.log(`[TTS] Synthesizing (flush): "${sentence}"`);
-        try {
-          const language = detectLanguage(sentence);
-          console.log(`[TTS] Flush: "${sentence}" → ${language}`);
-
-          ws.send(JSON.stringify({
-            type: "subtitle",
-            text: sentence,
-            language: language,
-          }));
-
-          const audio = await state.tts.synthesize(sentence, language);
-          ws.send(JSON.stringify({
-            type: "audio",
-            data: audio.toString("base64"),
-          }));
-        } catch (e) {
-          console.error("[TTS] Synthesis error:", e);
-        }
-      }
+    // After query completes, save the session ID for next query
+    state.hermesSessionId = state.hermes.getSessionId() ?? state.hermesSessionId;
+    if (state.hermesSessionId) {
+      console.log(`[Hermes] Session ID: ${state.hermesSessionId}`);
     }
 
     // Send final transcript
@@ -139,10 +183,10 @@ async function processHermesResponse(
 
     // Send turn complete
     ws.send(JSON.stringify({ type: "turnComplete" }));
+    // DON'T set isProcessing = false here - wait for client audioPlaybackDone message
   } catch (e) {
     console.error("[Hermes] Query error:", e);
     ws.send(JSON.stringify({ type: "error", error: "Hermes query failed" }));
-  } finally {
     state.isProcessing = false;
     state.abortController = undefined;
   }
@@ -151,12 +195,35 @@ async function processHermesResponse(
 const app = new Elysia()
   .ws("/ws", {
     async open(ws) {
-      console.log("[WS] Client connected — opening Gemini Live + Deepgram STT + Hermes Bridge...");
-
-      const state: ConnState = {
+      const key = socketKey(ws);
+      
+      // Check if we already have a connection state (reconnecting client)
+      let state = conns.get(key);
+      
+      if (state && state.gemini && state.deepgram) {
+        console.log("[WS] Client reconnected — reusing existing sessions");
+        
+        // Send ready status immediately
+        ws.send(JSON.stringify({
+          type: "status",
+          state: "ready",
+          log: "[Hermes] Bridge ready (CLI mode)",
+        }));
+        ws.send(JSON.stringify({
+          type: "status",
+          state: "ready",
+          log: `[TTS] Fish Audio TTS ready (model: s2.1-pro-free)`,
+        }));
+        
+        return;
+      }
+      
+      console.log("[WS] New client connected — creating new sessions");
+      
+      state = {
         audioChunks: 0,
         loggedClientFrame: false,
-        hermes: createHermesBridge(),
+        hermes: createHermesWSBridge(),
         tts: createFishAudioSession(process.env.FISH_API_KEY || ""),
         isProcessing: false,
         selectedVoice: DEFAULT_VOICE,
@@ -168,8 +235,11 @@ const app = new Elysia()
             // ws.send(JSON.stringify({ type: "audio", data: base64pcm }));
           },
           onTranscript: (text, role) => {
-            // Gemini Live transcript (for STT fallback)
-            ws.send(JSON.stringify({ type: "transcript", text, role, source: "gemini" }));
+            // Gemini Live transcript — only forward model output
+            // User speech is handled by Deepgram (primary STT)
+            if (role === "model") {
+              ws.send(JSON.stringify({ type: "transcript", text, role, source: "gemini" }));
+            }
           },
           onTurnComplete: () => {
             // Gemini Live turn complete — not used in cascaded mode
@@ -190,29 +260,41 @@ const app = new Elysia()
         }),
       };
 
-      // Deepgram createSession is async — wire up final transcript → Hermes pipeline
-      try {
-        state.deepgram = await createDeepgramSession(
-          ws.raw as any,
-          (finalText) => {
-            // Deepgram final transcript → trigger Hermes query
-            console.log(`[Pipeline] Deepgram final → Hermes: "${finalText}"`);
-            if (!state.isProcessing) {
+      // Deepgram STT — wire up final transcript → Hermes pipeline
+      const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY || "";
+      if (DEEPGRAM_API_KEY) {
+        state.deepgram = createDeepgramSession(DEEPGRAM_API_KEY);
+        state.deepgram.onTranscript((text, isFinal) => {
+          // Send interim transcript to client
+          ws.send(JSON.stringify({
+            type: "transcript",
+            role: "user",
+            text,
+            isFinal,
+            source: "deepgram",
+          }));
+          // Final transcript → trigger Hermes query
+          if (isFinal && text.trim().length > 0) {
+            console.log(`[Pipeline] Deepgram final → Hermes: "${text}"`);
+            if (!state!.isProcessing) {
               ws.send(JSON.stringify({ type: "status", state: "processing" }));
-              processHermesResponse(ws, state, finalText);
+              processHermesResponse(ws, state!, text.trim());
             } else {
               console.log("[Pipeline] Hermes busy, queuing...");
-              // TODO: queue or interrupt current response
             }
           }
-        );
-      } catch (e) {
-        console.error("[Deepgram] Failed to create session:", e);
-        ws.send(JSON.stringify({ type: "error", error: "Deepgram init failed" }));
+        });
+        ws.send(JSON.stringify({
+          type: "status",
+          state: "ready",
+          log: "[Deepgram] STT Engine Ready (Nova-3 ID)",
+        }));
+      } else {
+        console.error("[Deepgram] DEEPGRAM_API_KEY not set — STT disabled");
       }
 
       if (state.gemini) state.gemini.connect();
-      conns.set(socketKey(ws), state);
+      conns.set(key, state);
 
       ws.send(JSON.stringify({
         type: "status",
@@ -253,14 +335,32 @@ const app = new Elysia()
           state.audioChunks += 1;
           const count = state.audioChunks;
           if (count === 1 || count % 100 === 0) {
-            console.log(`[Audio] Browser chunk #${count}, base64 bytes=${msg.data.length}, deepgramReady=${state.deepgram?.isReady() ?? false}`);
+            console.log(`[Audio] Browser chunk #${count}, base64 bytes=${msg.data.length}, deepgramActive=${!!state.deepgram}, isProcessing=${state.isProcessing}`);
           }
-          // Send audio to both STT engines
-          if (state.deepgram?.isReady()) {
+          // Stop sending audio to Deepgram while Hermes is processing
+          // This prevents abort triggers from barge-in detection
+          if (state.deepgram && !state.isProcessing) {
             state.deepgram.sendAudio(msg.data);
+          } else if (state.isProcessing && count % 100 === 0) {
+            console.log(`[Audio] Chunk #${count} DROPPED — isProcessing stuck? Consider timeout reset`);
           }
-          if (state.gemini?.isReady()) {
-            state.gemini.sendAudio(msg.data);
+        } else if (msg.type === "audioPlaybackDone") {
+          // Client finished playing audio, safe to re-enable Deepgram
+          console.log("[Client] Audio playback done, re-enabling Deepgram");
+          state.isProcessing = false;
+          state.abortController = undefined;
+          if (state.processingTimeout) {
+            clearTimeout(state.processingTimeout);
+            state.processingTimeout = undefined;
+          }
+        } else if (msg.type === "forceReset") {
+          // Emergency reset from client (user tap) — unstick isProcessing
+          console.log("[Client] Force reset — clearing isProcessing");
+          state.isProcessing = false;
+          state.abortController = undefined;
+          if (state.processingTimeout) {
+            clearTimeout(state.processingTimeout);
+            state.processingTimeout = undefined;
           }
         } else if (msg.type === "diagnostic" && msg.message) {
           console.log(`[ClientDiag] ${msg.message}`);
@@ -323,5 +423,5 @@ const app = new Elysia()
   .listen(3002);
 
 console.log(`[Shorekeeper JARVIS] Running on http://${app.server?.hostname}:${app.server?.port}`);
-console.log(`[Shorekeeper JARVIS] Engine: Cascaded (Deepgram STT → Hermes → Gemini TTS)`);
+console.log(`[Shorekeeper JARVIS] Engine: Cascaded (Deepgram STT → Hermes → Fish Audio TTS)`);
 console.log(`[Shorekeeper JARVIS] Default Voice: ${DEFAULT_VOICE} | Gemini Live: ${MODEL} (STT fallback)`);

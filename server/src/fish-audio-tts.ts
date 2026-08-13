@@ -5,18 +5,15 @@
  * Model: s2.1-pro-free (free tier, unlimited)
  * Audio formats: mp3, wav, pcm, opus
  * 
- * Multi-voice support:
- * - English/Japanese: default voice (no reference_id)
- * - Indonesian: use specific reference_id for better quality
- * 
- * Rate limits: 5 concurrent requests (Starter tier)
+ * Single voice strategy: use Vestia Zeta for all languages
+ * This ensures consistent voice character across EN/ID/JP responses
  */
 
 const FISH_API_URL = "https://api.fish.audio/v1/tts";
 const FISH_MODEL = "s2.1-pro-free";
 
-// Indonesian voice reference IDs (tested and verified)
-const INDONESIAN_VOICE_ID = "3095f8e1d1fa4b82acaa8aca720a7f83"; // Vestia Zeta
+// Single voice for all languages (Vestia Zeta)
+const VOICE_ID = "3095f8e1d1fa4b82acaa8aca720a7f83";
 
 export interface FishAudioSession {
   /** Synthesize text to audio buffer (MP3 format by default) */
@@ -26,23 +23,21 @@ export interface FishAudioSession {
 }
 
 /**
- * Detect language from text
- * Returns: "id" for Indonesian, "jp" for Japanese, "en" for English (default)
+ * Detect language from text (simplified)
  */
 export function detectLanguage(text: string): "en" | "id" | "jp" {
-  // Check for Japanese characters (hiragana, katakana, kanji)
+  // Check for Japanese characters
   const japanesePattern = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/;
   if (japanesePattern.test(text)) {
     return "jp";
   }
 
-  // Check for Indonesian keywords/patterns
+  // Check for Indonesian keywords
   const indonesianKeywords = /\b(aku|kamu|dia|mereka|kita|ini|itu|dan|yang|dengan|untuk|dari|ke|di|adalah|tidak|sudah|belum|akan|bisa|mau|harus|jangan|sangat|lebih|juga|atau|tapi|karena|jika|kalau|bagaimana|mengapa|kapan|dimana|siapa|halo|selamat|terima kasih|maaf|tolong|baik|buruk|besar|kecil|baru|lama|cepat|lambat|siap|oke|ya|tidak)\b/i;
   if (indonesianKeywords.test(text)) {
     return "id";
   }
 
-  // Default to English
   return "en";
 }
 
@@ -59,18 +54,18 @@ export function createFishAudioSession(apiKey: string): FishAudioSession {
     text: string,
     language: "en" | "id" | "jp" = "en"
   ): Promise<Buffer> {
-    const requestBody: any = {
+    const startTime = Date.now();
+    
+    const requestBody = {
       text,
       format: "mp3",
       mp3_bitrate: 128,
       normalize: true,
-      latency: "normal",
+      latency: "low", // Changed from "normal" to "low" for faster response
+      reference_id: VOICE_ID, // Single voice for all languages
     };
 
-    // Use Indonesian voice for Indonesian text
-    if (language === "id") {
-      requestBody.reference_id = INDONESIAN_VOICE_ID;
-    }
+    console.log(`[Fish TTS] Requesting: "${text.substring(0, 50)}..." (${text.length} chars)`);
 
     const response = await fetch(FISH_API_URL, {
       method: "POST",
@@ -89,6 +84,9 @@ export function createFishAudioSession(apiKey: string): FishAudioSession {
     }
 
     const arrayBuffer = await response.arrayBuffer();
+    const elapsed = Date.now() - startTime;
+    console.log(`[Fish TTS] Generated ${arrayBuffer.byteLength} bytes in ${elapsed}ms`);
+    
     return Buffer.from(arrayBuffer);
   }
 

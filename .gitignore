@@ -62,3 +62,4 @@ server/dist/
 .venv/
 venv/
 __pycache__/
+.hermes/
