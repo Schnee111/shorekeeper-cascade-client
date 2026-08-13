@@ -902,8 +902,9 @@
   <div class="bg-mesh"></div>
   <div class="noise-overlay"></div>
 
-  <!-- Header -->
-  <header class="relative z-10 px-6 py-3 lg:py-5 flex items-center justify-between fade-in-up stagger-1">
+  <!-- Header — z-30 so the voice dropdown (which opens downward past the
+       header edge) stacks above the z-10 main content. -->
+  <header class="relative z-30 px-6 py-3 lg:py-5 flex items-center justify-between fade-in-up stagger-1">
     <div class="flex items-center gap-4">
       <div>
         <h1 class="text-base lg:text-lg font-semibold tracking-tight text-white">Shorekeeper</h1>
