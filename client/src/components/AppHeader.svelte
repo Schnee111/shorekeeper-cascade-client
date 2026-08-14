@@ -8,19 +8,6 @@
   import VoiceMenu from './VoiceMenu.svelte';
   import ModelMenu from './ModelMenu.svelte';
   import { session } from '../lib/stores/session.svelte';
-  import { sessionRecorder } from '../lib/recorder';
-
-  let isRecording = $state(false);
-
-  function toggleRecord(): void {
-    if (isRecording) {
-      sessionRecorder.stop('jarvis-voice');
-      isRecording = false;
-    } else {
-      const ok = sessionRecorder.start();
-      if (ok) isRecording = true;
-    }
-  }
 
   const lkDot = $derived(
     session.lkState === 'connected' ? 'connected'
@@ -54,29 +41,14 @@
   </div>
 
   <!-- Right: Voice Menu Pill + Status Indicators (Fades in on start) -->
-  <div class="flex items-center gap-2 sm:gap-3 min-w-[140px] justify-end">
-    <!-- Session Audio Recorder Button (REC): Visible from the start, hides when recording is active -->
-    {#if !isRecording}
-      <button
-        onclick={toggleRecord}
-        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs font-mono transition-all duration-300 cursor-pointer bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10"
-        title="Start Background Recording"
-        aria-label="Record Audio Session"
-      >
-        <div class="w-2 h-2 rounded-full bg-zinc-500"></div>
-        <span class="text-[11px] font-semibold">REC</span>
-      </button>
-    {/if}
-
-    <div class="transition-all duration-700 delay-300 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-90 pointer-events-none'}">
-      <VoiceMenu
-        options={session.voiceOptions}
-        selected={session.selectedVoice}
-        currentLabel={session.currentVoiceLabel}
-        switching={session.voiceSwitching}
-        onPick={(id) => session.pickVoice(id)}
-      />
-    </div>
+  <div class="flex items-center gap-2 sm:gap-3 min-w-[140px] justify-end transition-all duration-700 delay-300 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-90 pointer-events-none'}">
+    <VoiceMenu
+      options={session.voiceOptions}
+      selected={session.selectedVoice}
+      currentLabel={session.currentVoiceLabel}
+      switching={session.voiceSwitching}
+      onPick={(id) => session.pickVoice(id)}
+    />
 
     <!-- Status Indicators -->
     <div class="hidden sm:flex items-center gap-3">
