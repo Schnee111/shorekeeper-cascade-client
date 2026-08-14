@@ -1,7 +1,6 @@
 <!--
-  ParticleOrb.svelte — 3D Spectro Particle Visualizer powered by Three.js & Web Audio API.
-  Renders a 3D sphere of 2,500+ particles (Spectro cyan, blue, violet) that react dynamically
-  to voice frequency, intonation, and system state.
+  ParticleOrb.svelte — 3D Spectro Flowing Wave Ribbons & Particles powered by Three.js & Web Audio API.
+  Morphs dynamically between 3D Wavy Ribbons, Cosmic Helix, and Waveform Field.
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
@@ -21,7 +20,7 @@
 
   let initialPositions: Float32Array;
   let particleColors: Float32Array;
-  const PARTICLE_COUNT = 2800;
+  const PARTICLE_COUNT = 3200;
 
   // Spectro Palette (RGB normalized 0-1)
   const COLOR_CYAN = new THREE.Color('#67e8f9');
@@ -40,49 +39,63 @@
     // 1. Scene setup
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.z = 250;
+    camera.position.z = 220;
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     containerEl.appendChild(renderer.domElement);
 
-    // 2. Geometry & Particles
+    // 2. Geometry & Wavy Waveform Rings / Ribbons Distribution
     geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(PARTICLE_COUNT * 3);
     initialPositions = new Float32Array(PARTICLE_COUNT * 3);
     particleColors = new Float32Array(PARTICLE_COUNT * 3);
 
-    const radius = 65;
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      // Golden ratio sphere distribution
-      const phi = Math.acos(-1 + (2 * i) / PARTICLE_COUNT);
-      const theta = Math.sqrt(PARTICLE_COUNT * Math.PI) * phi;
+    const RINGS = 12;
+    const PER_RING = Math.floor(PARTICLE_COUNT / RINGS);
 
-      const x = radius * Math.cos(theta) * Math.sin(phi);
-      const y = radius * Math.sin(theta) * Math.sin(phi);
-      const z = radius * Math.cos(phi);
+    for (let r = 0; r < RINGS; r++) {
+      const ringRadius = 25 + r * 5.5; // Expanding concentric 3D wavy rings
+      const heightOffset = (r - RINGS / 2) * 4;
 
-      positions[i * 3] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
+      for (let i = 0; i < PER_RING; i++) {
+        const idx = (r * PER_RING + i) * 3;
+        if (idx >= PARTICLE_COUNT * 3) break;
 
-      initialPositions[i * 3] = x;
-      initialPositions[i * 3 + 1] = y;
-      initialPositions[i * 3 + 2] = z;
+        const angle = (i / PER_RING) * Math.PI * 2;
+        // Natural organic 3D wave deformation
+        const waveY = Math.sin(angle * 4 + r * 0.8) * 8;
+        const waveR = ringRadius + Math.cos(angle * 3) * 6;
 
-      // Random blend between Spectro colors
-      const mix = Math.random();
-      const col = mix < 0.5 ? COLOR_CYAN.clone().lerp(COLOR_BLUE, mix * 2) : COLOR_BLUE.clone().lerp(COLOR_VIOLET, (mix - 0.5) * 2);
-      particleColors[i * 3] = col.r;
-      particleColors[i * 3 + 1] = col.g;
-      particleColors[i * 3 + 2] = col.b;
+        const x = Math.cos(angle) * waveR;
+        const y = Math.sin(angle) * waveR + heightOffset + waveY;
+        const z = Math.sin(angle * 2 + r) * 12;
+
+        positions[idx] = x;
+        positions[idx + 1] = y;
+        positions[idx + 2] = z;
+
+        initialPositions[idx] = x;
+        initialPositions[idx + 1] = y;
+        initialPositions[idx + 2] = z;
+
+        // Gradient color transitions along the wavy rings
+        const colorRatio = (r / RINGS + i / PER_RING) % 1;
+        const col = colorRatio < 0.5
+          ? COLOR_CYAN.clone().lerp(COLOR_BLUE, colorRatio * 2)
+          : COLOR_BLUE.clone().lerp(COLOR_VIOLET, (colorRatio - 0.5) * 2);
+
+        particleColors[idx] = col.r;
+        particleColors[idx + 1] = col.g;
+        particleColors[idx + 2] = col.b;
+      }
     }
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
 
-    // Canvas particle texture
+    // Particle texture
     const canvas = document.createElement('canvas');
     canvas.width = 16;
     canvas.height = 16;
@@ -90,7 +103,7 @@
     if (ctx) {
       const grad = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
       grad.addColorStop(0, 'rgba(255,255,255,1)');
-      grad.addColorStop(0.4, 'rgba(255,255,255,0.8)');
+      grad.addColorStop(0.3, 'rgba(255,255,255,0.8)');
       grad.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, 16, 16);
@@ -98,23 +111,23 @@
     const texture = new THREE.CanvasTexture(canvas);
 
     material = new THREE.PointsMaterial({
-      size: 2.8,
+      size: 2.6,
       vertexColors: true,
       map: texture,
       transparent: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      opacity: 0.85,
+      opacity: 0.88,
     });
 
     particlesMesh = new THREE.Points(geometry, material);
     scene.add(particlesMesh);
 
-    // 3. Animation Loop
+    // 3. Animation Loop (3D Wave Oscillations & Audio Dynamics)
     let clock = 0;
     const animate = () => {
       animId = requestAnimationFrame(animate);
-      clock += 0.015;
+      clock += 0.018;
 
       const posAttr = geometry.attributes.position as THREE.BufferAttribute;
       const colAttr = geometry.attributes.color as THREE.BufferAttribute;
@@ -123,17 +136,18 @@
 
       // Get real-time audio frequency data
       const audio = audioAnalyser.getFrequencyData();
-      const amp = audio.amplitude * 2.5;
+      const amp = audio.amplitude;
 
-      // Rotation speed based on status
-      let rotSpeed = 0.003;
-      if (session.status === 'processing') rotSpeed = 0.02;
-      else if (session.status === 'speaking') rotSpeed = 0.008;
+      // Rotation & Dynamic Tilt
+      let rotSpeed = 0.005;
+      if (session.status === 'processing') rotSpeed = 0.025;
+      else if (session.status === 'speaking') rotSpeed = 0.01;
 
       particlesMesh.rotation.y += rotSpeed;
-      particlesMesh.rotation.x += rotSpeed * 0.5;
+      particlesMesh.rotation.x = Math.sin(clock * 0.5) * 0.25;
+      particlesMesh.rotation.z = Math.cos(clock * 0.3) * 0.15;
 
-      // Determine state color
+      // State color targets
       let targetColor = COLOR_CYAN;
       if (session.mode === 'off') targetColor = COLOR_OFF;
       else if (session.status === 'listening') targetColor = COLOR_EMERALD;
@@ -146,36 +160,38 @@
         const iy = initialPositions[idx + 1];
         const iz = initialPositions[idx + 2];
 
-        // Normal direction from center
-        const len = Math.sqrt(ix * ix + iy * iy + iz * iz);
-        const nx = ix / len;
-        const ny = iy / len;
-        const nz = iz / len;
+        // 3D Flowing Wave Displacement (Sine / Cosine Wave Ribbons)
+        const angle = Math.atan2(iz, ix);
+        const distFromCenter = Math.sqrt(ix * ix + iz * iz);
 
-        // Wave noise + Audio displacement (balanced organic & fluid responsiveness)
-        const wave = Math.sin(clock * 2 + ix * 0.04 + iy * 0.04) * Math.cos(clock * 1.5 + iz * 0.04);
-        let displacement = wave * 2.5;
+        // Continuous wavy motion along 3D space
+        let waveY = Math.sin(clock * 2.5 + distFromCenter * 0.08 + angle * 3) * 6;
+        let waveZ = Math.cos(clock * 2.0 + distFromCenter * 0.06 + angle * 2) * 5;
 
         if (session.mode !== 'off') {
-          // Smooth Audio Reactivity
           const audioBoost = Math.max(amp, audio.mid, audio.bass, audio.treble);
-          displacement += audioBoost * 18 * Math.sin(clock * 5 + i * 0.05);
-
+          
           if (session.status === 'speaking') {
-            displacement += (audio.mid * 15 + audio.treble * 10) * Math.sin(clock * 6 + idx * 0.1);
+            // High fluid wave oscillations on vocal intonation
+            waveY += Math.sin(clock * 8 + angle * 5 + i * 0.05) * (audio.mid * 28 + amp * 18);
+            waveZ += Math.cos(clock * 6 + angle * 4 + i * 0.05) * (audio.treble * 22 + amp * 15);
           } else if (session.status === 'listening') {
-            displacement += (audio.bass * 16 + amp * 10) * Math.cos(clock * 5 + idx * 0.1);
+            // Deep pulsing bass waves on mic audio
+            waveY += Math.sin(clock * 6 + angle * 3) * (audio.bass * 24 + amp * 15);
+            waveZ += Math.cos(clock * 5 + angle * 2) * (audio.bass * 20 + amp * 12);
+          } else {
+            waveY += audioBoost * 10 * Math.sin(clock * 4 + angle * 2);
           }
         }
 
-        posArray[idx] = ix + nx * displacement;
-        posArray[idx + 1] = iy + ny * displacement;
-        posArray[idx + 2] = iz + nz * displacement;
+        posArray[idx] = ix;
+        posArray[idx + 1] = iy + waveY;
+        posArray[idx + 2] = iz + waveZ;
 
-        // Smooth color interpolation towards active state color
-        colArray[idx] += (targetColor.r - colArray[idx]) * 0.05;
-        colArray[idx + 1] += (targetColor.g - colArray[idx + 1]) * 0.05;
-        colArray[idx + 2] += (targetColor.b - colArray[idx + 2]) * 0.05;
+        // Smooth color interpolation
+        colArray[idx] += (targetColor.r - colArray[idx]) * 0.04;
+        colArray[idx + 1] += (targetColor.g - colArray[idx + 1]) * 0.04;
+        colArray[idx + 2] += (targetColor.b - colArray[idx + 2]) * 0.04;
       }
 
       posAttr.needsUpdate = true;
