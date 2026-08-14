@@ -126,6 +126,8 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
       (track: Track, _pub: RemoteTrackPublication, participant) => {
         if (track.kind === Track.Kind.Audio && participant.identity !== IDENTITY) {
           const el = track.attach();
+          el.setAttribute('playsinline', 'true');
+          el.setAttribute('webkit-playsinline', 'true');
           audioElements.push(el);
           document.body.appendChild(el);
           opts.onLog('Agent audio track attached');
