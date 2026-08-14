@@ -163,18 +163,18 @@
   </div>
 
   <!-- Minimalist Mode Switcher Dash Indicator (2D vs 3D) -->
-  <div class="flex items-center gap-1.5 mt-1 mb-2 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" onclick={toggleViewMode} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && toggleViewMode()}>
+  <div class="flex items-center gap-1.5 mt-5 sm:mt-6 mb-3 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" onclick={toggleViewMode} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && toggleViewMode()}>
     <div class="h-1 rounded-full transition-all duration-300 {viewMode === '2d' ? 'w-4 bg-cyan-400 shadow-[0_0_8px_rgba(103,232,249,0.8)]' : 'w-1.5 bg-white/20'}"></div>
     <div class="h-1 rounded-full transition-all duration-300 {viewMode === '3d' ? 'w-4 bg-cyan-400 shadow-[0_0_8px_rgba(103,232,249,0.8)]' : 'w-1.5 bg-white/20'}"></div>
   </div>
 
   <!-- Hint Text / Clean Connection Log Subtitle -->
   {#if !session.hasStarted && session.mode === 'active'}
-    <p class="text-xs font-mono text-cyan-200/80 text-center animate-pulse tracking-wide mt-3 drop-shadow-[0_0_10px_rgba(103,232,249,0.3)] min-h-[20px]">
+    <p class="text-xs font-mono text-cyan-200/80 text-center animate-pulse tracking-wide mt-2 drop-shadow-[0_0_10px_rgba(103,232,249,0.3)] min-h-[20px]">
       {logs.latest?.text || 'Opening secure channel...'}
     </p>
   {:else}
-    <p class="text-xs lg:text-sm text-center transition-all duration-700 {session.hasStarted ? 'text-zinc-500 font-normal mt-0' : 'text-cyan-200/90 font-medium tracking-wide mt-3 drop-shadow-[0_0_12px_rgba(103,232,249,0.5)]'}">{hint}</p>
+    <p class="text-xs lg:text-sm text-center transition-all duration-700 {session.hasStarted ? 'text-zinc-500 font-normal mt-0' : 'text-cyan-200/90 font-medium tracking-wide mt-2 drop-shadow-[0_0_12px_rgba(103,232,249,0.5)]'}">{hint}</p>
   {/if}
 
   <CaptionBar />
