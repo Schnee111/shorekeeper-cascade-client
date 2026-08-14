@@ -22,12 +22,37 @@ class ConversationStore {
    *  each sentence as a distinct segment), upserted by key while streaming. */
   readonly liveAgentBubbles = $state<LiveBubble[]>([]);
 
+  /** Turn still in progress — true from TTFT/turn start until complete seal. */
+  get turnInProgress(): boolean {
+    return this.awaitingReply || this.agentProcessing || this.liveAgentBubbles.length > 0 || this.hasLiveAgentSegment() || tools.active;
+  }
+
+  setTurnState(state: 'start' | 'complete'): void {
+    this.agentProcessing = state === 'start';
+    if (state === 'start') {
+      this.awaitingReply = true;
+    } else if (state === 'complete') {
+      this.awaitingReply = false;
+      this.armSealWatcher();
+    }
+  }
+
+  /** Elapsed seconds since the current turn started (for UI timer). */
+  get turnElapsedSeconds(): number {
+    if (!this.liveAgentStartTime) return 0;
+    const start = new Date(`2000-01-01 ${this.liveAgentStartTime}`).getTime();
+    const now = new Date(`2000-01-01 ${getTime()}`).getTime();
+    return Math.max(0, Math.floor((now - start) / 1000));
+  }
+
   /** Caption bar — agent: current sentence only. */
   subtitle = $state('');
   /** Caption bar — user: interim + held final. */
   transcript = $state('');
   /** Awaiting the agent's reply (set when the user's final transcript lands). */
   awaitingReply = $state(false);
+  /** True while the turn is actively processing on the agent bridge. */
+  agentProcessing = $state(false);
   /** Agent currently in the active-speakers list. */
   agentSpeaking = $state(false);
   /** Bumped on every processed segment batch — lets deriveds observe the
@@ -79,7 +104,7 @@ class ConversationStore {
         const prev = this.segmentsMap.get(key);
         if (prev && prev.text === text && prev.final === seg.final) continue; // anti-flicker
         this.segmentsMap.set(key, { text, language: seg.language, final: seg.final, fromAgent: true });
-        this.awaitingReply = false;
+        this.awaitingReply = !seg.final; // Keep turn alive / awaiting while stream is not fully finalized
         if (text) {
           session.markStarted();
           // Stamp the reply clock at FIRST TOKEN (lock it for the entire turn).
@@ -95,11 +120,11 @@ class ConversationStore {
             const lastBubble = this.liveAgentBubbles[this.liveAgentBubbles.length - 1];
             // Check 2: In last sealed message (if liveAgentBubbles was cleared during premature seal)
             const lastSealed = this.messages[this.messages.length - 1];
-            
+
             if (
               lastBubble &&
               (text.toLowerCase().startsWith(lastBubble.text.toLowerCase().replace(/[.,!?]+\s*$/, '')) ||
-               lastBubble.text.toLowerCase().startsWith(text.toLowerCase().replace(/[.,!?]+\s*$/, '')))
+                lastBubble.text.toLowerCase().startsWith(text.toLowerCase().replace(/[.,!?]+\s*$/, '')))
             ) {
               if (text.length >= lastBubble.text.length) {
                 lastBubble.key = key;
@@ -110,15 +135,15 @@ class ConversationStore {
               lastSealed &&
               lastSealed.role === 'assistant' &&
               (text.toLowerCase().startsWith(lastSealed.text.toLowerCase().replace(/[.,!?]+\s*$/, '')) ||
-               lastSealed.text.toLowerCase().startsWith(text.toLowerCase().replace(/[.,!?]+\s*$/, '')))
+                lastSealed.text.toLowerCase().startsWith(text.toLowerCase().replace(/[.,!?]+\s*$/, '')))
             ) {
               // Un-seal the prematurely sealed assistant message back into streaming
               if (text.length >= lastSealed.text.length) {
                 this.messages.pop(); // remove duplicate from history
-                this.liveAgentBubbles.push({ key, text, final: seg.final, time: this.liveAgentStartTime });
+                this.liveAgentBubbles.push({ key, text, final: seg.final, time: getTime() });
               }
             } else {
-              this.liveAgentBubbles.push({ key, text, final: seg.final, time: this.liveAgentStartTime });
+              this.liveAgentBubbles.push({ key, text, final: seg.final, time: getTime() });
             }
           }
           this.liveAgentLanguage = seg.language || 'id';
@@ -150,7 +175,7 @@ class ConversationStore {
           text.toLowerCase().startsWith(prev.text.toLowerCase().replace(/[.,!?]+\s*$/, ''))
         ) {
           prev.text = text; // in-place — Svelte 5 array item mutation is reactive
-          prev.time = getTime();
+          if (!prev.time) prev.time = getTime();
           prev.language = seg.language;
         } else {
           this.messages.push({ role: 'user', text, time: getTime(), language: seg.language });
@@ -215,7 +240,7 @@ class ConversationStore {
       ...bubbles.map((b, i) => ({
         role: 'assistant' as const,
         text: b.text,
-        time: startTime, // ALL bubbles in this turn share the EXACT SAME start time stamp
+        time: startTime, // Unified single timestamp per turn
         language: this.liveAgentLanguage,
         group,
         // attach the tool log to the FIRST sealed segment of the turn only

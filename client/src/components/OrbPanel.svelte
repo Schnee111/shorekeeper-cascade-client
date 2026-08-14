@@ -80,6 +80,7 @@
     listening: 'Speak freely...',
     speaking: 'Shorekeeper responds',
     processing: 'Thinking...',
+    working: 'Executing tools...',
   };
 
   const STATUS_INDICATOR: Record<string, { label: string; bar: string; text: string; glow: string }> = {
@@ -87,6 +88,7 @@
     listening: { label: 'LISTENING', bar: 'bg-emerald-400', text: 'text-emerald-300', glow: 'drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]' },
     speaking: { label: 'SPEAKING', bar: 'bg-violet-400', text: 'text-violet-300', glow: 'drop-shadow-[0_0_8px_rgba(167,139,250,0.5)]' },
     processing: { label: 'PROCESSING', bar: 'bg-amber-400', text: 'text-amber-300', glow: 'drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]' },
+    working: { label: 'WORKING', bar: 'bg-cyan-400', text: 'text-cyan-300', glow: 'drop-shadow-[0_0_8px_rgba(103,232,249,0.5)]' },
     standby: { label: 'STANDBY', bar: 'bg-emerald-500/70', text: 'text-emerald-400/80', glow: '' },
     idle: { label: 'READY', bar: 'bg-zinc-600', text: 'text-zinc-500', glow: '' },
   };

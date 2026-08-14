@@ -86,8 +86,8 @@
             </div>
           </div>
         {:else}
-          <!-- Agent replies: CLEAN text, no bubble (ChatGPT style). -->
-          <div class="{sameGroup ? 'mt-3' : (msg.tools?.length ? 'mt-3' : (i === 0 ? 'mt-1' : 'mt-6'))} flex justify-start">
+          <!-- Agent replies: CLEAN text, with natural spacing between paragraphs/turns -->
+          <div class="{sameGroup ? 'mt-2' : (msg.tools?.length ? 'mt-3' : (i === 0 ? 'mt-1' : 'mt-6'))} flex justify-start">
             <div class="max-w-[85%]">
               <MarkdownText text={msg.text} />
               {#if msg.time && isLastInGroup}
@@ -105,17 +105,42 @@
         <ToolProgress rows={tools.calls} groupKey="live" />
       </div>
     {/if}
-    {#each conversation.liveAgentBubbles as bubble, bi}
-      <div class="{bi === 0 && tools.calls.length === 0 ? (conversation.messages.length > 0 ? 'mt-6' : 'mt-1') : 'mt-3'} flex justify-start">
-        <div class="max-w-[85%]">
-          <MarkdownText text={bubble.text} />
+    
+    {#if conversation.liveAgentBubbles.length > 0}
+      <div class="{tools.calls.length === 0 ? (conversation.messages.length > 0 ? 'mt-6' : 'mt-1') : 'mt-3'} flex justify-start">
+        <div class="max-w-[85%] space-y-2">
+          {#each conversation.liveAgentBubbles as bubble, bi}
+            <div>
+              <MarkdownText text={bubble.text} />
+            </div>
+          {/each}
         </div>
       </div>
-    {/each}
-    {#if conversation.liveAgentBubbles.length > 0 && conversation.liveAgentStartTime}
-      <div class="flex justify-start">
+    {/if}
+    
+    <!-- Timestamp area — shows indicator while processing, timestamp when done -->
+    {#if conversation.liveAgentBubbles.length > 0 || conversation.turnInProgress}
+      <div class="{conversation.liveAgentBubbles.length === 0 && tools.calls.length === 0 ? (conversation.messages.length > 0 ? 'mt-6' : 'mt-1') : ''} flex justify-start">
         <div class="max-w-[85%]">
-          <span class="block text-[10px] text-zinc-500 font-mono mt-1.5">{conversation.liveAgentStartTime}</span>
+          {#if conversation.turnInProgress}
+            <!-- Processing indicator — replaces timestamp -->
+            <div class="flex items-center gap-1.5 text-zinc-500 mt-1.5">
+              <div class="flex gap-0.5">
+                <div class="w-1 h-1 rounded-full bg-current animate-pulse"></div>
+                <div class="w-1 h-1 rounded-full bg-current animate-pulse" style="animation-delay: 300ms"></div>
+                <div class="w-1 h-1 rounded-full bg-current animate-pulse" style="animation-delay: 600ms"></div>
+              </div>
+              <span class="text-[10px] font-mono tracking-wide opacity-70">
+                {tools.active ? 'working' : 'processing'}
+                {#if conversation.turnElapsedSeconds > 2}
+                  <span class="opacity-50">· {conversation.turnElapsedSeconds}s</span>
+                {/if}
+              </span>
+            </div>
+          {:else if conversation.liveAgentStartTime}
+            <!-- Final timestamp — appears when turn complete -->
+            <span class="block text-[10px] text-zinc-500 font-mono mt-1.5">{conversation.liveAgentStartTime}</span>
+          {/if}
         </div>
       </div>
     {/if}

@@ -125,6 +125,7 @@ class SessionStore {
         onStateChange: (s) => this.handleStateChange(s),
         onLog: (m) => logs.add('info', m),
         onToolActivity: (ev) => tools.handle(ev),
+        onTurnState: (st) => conversation.setTurnState(st),
         voice: this.selectedVoice,
         model: this.selectedModel,
       });

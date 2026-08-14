@@ -58,6 +58,9 @@ export const MODEL_OPTIONS: ModelOption[] = [
   { id: '', label: 'Gemini 3.6 Flash High (Default)', desc: 'Smartest · ~1.3s TTFT', default: true },
   { id: 'ag/gemini-3.6-flash-medium', label: 'Gemini 3.6 Flash Medium', desc: 'Balanced · ~1.0s TTFT' },
   { id: 'ag/gemini-3.6-flash-low', label: 'Gemini 3.6 Flash Low', desc: 'Ultra Fast · Low latency' },
+  { id: 'ag/gemini-3.7-flash-high', label: 'Gemini 3.7 Flash High', desc: 'Next-gen · Smartest' },
+  { id: 'ag/gemini-3.7-flash-medium', label: 'Gemini 3.7 Flash Medium', desc: 'Next-gen · Balanced' },
+  { id: 'ag/gemini-3.7-flash-low', label: 'Gemini 3.7 Flash Low', desc: 'Next-gen · Ultra Fast' },
   { id: 'qd/qmodel_38max', label: 'Qoder 38max', desc: 'Sub-second · ~0.9s TTFT' },
 ];
 

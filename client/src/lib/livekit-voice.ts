@@ -38,6 +38,8 @@ export interface LivekitVoiceOptions {
   onLog: (message: string) => void;
   /** Tool activity events from the agent bridge (Gemini/Claude-style chip). */
   onToolActivity?: (ev: { state: 'start' | 'complete'; name: string }) => void;
+  /** Turn state events from the bridge ('start' | 'complete'). */
+  onTurnState?: (state: 'start' | 'complete') => void;
   /** Fish Audio voice key (token_server registry); default "gura". */
   voice?: string;
   /** Hermes LLM model override (9Router model ID). */
@@ -106,6 +108,8 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
         };
         if (data?.type === 'jarvis.tool' && (data.state === 'start' || data.state === 'complete')) {
           opts.onToolActivity({ state: data.state, name: data.name || '?' });
+        } else if (data?.type === 'jarvis.turn' && (data.state === 'start' || data.state === 'complete')) {
+          opts.onTurnState?.(data.state);
         }
       } catch {
         /* not a JSON event — ignore */
