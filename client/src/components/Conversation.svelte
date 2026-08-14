@@ -94,7 +94,7 @@
               <div class="text-xs text-zinc-200 leading-relaxed message-text">
                 <StreamingMarkdown 
                   text={msg.text} 
-                  caret={msg.status === 'streaming'} 
+                  caret={false} 
                   anim="jv-word-glow" 
                 />
               </div>
