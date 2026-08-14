@@ -103,14 +103,14 @@
       {/each}
     {/if}
 
-    <!-- Live turn tools (while active before assistant msg created) -->
-    {#if tools.calls.length > 0 && (!conversation.messages.length || conversation.messages[conversation.messages.length - 1].role !== 'assistant')}
-      <div class="{conversation.messages.length > 0 ? 'mt-6' : 'mt-1'} flex justify-start w-full">
+    <!-- Live turn tools (ACTIVE DURING TOOL EXECUTION BEFORE/DURING STREAM) -->
+    {#if tools.calls.length > 0 && (!conversation.messages.length || conversation.messages[conversation.messages.length - 1].role !== 'assistant' || conversation.messages[conversation.messages.length - 1].status === 'streaming')}
+      <div class="{conversation.messages.length > 0 ? 'mt-3' : 'mt-1'} flex justify-start w-full">
         <ToolProgress rows={tools.calls} groupKey="live" />
       </div>
     {/if}
 
-    <!-- Bottom Minimalist Turn Progress Indicator (active across entire turn lifecycle including filler -> tool -> final answer gaps) -->
+    <!-- Bottom Minimalist Turn Progress Indicator (active during dead-air / LLM thinking before final answer) -->
     {#if conversation.turnInProgress}
       <div class="{tools.calls.length === 0 ? (conversation.messages.length > 0 ? 'mt-3' : 'mt-1') : 'mt-2'} flex justify-start w-full">
         <div class="max-w-[85%]">

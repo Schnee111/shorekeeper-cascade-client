@@ -24,7 +24,9 @@ class ConversationStore {
   get turnInProgress(): boolean {
     const lastMsg = this.messages[this.messages.length - 1];
     const isDone = lastMsg && lastMsg.status === 'done';
-    return (this.awaitingReply || this.agentProcessing || tools.active || !isDone) && (this.messages.length > 0 && lastMsg?.role === 'assistant' ? lastMsg.status === 'streaming' : this.awaitingReply);
+    // True if awaiting reply, processing on bridge, tools currently executing,
+    // or if the assistant message is still actively in 'streaming' status.
+    return this.awaitingReply || this.agentProcessing || tools.active || (this.messages.length > 0 && !isDone && lastMsg?.role === 'assistant');
   }
 
   setTurnState(state: 'start' | 'complete'): void {
