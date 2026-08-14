@@ -80,10 +80,13 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
   const roomName = makeRoomName();
   const token = await fetchToken(roomName, opts.voice, opts.model);
 
+  // Initialize shared AudioContext for both LiveKit mixing and Visualizer
+  const sharedCtx = audioAnalyser.getAudioContext();
+
   const room = new Room({
     adaptiveStream: true,
     dynacast: true,
-    webAudioMix: true,
+    webAudioMix: sharedCtx ? { audioContext: sharedCtx } : true,
   });
   const audioElements: HTMLMediaElement[] = [];
 
@@ -132,6 +135,8 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
           document.body.appendChild(el);
           opts.onLog('Agent audio track attached');
           // Attach AudioAnalyser for 3D Spectro Particle Visualizer
+          // In webAudioMix mode, LiveKit routes audio through the shared AudioContext directly,
+          // so analyser attaches smoothly without sample rate mismatch.
           audioAnalyser.attachMediaElement(el);
         }
       }
