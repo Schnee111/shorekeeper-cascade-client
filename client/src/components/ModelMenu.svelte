@@ -52,10 +52,11 @@
     aria-haspopup="listbox"
     aria-expanded={open}
   >
+    <!-- CPU / Brain Chip Icon for LLM Model -->
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-300/80 shrink-0" aria-hidden="true">
-      <circle cx="12" cy="12" r="10"/>
-      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
-      <path d="M2 12h20"/>
+      <rect x="4" y="4" width="16" height="16" rx="2"/>
+      <rect x="9" y="9" width="6" height="6"/>
+      <path d="M15 2v2M15 20v2M2 15h2M20 15h2M9 2v2M9 20v2M2 9h2M20 9h2"/>
     </svg>
     <span class="text-xs lg:text-sm text-zinc-200 font-medium truncate max-w-[100px] sm:max-w-[160px]">{currentLabel}</span>
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-500 transition-transform duration-200 {open ? 'rotate-180' : ''}" aria-hidden="true">

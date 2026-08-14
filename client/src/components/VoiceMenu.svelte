@@ -56,9 +56,9 @@
       <span class="voice-spinner" aria-hidden="true"></span>
       <span class="text-xs lg:text-sm text-amber-300/90">Switching…</span>
     {:else}
+      <!-- Audio Waveform / Sparkle Icon for Voice Selection -->
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-300/80 shrink-0" aria-hidden="true">
-        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>
+        <path d="M2 10v4M6 6v12M10 3v18M14 8v8M18 5v14M22 10v4"/>
       </svg>
       <span class="text-xs lg:text-sm text-zinc-200 font-medium truncate max-w-[90px] sm:max-w-[140px]">{currentLabel}</span>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-500 transition-transform duration-200 {open ? 'rotate-180' : ''}" aria-hidden="true">
