@@ -145,6 +145,12 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
     const local = room.localParticipant as LocalParticipant;
     await local.setMicrophoneEnabled(true);
     opts.onLog('Microphone enabled');
+
+    // Connect user mic MediaStream to AudioAnalyser for 3D Spectro Particle Visualizer
+    const micPublication = Array.from(local.audioTrackPublications.values())[0];
+    if (micPublication && micPublication.track && micPublication.track.mediaStream) {
+      audioAnalyser.attachMediaStream(micPublication.track.mediaStream);
+    }
   } catch (err) {
     await room.disconnect();
     throw err;

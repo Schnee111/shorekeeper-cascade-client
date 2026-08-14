@@ -30,6 +30,25 @@ class AudioAnalyser {
     this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
   }
 
+  attachMediaStream(stream: MediaStream): void {
+    try {
+      this.init();
+      if (!this.ctx || !this.analyser) return;
+
+      if (this.ctx.state === 'suspended') {
+        void this.ctx.resume();
+      }
+
+      if (!this.sourceMap.has(stream)) {
+        const source = this.ctx.createMediaStreamSource(stream);
+        source.connect(this.analyser);
+        this.sourceMap.set(stream, source);
+      }
+    } catch (err) {
+      console.warn('[AudioAnalyser] Failed to attach media stream:', err);
+    }
+  }
+
   attachMediaElement(el: HTMLMediaElement): void {
     try {
       this.init();
@@ -40,11 +59,21 @@ class AudioAnalyser {
       }
 
       if (!this.sourceMap.has(el)) {
-        const source = this.ctx.createMediaElementSource(el);
-        source.connect(this.analyser);
-        this.analyser.connect(this.ctx.destination); // pass audio through to speakers
-        this.sourceMap.set(el, source);
-        this.activeSource = source;
+        // Use AudioContext.createMediaStreamSource on HTMLMediaElement's srcObject (WebRTC LiveKit Stream)
+        // to bypass CORS and WebAudio HTMLMediaElement routing locks in Chrome!
+        const mediaStream = (el as HTMLAudioElement).srcObject as MediaStream;
+        if (mediaStream && mediaStream instanceof MediaStream) {
+          const source = this.ctx.createMediaStreamSource(mediaStream);
+          source.connect(this.analyser);
+          this.sourceMap.set(el, source);
+          this.activeSource = source;
+        } else {
+          const source = this.ctx.createMediaElementSource(el);
+          source.connect(this.analyser);
+          this.analyser.connect(this.ctx.destination);
+          this.sourceMap.set(el, source);
+          this.activeSource = source;
+        }
       }
     } catch (err) {
       console.warn('[AudioAnalyser] Failed to attach media element:', err);
