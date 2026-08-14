@@ -69,18 +69,20 @@
   <!-- Hint Text -->
   <p class="text-xs lg:text-sm text-zinc-500 text-center">{hint}</p>
 
-  <!-- Wake word arm/disarm (secondary path) -->
-  {#if session.mode === 'off' || session.mode === 'standby'}
-    <button
-      onclick={() => session.toggleWake()}
-      class="mt-2 lg:mt-4 px-4 py-1.5 rounded-full text-xs font-mono transition-colors border
-        {session.mode === 'standby'
-          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-          : 'bg-white/5 border-white/10 text-zinc-500 hover:text-zinc-300 hover:border-white/20'}"
-    >
-      {session.mode === 'standby' ? 'Voice wake armed' : 'Arm voice wake'}
-    </button>
-  {/if}
+  <!-- Wake word arm/disarm (secondary path) — fixed layout slot to prevent height shift -->
+  <div class="h-9 mt-2 lg:mt-4 flex items-center justify-center">
+    {#if session.mode === 'off' || session.mode === 'standby'}
+      <button
+        onclick={() => session.toggleWake()}
+        class="px-4 py-1.5 rounded-full text-xs font-mono transition-colors border
+          {session.mode === 'standby'
+            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+            : 'bg-white/5 border-white/10 text-zinc-500 hover:text-zinc-300 hover:border-white/20'}"
+      >
+        {session.mode === 'standby' ? 'Voice wake armed' : 'Arm voice wake'}
+      </button>
+    {/if}
+  </div>
 
   <CaptionBar />
 </div>
