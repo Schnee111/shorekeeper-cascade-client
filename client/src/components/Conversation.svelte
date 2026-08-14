@@ -5,8 +5,8 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
   import MarkdownText from './MarkdownText.svelte';
+  import SmoothMarkdown from './SmoothMarkdown.svelte';
   import ToolProgress from './ToolProgress.svelte';
-  import StreamingMarkdown from '../lib/streaming/StreamingMarkdown.svelte';
   import { conversation } from '../lib/stores/conversation.svelte';
   import { session } from '../lib/stores/session.svelte';
   import { tools } from '../lib/stores/tools.svelte';
@@ -91,7 +91,7 @@
           <!-- Agent replies: SINGLE STORE IN-PLACE RENDERING -->
           <div class="{sameGroup ? 'mt-2' : (msg.tools?.length ? 'mt-3' : (i === 0 ? 'mt-1' : 'mt-6'))} flex justify-start w-full">
             <div class="max-w-[85%] w-full">
-              <MarkdownText text={msg.text} />
+              <SmoothMarkdown text={msg.text} isStreaming={msg.status === 'streaming'} />
               {#if isLastInGroup && msg.time && msg.status !== 'streaming'}
                 <span in:fade={{ duration: 250 }} class="block text-[10px] text-zinc-500 font-mono mt-1">
                   {msg.time}
