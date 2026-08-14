@@ -6,7 +6,7 @@
   import { fade } from 'svelte/transition';
   import MarkdownText from './MarkdownText.svelte';
   import ToolProgress from './ToolProgress.svelte';
-  import StreamingText from '../lib/streaming/StreamingText.svelte';
+  import StreamingMarkdown from '../lib/streaming/StreamingMarkdown.svelte';
   import { conversation } from '../lib/stores/conversation.svelte';
   import { session } from '../lib/stores/session.svelte';
   import { tools } from '../lib/stores/tools.svelte';
@@ -88,13 +88,12 @@
             </div>
           </div>
         {:else}
-          <!-- Agent replies: SINGLE STORE IN-PLACE RENDERING -->
+          <!-- Agent replies: SINGLE STORE IN-PLACE RENDERING WITH FULL MARKDOWN SUPPORT -->
           <div class="{sameGroup ? 'mt-2' : (msg.tools?.length ? 'mt-3' : (i === 0 ? 'mt-1' : 'mt-6'))} flex justify-start w-full">
             <div class="max-w-[85%] w-full">
               <div class="text-xs text-zinc-200 leading-relaxed message-text">
-                <StreamingText 
+                <StreamingMarkdown 
                   text={msg.text} 
-                  isStreaming={msg.status === 'streaming'} 
                   caret={msg.status === 'streaming'} 
                   anim="jv-word-glow" 
                 />
