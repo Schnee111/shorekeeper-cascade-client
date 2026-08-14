@@ -35,7 +35,7 @@
     <OrbPanel />
 
     <!-- Right: Conversation & Logs -->
-    <div class="flex-1 min-h-0 flex flex-col gap-3 lg:gap-6 min-w-0">
+    <div class="flex-1 min-h-0 flex flex-col gap-3 lg:gap-6 min-w-0 fade-in-up stagger-3">
       <Conversation />
       <StatusLog />
     </div>

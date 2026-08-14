@@ -17,7 +17,7 @@
   const roomDot = $derived(session.mode === 'active' ? 'connected' : session.mode === 'standby' ? 'pending' : 'disconnected');
 </script>
 
-<header class="relative z-30 px-4 sm:px-6 py-3 lg:py-5 flex items-center justify-between">
+<header class="relative z-30 px-4 sm:px-6 py-3 lg:py-5 flex items-center justify-between fade-in-up stagger-1">
   <!-- Left: Brand Block -->
   <div class="flex items-center gap-4 min-w-[140px]">
     <div>

@@ -37,7 +37,7 @@
   );
 </script>
 
-<div class="lg:w-[400px] shrink-0 glass-card p-4 lg:p-8 flex flex-col items-center justify-center">
+<div class="lg:w-[400px] shrink-0 glass-card p-4 lg:p-8 fade-in-up stagger-2 flex flex-col items-center justify-center">
 
   <!-- Status Label -->
   <div class="mb-2 lg:mb-8 flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 rounded-full bg-white/5 border border-white/10">
