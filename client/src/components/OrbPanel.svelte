@@ -11,10 +11,48 @@
   const ORB_MODE_KEY = 'jarvis-orb-mode';
   let viewMode: '2d' | '3d' = $state((localStorage.getItem(ORB_MODE_KEY) as '2d' | '3d') || '2d');
 
+  // Shared Motion Coordinator ($t in [0, 1] spring lerp)
+  const initialProgress = (localStorage.getItem(ORB_MODE_KEY) as '2d' | '3d') === '3d' ? 1 : 0;
+  let targetProgress = $state(initialProgress);
+  let currentProgress = $state(initialProgress);
+  let velocity = 0;
+  let animId: number | null = null;
+
+  function updateSpring() {
+    // Spring physics configuration (stiffness & damping for elastic bouncy feel)
+    const stiffness = 0.15;
+    const damping = 0.72;
+
+    const force = (targetProgress - currentProgress) * stiffness;
+    velocity = (velocity + force) * damping;
+    currentProgress += velocity;
+
+    if (Math.abs(targetProgress - currentProgress) > 0.0005 || Math.abs(velocity) > 0.0005) {
+      animId = requestAnimationFrame(updateSpring);
+    } else {
+      currentProgress = targetProgress;
+      velocity = 0;
+      animId = null;
+    }
+  }
+
   function toggleViewMode() {
     viewMode = viewMode === '2d' ? '3d' : '2d';
     localStorage.setItem(ORB_MODE_KEY, viewMode);
+    targetProgress = viewMode === '3d' ? 1 : 0;
+    if (!animId) {
+      animId = requestAnimationFrame(updateSpring);
+    }
   }
+
+  // Derived inline CSS transforms based on currentProgress (0 = 2D pure, 1 = 3D pure)
+  // 2D Scale: 1.0 (active) <-> 0.70 (inactive shrink)
+  // 3D Scale: 0.70 (inactive shrink) <-> 1.0 (active bloom)
+  let scale2d = $derived((1 - currentProgress * 0.30).toFixed(4));
+  let opacity2d = $derived(Math.max(0, Math.min(1, 1 - currentProgress * 1.6)).toFixed(4));
+
+  let scale3d = $derived((0.70 + currentProgress * 0.30).toFixed(4));
+  let opacity3d = $derived(Math.max(0, Math.min(1, currentProgress * 1.6 - 0.3)).toFixed(4));
 
   // Touch Swipe Gesture for Switching 2D / 3D Mode
   let touchStartX = 0;
@@ -69,7 +107,7 @@
 <div class="w-full flex flex-col items-center justify-center p-0 border-0 bg-transparent shadow-none backdrop-blur-none">
 
   <!-- Status Indicator (Clean Dynamic Wave Bars + HUD Text, Borderless) -->
-  <div class="mt-2 sm:mt-3 mb-4 lg:mb-8 flex items-center justify-center w-full px-1 transition-all duration-500 delay-200 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none hidden'}">
+  <div class="mt-6 sm:mt-8 mb-2 lg:mb-6 flex items-center justify-center w-full px-1 transition-all duration-500 delay-200 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none hidden'}">
     <div class="flex items-center gap-2.5 px-2 py-1">
       <!-- Equalizer / Waveform Bar Indicator -->
       <div class="flex items-end gap-1 h-4 min-h-[16px]">
@@ -87,29 +125,47 @@
     ontouchstart={handleTouchStart}
     ontouchend={handleTouchEnd}
   >
-    {#if viewMode === '3d'}
-      <ParticleOrb />
-    {:else}
-      <div class="orb-container">
-        {#if session.mode !== 'off'}
-          <div class="orb-ripple {session.status}"></div>
-          <div class="orb-ripple {session.status}"></div>
-          <div class="orb-ripple {session.status}"></div>
-        {/if}
+    <div class="relative flex items-center justify-center w-full h-full">
+      <!-- 2D Orb Layer -->
+      <div 
+        class="absolute inset-0 flex items-center justify-center will-change-transform {currentProgress < 0.5 ? 'pointer-events-auto z-10' : 'pointer-events-none z-0'}"
+        style="transform: scale({scale2d}); opacity: {opacity2d}; transform-origin: center center;"
+      >
+        <div class="orb-container">
+          {#if session.mode !== 'off'}
+            <div class="orb-ripple {session.status}"></div>
+            <div class="orb-ripple {session.status}"></div>
+            <div class="orb-ripple {session.status}"></div>
+          {/if}
 
-        {#if session.mode === 'active'}
-          <div class="orb-glow-ring active"></div>
-        {:else if session.mode === 'standby'}
-          <div class="orb-glow-ring"></div>
-        {/if}
+          {#if session.mode === 'active'}
+            <div class="orb-glow-ring active"></div>
+          {:else if session.mode === 'standby'}
+            <div class="orb-glow-ring"></div>
+          {/if}
 
-        <button
-          onclick={() => session.toggleSession()}
-          class="orb-core {orbClass}"
-          aria-label={session.mode === 'off' ? 'Start session' : 'End session'}
-        ></button>
+          <button
+            onclick={() => session.toggleSession()}
+            class="orb-core {orbClass}"
+            aria-label={session.mode === 'off' ? 'Start session' : 'End session'}
+          ></button>
+        </div>
       </div>
-    {/if}
+
+      <!-- 3D Particle Orb Layer -->
+      <div 
+        class="absolute inset-0 flex items-center justify-center will-change-transform {currentProgress >= 0.5 ? 'pointer-events-auto z-10' : 'pointer-events-none z-0'}"
+        style="transform: scale({scale3d}); opacity: {opacity3d}; transform-origin: center center;"
+      >
+        <ParticleOrb />
+      </div>
+    </div>
+  </div>
+
+  <!-- Minimalist Mode Switcher Dash Indicator (2D vs 3D) -->
+  <div class="flex items-center gap-1.5 mt-1 mb-2 opacity-60 hover:opacity-100 transition-opacity cursor-pointer" onclick={toggleViewMode} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && toggleViewMode()}>
+    <div class="h-1 rounded-full transition-all duration-300 {viewMode === '2d' ? 'w-4 bg-cyan-400 shadow-[0_0_8px_rgba(103,232,249,0.8)]' : 'w-1.5 bg-white/20'}"></div>
+    <div class="h-1 rounded-full transition-all duration-300 {viewMode === '3d' ? 'w-4 bg-cyan-400 shadow-[0_0_8px_rgba(103,232,249,0.8)]' : 'w-1.5 bg-white/20'}"></div>
   </div>
 
   <!-- Hint Text / Clean Connection Log Subtitle -->
@@ -120,21 +176,6 @@
   {:else}
     <p class="text-xs lg:text-sm text-center transition-all duration-700 {session.hasStarted ? 'text-zinc-500 font-normal mt-0' : 'text-cyan-200/90 font-medium tracking-wide mt-3 drop-shadow-[0_0_12px_rgba(103,232,249,0.5)]'}">{hint}</p>
   {/if}
-
-  <!-- Wake word arm/disarm (secondary path) — smooth height transition -->
-  <div class="overflow-hidden transition-all duration-300 ease-out flex items-center justify-center {session.mode === 'off' || session.mode === 'standby' ? 'max-h-9 opacity-100 mt-2 lg:mt-4' : 'max-h-0 opacity-0 mt-0'}">
-    {#if session.mode === 'off' || session.mode === 'standby'}
-      <button
-        onclick={() => session.toggleWake()}
-        class="px-4 py-1.5 rounded-full text-xs font-mono transition-colors border
-          {session.mode === 'standby'
-            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-            : 'bg-white/5 border-white/10 text-zinc-500 hover:text-zinc-300 hover:border-white/20'}"
-      >
-        {session.mode === 'standby' ? 'Voice wake armed' : 'Arm voice wake'}
-      </button>
-    {/if}
-  </div>
 
   <CaptionBar />
 </div>

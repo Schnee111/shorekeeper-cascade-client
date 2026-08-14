@@ -4,8 +4,8 @@
    ========================================================================== */
 
 @keyframes orb-breathe {
-  0%, 100% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.02); opacity: 0.8; }
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.05); opacity: 0.95; }
 }
 
 @keyframes orb-pulse {
@@ -139,6 +139,7 @@
   box-shadow:
     0 0 30px rgba(113, 113, 122, 0.2),
     inset 0 0 20px rgba(255, 255, 255, 0.05);
+  animation: orb-breathe 3.5s ease-in-out infinite;
 }
 
 /* Ripple rings */
