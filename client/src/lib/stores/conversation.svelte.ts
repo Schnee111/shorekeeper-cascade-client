@@ -71,7 +71,8 @@ class ConversationStore {
 
   handleSegments(segments: TranscriptionSegment[], fromAgent: boolean): void {
     for (const seg of segments) {
-      const text = cleanVoiceText(seg.text);
+      const cleanDisplay = cleanVoiceText(seg.text);
+      const text = fromAgent ? cleanDisplay : seg.text;
       const key = `${fromAgent ? 'agent' : 'user'}:${seg.id}`;
 
       if (fromAgent) {
@@ -88,7 +89,7 @@ class ConversationStore {
           // Check 1: In liveAgentBubbles
           const existing = this.liveAgentBubbles.find((b) => b.key === key);
           if (existing) {
-            existing.text = seg.text;
+            existing.text = text;
             existing.final = seg.final;
           } else {
             const lastBubble = this.liveAgentBubbles[this.liveAgentBubbles.length - 1];
@@ -97,27 +98,27 @@ class ConversationStore {
             
             if (
               lastBubble &&
-              (seg.text.toLowerCase().startsWith(lastBubble.text.toLowerCase().replace(/[.,!?]+\s*$/, '')) ||
-               lastBubble.text.toLowerCase().startsWith(seg.text.toLowerCase().replace(/[.,!?]+\s*$/, '')))
+              (text.toLowerCase().startsWith(lastBubble.text.toLowerCase().replace(/[.,!?]+\s*$/, '')) ||
+               lastBubble.text.toLowerCase().startsWith(text.toLowerCase().replace(/[.,!?]+\s*$/, '')))
             ) {
-              if (seg.text.length >= lastBubble.text.length) {
+              if (text.length >= lastBubble.text.length) {
                 lastBubble.key = key;
-                lastBubble.text = seg.text;
+                lastBubble.text = text;
                 lastBubble.final = seg.final;
               }
             } else if (
               lastSealed &&
               lastSealed.role === 'assistant' &&
-              (seg.text.toLowerCase().startsWith(lastSealed.text.toLowerCase().replace(/[.,!?]+\s*$/, '')) ||
-               lastSealed.text.toLowerCase().startsWith(seg.text.toLowerCase().replace(/[.,!?]+\s*$/, '')))
+              (text.toLowerCase().startsWith(lastSealed.text.toLowerCase().replace(/[.,!?]+\s*$/, '')) ||
+               lastSealed.text.toLowerCase().startsWith(text.toLowerCase().replace(/[.,!?]+\s*$/, '')))
             ) {
               // Un-seal the prematurely sealed assistant message back into streaming
-              if (seg.text.length >= lastSealed.text.length) {
+              if (text.length >= lastSealed.text.length) {
                 this.messages.pop(); // remove duplicate from history
-                this.liveAgentBubbles.push({ key, text: seg.text, final: seg.final, time: this.liveAgentStartTime });
+                this.liveAgentBubbles.push({ key, text, final: seg.final, time: this.liveAgentStartTime });
               }
             } else {
-              this.liveAgentBubbles.push({ key, text: seg.text, final: seg.final, time: this.liveAgentStartTime });
+              this.liveAgentBubbles.push({ key, text, final: seg.final, time: this.liveAgentStartTime });
             }
           }
           this.liveAgentLanguage = seg.language || 'id';
