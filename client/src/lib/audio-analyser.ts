@@ -59,17 +59,18 @@ class AudioAnalyser {
       }
 
       if (!this.sourceMap.has(el)) {
+        // Use AudioContext.createMediaStreamSource on HTMLMediaElement's srcObject (WebRTC LiveKit Stream)
+        // to bypass CORS and WebAudio HTMLMediaElement routing locks in Chrome!
         const mediaStream = (el as HTMLAudioElement).srcObject as MediaStream;
         if (mediaStream && mediaStream instanceof MediaStream) {
           const source = this.ctx.createMediaStreamSource(mediaStream);
           source.connect(this.analyser);
-          // Do NOT connect to ctx.destination here — HTMLMediaElement already plays audio.
-          // Connecting to destination causes double-audio / phasing echo.
           this.sourceMap.set(el, source);
           this.activeSource = source;
         } else {
           const source = this.ctx.createMediaElementSource(el);
           source.connect(this.analyser);
+          this.analyser.connect(this.ctx.destination);
           this.sourceMap.set(el, source);
           this.activeSource = source;
         }
