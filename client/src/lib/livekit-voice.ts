@@ -105,9 +105,10 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
           type?: string;
           state?: string;
           name?: string;
+          args?: Record<string, unknown>;
         };
         if (data?.type === 'jarvis.tool' && (data.state === 'start' || data.state === 'complete')) {
-          opts.onToolActivity({ state: data.state, name: data.name || '?' });
+          opts.onToolActivity({ state: data.state, name: data.name || '?', args: data.args });
         } else if (data?.type === 'jarvis.turn' && (data.state === 'start' || data.state === 'complete')) {
           opts.onTurnState?.(data.state);
         }
