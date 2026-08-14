@@ -42,7 +42,7 @@
   });
 </script>
 
-<div class="relative flex-1 min-h-0 lg:min-h-[300px] glass-card p-4 lg:p-6 flex flex-col">
+<div class="relative flex-1 min-h-0 lg:min-h-[300px] glass-card p-4 lg:p-6 flex flex-col overflow-hidden">
   <div class="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
     <h3 class="text-sm font-medium text-zinc-300 flex items-center gap-2">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-zinc-500">
@@ -56,7 +56,7 @@
   <div 
     bind:this={conversationEl} 
     onscroll={handleScroll}
-    class="flex-1 overflow-y-auto custom-scrollbar pr-2 pt-1"
+    class="flex-1 overflow-y-auto custom-scrollbar -mr-2 pr-2 pt-1"
   >
     <!-- Placeholder only when there is truly nothing to show. -->
     {#if conversation.messages.length === 0 && !conversation.liveAgentText && tools.calls.length === 0}
