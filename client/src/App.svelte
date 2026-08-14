@@ -54,7 +54,7 @@
           { transform: currentTransform },
           { transform: centerTransform }
         ], {
-          duration: 800,
+          duration: 1000,
           easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
           fill: 'forwards'
         });
@@ -69,7 +69,7 @@
         { transform: currentTransform },
         { transform: 'translate(0px, 0px) scale(1)' }
       ], {
-        duration: 800,
+        duration: 1000,
         easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
         fill: 'forwards'
       });
