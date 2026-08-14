@@ -13,6 +13,10 @@ class LogsStore {
   add(type: LogEntry['type'], text: string): void {
     this.entries.push({ type, text, time: getTime() });
   }
+
+  get latest(): LogEntry | null {
+    return this.entries.length > 0 ? this.entries[this.entries.length - 1] : null;
+  }
 }
 
 export const logs = new LogsStore();

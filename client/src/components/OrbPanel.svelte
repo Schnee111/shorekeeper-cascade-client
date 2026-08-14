@@ -6,6 +6,7 @@
   import CaptionBar from './CaptionBar.svelte';
   import ParticleOrb from './ParticleOrb.svelte';
   import { session } from '../lib/stores/session.svelte';
+  import { logs } from '../lib/stores/logs.svelte';
 
   const ORB_MODE_KEY = 'jarvis-orb-mode';
   let viewMode: '2d' | '3d' = $state((localStorage.getItem(ORB_MODE_KEY) as '2d' | '3d') || '2d');
@@ -43,16 +44,16 @@
     processing: 'Thinking...',
   };
 
-  const STATUS_PILL: Record<string, { label: string; dot: string; text: string; pulse: boolean }> = {
-    connecting: { label: 'Connecting', dot: 'bg-amber-400', text: 'text-amber-400', pulse: true },
-    listening: { label: 'Listening', dot: 'bg-emerald-400', text: 'text-emerald-400', pulse: true },
-    speaking: { label: 'Speaking', dot: 'bg-violet-400', text: 'text-violet-400', pulse: true },
-    processing: { label: 'Processing', dot: 'bg-amber-400', text: 'text-amber-400', pulse: true },
-    standby: { label: 'Standby', dot: 'bg-emerald-500/70', text: 'text-emerald-500/70', pulse: false },
-    idle: { label: 'Ready', dot: 'bg-zinc-600', text: 'text-zinc-500', pulse: false },
+  const STATUS_INDICATOR: Record<string, { label: string; bar: string; text: string; glow: string }> = {
+    connecting: { label: 'CONNECTING', bar: 'bg-amber-400', text: 'text-amber-300', glow: 'drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]' },
+    listening: { label: 'LISTENING', bar: 'bg-emerald-400', text: 'text-emerald-300', glow: 'drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]' },
+    speaking: { label: 'SPEAKING', bar: 'bg-violet-400', text: 'text-violet-300', glow: 'drop-shadow-[0_0_8px_rgba(167,139,250,0.5)]' },
+    processing: { label: 'PROCESSING', bar: 'bg-amber-400', text: 'text-amber-300', glow: 'drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]' },
+    standby: { label: 'STANDBY', bar: 'bg-emerald-500/70', text: 'text-emerald-400/80', glow: '' },
+    idle: { label: 'READY', bar: 'bg-zinc-600', text: 'text-zinc-500', glow: '' },
   };
 
-  const pill = $derived(STATUS_PILL[session.mode === 'off' ? 'idle' : session.mode === 'standby' ? 'standby' : session.status] ?? STATUS_PILL.idle);
+  const statusInfo = $derived(STATUS_INDICATOR[session.mode === 'off' ? 'idle' : session.mode === 'standby' ? 'standby' : session.status] ?? STATUS_INDICATOR.idle);
   const hint = $derived(
     session.mode === 'off' ? HINTS.off
     : session.mode === 'standby' ? HINTS.standby
@@ -67,17 +68,22 @@
 
 <div class="w-full flex flex-col items-center justify-center p-0 border-0 bg-transparent shadow-none backdrop-blur-none">
 
-  <!-- Status Label (Centered at Top) -->
-  <div class="mb-2 lg:mb-8 flex items-center justify-center w-full px-1 transition-all duration-500 delay-200 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none hidden'}">
-    <div class="flex items-center gap-2 px-3.5 lg:px-4 py-1.5 lg:py-2 rounded-full bg-white/5 border border-white/10 shadow-lg backdrop-blur-md">
-      <div class="w-2 h-2 rounded-full {pill.dot} {pill.pulse ? 'animate-pulse' : ''}"></div>
-      <span class="text-sm font-medium {pill.text}">{pill.label}</span>
+  <!-- Status Indicator (Clean Dynamic Wave Bars + HUD Text, Borderless) -->
+  <div class="mt-2 sm:mt-3 mb-4 lg:mb-8 flex items-center justify-center w-full px-1 transition-all duration-500 delay-200 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none hidden'}">
+    <div class="flex items-center gap-2.5 px-2 py-1">
+      <!-- Equalizer / Waveform Bar Indicator -->
+      <div class="flex items-end gap-1 h-4 min-h-[16px]">
+        <div class="w-1 rounded-full {statusInfo.bar} transition-all duration-300 {session.mode === 'active' ? 'h-4 animate-[bounce_1s_infinite_100ms]' : 'h-2'}"></div>
+        <div class="w-1 rounded-full {statusInfo.bar} transition-all duration-300 {session.mode === 'active' ? 'h-4 animate-[bounce_1s_infinite_300ms]' : 'h-3'}"></div>
+        <div class="w-1 rounded-full {statusInfo.bar} transition-all duration-300 {session.mode === 'active' ? 'h-4 animate-[bounce_1s_infinite_200ms]' : 'h-2.5'}"></div>
+      </div>
+      <span class="text-xs font-mono font-medium tracking-widest {statusInfo.text} {statusInfo.glow}">{statusInfo.label}</span>
     </div>
   </div>
 
   <!-- Orb Container (Swipeable 2D CSS Orb vs 3D Spectro Particle Field) -->
   <div 
-    class="relative mb-1 lg:mb-6 flex items-center justify-center min-h-[240px] sm:min-h-[280px] touch-pan-y transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform {session.hasStarted ? 'scale-75 sm:scale-85 lg:scale-100' : 'scale-110 sm:scale-125 lg:scale-135'}"
+    class="relative mb-1 lg:mb-6 flex items-center justify-center min-h-[240px] sm:min-h-[280px] touch-pan-y transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform {session.hasStarted ? 'scale-90 sm:scale-100 lg:scale-115' : 'scale-110 sm:scale-125 lg:scale-135'}"
     ontouchstart={handleTouchStart}
     ontouchend={handleTouchEnd}
   >
@@ -106,8 +112,14 @@
     {/if}
   </div>
 
-  <!-- Hint Text -->
-  <p class="text-xs lg:text-sm text-center transition-all duration-700 {session.hasStarted ? 'text-zinc-500 font-normal mt-0' : 'text-cyan-200/90 font-medium tracking-wide mt-3 drop-shadow-[0_0_12px_rgba(103,232,249,0.5)]'}">{hint}</p>
+  <!-- Hint Text / Clean Connection Log Subtitle -->
+  {#if !session.hasStarted && session.mode === 'active'}
+    <p class="text-xs font-mono text-cyan-200/80 text-center animate-pulse tracking-wide mt-3 drop-shadow-[0_0_10px_rgba(103,232,249,0.3)] min-h-[20px]">
+      {logs.latest?.text || 'Opening secure channel...'}
+    </p>
+  {:else}
+    <p class="text-xs lg:text-sm text-center transition-all duration-700 {session.hasStarted ? 'text-zinc-500 font-normal mt-0' : 'text-cyan-200/90 font-medium tracking-wide mt-3 drop-shadow-[0_0_12px_rgba(103,232,249,0.5)]'}">{hint}</p>
+  {/if}
 
   <!-- Wake word arm/disarm (secondary path) — smooth height transition -->
   <div class="overflow-hidden transition-all duration-300 ease-out flex items-center justify-center {session.mode === 'off' || session.mode === 'standby' ? 'max-h-9 opacity-100 mt-2 lg:mt-4' : 'max-h-0 opacity-0 mt-0'}">

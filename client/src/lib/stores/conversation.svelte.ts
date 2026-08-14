@@ -13,6 +13,7 @@ import { cleanVoiceText } from '../voice-text';
 import { SEAL_DELAY_MS, TRANSCRIPT_HOLD_MS, getTime } from '../config';
 import type { LiveBubble, LiveSegment, Message } from '../types';
 import { tools } from './tools.svelte';
+import { session } from './session.svelte';
 
 class ConversationStore {
   readonly messages = $state<Message[]>([]);
@@ -79,6 +80,7 @@ class ConversationStore {
         this.segmentsMap.set(key, { text, language: seg.language, final: seg.final, fromAgent: true });
         this.awaitingReply = false;
         if (text) {
+          session.markStarted();
           // Stamp the reply clock at FIRST TOKEN (lock it for the entire turn).
           if (!this.liveAgentStartTime) this.liveAgentStartTime = getTime();
           
@@ -181,6 +183,7 @@ class ConversationStore {
 
   setAgentSpeaking(speaking: boolean): void {
     this.agentSpeaking = speaking;
+    if (speaking) session.markStarted();
     if (!speaking) this.armSealWatcher();
     this.segmentsVersion++; // nudge observers even if nothing else changed
   }

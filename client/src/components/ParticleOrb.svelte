@@ -185,11 +185,11 @@
             Math.sin(clock * 3.5 + iz * 0.08 + phaseZ);
 
           if (session.status === 'speaking') {
-            displacement += voiceNoise * (audio.mid * 22 + audio.treble * 16 + audioPower * 10);
+            displacement += voiceNoise * (audio.mid * 10 + audio.treble * 8 + audioPower * 5);
           } else if (session.status === 'listening') {
-            displacement += voiceNoise * (audio.bass * 20 + amp * 14);
+            displacement += voiceNoise * (audio.bass * 9 + amp * 6);
           } else {
-            displacement += idleNoise * audioPower * 12;
+            displacement += idleNoise * audioPower * 6;
           }
         }
 

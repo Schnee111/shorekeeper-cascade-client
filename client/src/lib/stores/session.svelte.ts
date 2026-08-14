@@ -89,6 +89,13 @@ class SessionStore {
       logs.add('warn', 'Connection unstable — reconnecting...');
     } else if (state === 'connected') {
       logs.add('success', 'LiveKit connected');
+      // Fallback transition: If agent voice TTS stalls or delays beyond 1.8s after connection,
+      // reveal workspace automatically so the user is never stuck on initial screen.
+      setTimeout(() => {
+        if (this.mode === 'active' && !this.hasStarted) {
+          this.markStarted();
+        }
+      }, 1800);
     } else if (state === 'disconnected' && this.mode === 'active') {
       // Plan §6: ACTIVE ──disconnect──► OFF
       logs.add('warn', 'Disconnected');
@@ -134,11 +141,13 @@ class SessionStore {
   }
   hasStarted = $state(false);
 
+  markStarted(): void {
+    if (!this.hasStarted) this.hasStarted = true;
+  }
+
   /** Toggle active live session on/off. */
   async toggleSession(): Promise<void> {
-    if (!this.hasStarted) this.hasStarted = true;
     if (this.mode === 'off' || this.mode === 'standby') {
-      await this.startActive();
       if (this.stopWake) {
         await this.stopWake();
         this.stopWake = null;
@@ -159,6 +168,7 @@ class SessionStore {
     this.resetAll();
     this.mode = 'off';
     this.offState = 'idle';
+    this.hasStarted = false;
     logs.add('info', 'Session ended');
   }
 
