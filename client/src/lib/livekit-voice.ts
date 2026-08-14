@@ -39,6 +39,8 @@ export interface LivekitVoiceOptions {
   onToolActivity?: (ev: { state: 'start' | 'complete'; name: string }) => void;
   /** Fish Audio voice key (token_server registry); default "gura". */
   voice?: string;
+  /** Hermes LLM model override (9Router model ID). */
+  model?: string;
 }
 
 export interface LivekitHandle {
@@ -56,9 +58,10 @@ function makeRoomName(): string {
   return `jarvis-${suffix}`;
 }
 
-async function fetchToken(roomName: string, voice?: string): Promise<string> {
+async function fetchToken(roomName: string, voice?: string, model?: string): Promise<string> {
   let url = `${TOKEN_ENDPOINT}?room=${encodeURIComponent(roomName)}&identity=${IDENTITY}`;
   if (voice) url += `&voice=${encodeURIComponent(voice)}`;
+  if (model) url += `&model=${encodeURIComponent(model)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Token endpoint ${res.status}`);
   const data = (await res.json()) as { token?: string };
@@ -72,7 +75,7 @@ async function fetchToken(roomName: string, voice?: string): Promise<string> {
  */
 export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<LivekitHandle> {
   const roomName = makeRoomName();
-  const token = await fetchToken(roomName, opts.voice);
+  const token = await fetchToken(roomName, opts.voice, opts.model);
 
   const room = new Room({
     adaptiveStream: true,

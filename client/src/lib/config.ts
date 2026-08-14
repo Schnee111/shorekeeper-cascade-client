@@ -19,12 +19,27 @@ export const VOICES_ENDPOINT = '/jarvis-livekit/voices';
 
 /** localStorage key for the chosen Fish Audio voice. */
 export const VOICE_STORAGE_KEY = 'jarvis-voice';
+export const MODEL_STORAGE_KEY = 'jarvis-model';
 
 /** Static voice registry — used only if the /voices endpoint fails. */
 export const FALLBACK_VOICES: VoiceOption[] = [
   { id: 'gura', label: 'Gura', desc: 'Energetic · EN', default: true },
   { id: 'gura2', label: 'Gura (alt)', desc: 'Alt clone · EN', default: false },
   { id: 'zeta', label: 'Zeta', desc: 'Calm · ID/EN', default: false },
+];
+
+export interface ModelOption {
+  id: string;
+  label: string;
+  desc: string;
+  default?: boolean;
+}
+
+export const MODEL_OPTIONS: ModelOption[] = [
+  { id: '', label: 'Gemini 3.6 Flash High (Default)', desc: 'Smartest · ~1.3s TTFT', default: true },
+  { id: 'ag/gemini-3.6-flash-medium', label: 'Gemini 3.6 Flash Medium', desc: 'Balanced · ~1.0s TTFT' },
+  { id: 'ag/gemini-3.6-flash-low', label: 'Gemini 3.6 Flash Low', desc: 'Ultra Fast · Low latency' },
+  { id: 'qd/qmodel_38max', label: 'Qoder 38max', desc: 'Sub-second · ~0.9s TTFT' },
 ];
 
 /** Human-friendly labels for tool progress rows, keyed by tool name. */
@@ -43,6 +58,21 @@ export const TOOL_LABELS: Record<string, string> = {
 };
 
 export const toolLabel = (name: string): string => TOOL_LABELS[name] || 'Working on it';
+
+/** Extract a human-readable argument summary for display in the tool chip. */
+export const extractToolDetail = (name: string, args?: Record<string, any>): string | undefined => {
+  if (!args || typeof args !== 'object') return undefined;
+  if (name === 'web_search' && args.query) return `"${args.query}"`;
+  if (name === 'terminal' && args.command) {
+    const cmd = args.command.trim();
+    return cmd.length > 30 ? cmd.slice(0, 30) + '…' : cmd;
+  }
+  if (name === 'read_file' && args.path) return args.path.split('/').pop();
+  if (name === 'write_file' && args.path) return args.path.split('/').pop();
+  if (name === 'search_files' && args.pattern) return `"${args.pattern}"`;
+  if (name === 'session_search' && args.query) return `"${args.query}"`;
+  return undefined;
+};
 
 /** Keep the user transcript on the caption bar this long after it commits. */
 export const TRANSCRIPT_HOLD_MS = 3500;

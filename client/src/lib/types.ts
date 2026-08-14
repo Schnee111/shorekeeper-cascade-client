@@ -38,6 +38,7 @@ export interface LiveBubble {
   key: string;
   text: string;
   final: boolean;
+  time?: string;
 }
 
 /** Interim transcription segment tracked in the segment map. */
@@ -52,6 +53,7 @@ export interface LiveSegment {
 export interface ToolCallInfo {
   name: string;
   label: string;
+  detail?: string;
   time: string;
   done: boolean;
 }
