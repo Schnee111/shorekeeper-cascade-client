@@ -23,6 +23,7 @@ import {
   type TranscriptionSegment,
 } from 'livekit-client';
 import { IDENTITY, LIVEKIT_URL, TOKEN_ENDPOINT } from './config';
+import { audioAnalyser } from './audio-analyser';
 
 export { LIVEKIT_URL, IDENTITY };
 
@@ -122,6 +123,8 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
           audioElements.push(el);
           document.body.appendChild(el);
           opts.onLog('Agent audio track attached');
+          // Attach AudioAnalyser for 3D Spectro Particle Visualizer
+          audioAnalyser.attachMediaElement(el);
         }
       }
     )

@@ -4,7 +4,16 @@
 -->
 <script lang="ts">
   import CaptionBar from './CaptionBar.svelte';
+  import ParticleOrb from './ParticleOrb.svelte';
   import { session } from '../lib/stores/session.svelte';
+
+  const ORB_MODE_KEY = 'jarvis-orb-mode';
+  let viewMode: '2d' | '3d' = $state((localStorage.getItem(ORB_MODE_KEY) as '2d' | '3d') || '2d');
+
+  function toggleViewMode() {
+    viewMode = viewMode === '2d' ? '3d' : '2d';
+    localStorage.setItem(ORB_MODE_KEY, viewMode);
+  }
 
   const HINTS: Record<string, string> = {
     off: 'Tap the orb to begin',
@@ -39,31 +48,49 @@
 
 <div class="lg:w-[400px] shrink-0 glass-card p-4 lg:p-8 flex flex-col items-center justify-center overflow-hidden transition-all duration-300 ease-out">
 
-  <!-- Status Label -->
-  <div class="mb-2 lg:mb-8 flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 rounded-full bg-white/5 border border-white/10">
-    <div class="w-2 h-2 rounded-full {pill.dot} {pill.pulse ? 'animate-pulse' : ''}"></div>
-    <span class="text-sm font-medium {pill.text}">{pill.label}</span>
+  <!-- Status Label & 2D/3D Mode Toggle -->
+  <div class="mb-2 lg:mb-8 flex items-center justify-between w-full px-2">
+    <div class="flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 rounded-full bg-white/5 border border-white/10">
+      <div class="w-2 h-2 rounded-full {pill.dot} {pill.pulse ? 'animate-pulse' : ''}"></div>
+      <span class="text-sm font-medium {pill.text}">{pill.label}</span>
+    </div>
+
+    <!-- 2D / 3D Mode Switcher -->
+    <button
+      onclick={toggleViewMode}
+      class="px-2.5 py-1 rounded-full text-[11px] font-mono transition-all border bg-white/5 border-white/10 text-zinc-400 hover:text-cyan-300 hover:border-cyan-500/30 flex items-center gap-1.5"
+      title="Toggle between 2D CSS Orb and 3D Spectro Particle Visualizer"
+    >
+      <span class="w-1.5 h-1.5 rounded-full {viewMode === '3d' ? 'bg-cyan-400 shadow-[0_0_6px_rgba(103,232,249,0.8)]' : 'bg-zinc-500'}"></span>
+      <span>{viewMode.toUpperCase()} Mode</span>
+    </button>
   </div>
 
-  <!-- Orb -->
-  <div class="orb-container mb-1 lg:mb-8">
-    {#if session.mode !== 'off'}
-      <div class="orb-ripple {session.status}"></div>
-      <div class="orb-ripple {session.status}"></div>
-      <div class="orb-ripple {session.status}"></div>
-    {/if}
+  <!-- Orb Container (2D CSS Orb vs 3D Spectro Particle Field) -->
+  <div class="relative mb-1 lg:mb-8 flex items-center justify-center min-h-[220px]">
+    {#if viewMode === '3d'}
+      <ParticleOrb />
+    {:else}
+      <div class="orb-container">
+        {#if session.mode !== 'off'}
+          <div class="orb-ripple {session.status}"></div>
+          <div class="orb-ripple {session.status}"></div>
+          <div class="orb-ripple {session.status}"></div>
+        {/if}
 
-    {#if session.mode === 'active'}
-      <div class="orb-glow-ring active"></div>
-    {:else if session.mode === 'standby'}
-      <div class="orb-glow-ring"></div>
-    {/if}
+        {#if session.mode === 'active'}
+          <div class="orb-glow-ring active"></div>
+        {:else if session.mode === 'standby'}
+          <div class="orb-glow-ring"></div>
+        {/if}
 
-    <button
-      onclick={() => session.toggleSession()}
-      class="orb-core {orbClass}"
-      aria-label={session.mode === 'off' ? 'Start session' : 'End session'}
-    ></button>
+        <button
+          onclick={() => session.toggleSession()}
+          class="orb-core {orbClass}"
+          aria-label={session.mode === 'off' ? 'Start session' : 'End session'}
+        ></button>
+      </div>
+    {/if}
   </div>
 
   <!-- Hint Text -->
