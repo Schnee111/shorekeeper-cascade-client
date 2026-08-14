@@ -1,0 +1,24 @@
+{
+  "name": "Shorekeeper JARVIS",
+  "short_name": "JARVIS",
+  "description": "Shorekeeper JARVIS Realtime Voice Interface Workspace",
+  "start_url": "/jarvis/",
+  "display": "standalone",
+  "background_color": "#050609",
+  "theme_color": "#050609",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/jarvis/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/jarvis/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
