@@ -36,8 +36,8 @@
   onMount(() => {
     if (!containerEl) return;
 
-    const width = 220;
-    const height = 220;
+    const width = 320;
+    const height = 320;
 
     // 1. Scene setup
     scene = new THREE.Scene();
@@ -229,12 +229,12 @@
   onclick={() => session.toggleSession()}
   aria-label={session.mode === 'off' ? 'Start session' : 'End session'}
 >
-  <div bind:this={containerEl} class="w-[220px] h-[220px] flex items-center justify-center pointer-events-none"></div>
+  <div bind:this={containerEl} class="w-[320px] h-[320px] flex items-center justify-center pointer-events-none"></div>
 </button>
 
 <style>
   .particle-orb-container {
-    width: 220px;
-    height: 220px;
+    width: 320px;
+    height: 320px;
   }
 </style>

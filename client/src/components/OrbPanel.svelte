@@ -15,6 +15,25 @@
     localStorage.setItem(ORB_MODE_KEY, viewMode);
   }
 
+  // Touch Swipe Gesture for Switching 2D / 3D Mode
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  function handleTouchStart(e: TouchEvent) {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }
+
+  function handleTouchEnd(e: TouchEvent) {
+    const deltaX = e.changedTouches[0].clientX - touchStartX;
+    const deltaY = e.changedTouches[0].clientY - touchStartY;
+
+    // Horizonal swipe detection (> 40px threshold and more horizontal than vertical)
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      toggleViewMode();
+    }
+  }
+
   const HINTS: Record<string, string> = {
     off: 'Tap the orb to begin',
     standby: 'Say "Hey Jarvis" to activate',
@@ -46,35 +65,32 @@
   );
 </script>
 
-<div class="w-full flex flex-col items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'glass-card p-4 lg:p-8 overflow-hidden border border-white/10' : 'border-0 bg-transparent shadow-none backdrop-blur-none p-0'}">
+<div class="w-full flex flex-col items-center justify-center p-0 border-0 bg-transparent shadow-none backdrop-blur-none">
 
-  <!-- Status Label (Hidden on initial landing screen, fades in smoothly on start) -->
-  <div class="mb-2 lg:mb-8 flex items-center justify-between w-full px-1 transition-all duration-500 delay-200 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none hidden'}">
-    <!-- Status Badge -->
-    <div class="flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 rounded-full bg-white/5 border border-white/10">
+  <!-- Dynamic Landing Title: Centered above Orb on landing screen (Clean fade-out when session starts) -->
+  {#if !session.hasStarted}
+    <div
+      class="text-center flex flex-col items-center mb-6 sm:mb-8 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+    >
+      <h1 class="font-semibold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white to-violet-200 text-3xl sm:text-4xl lg:text-5xl drop-shadow-[0_0_30px_rgba(103,232,249,0.6)] whitespace-nowrap">Shorekeeper</h1>
+      <p class="text-zinc-400/90 font-mono tracking-widest text-sm sm:text-base mt-2">JARVIS v2.0</p>
+    </div>
+  {/if}
+
+  <!-- Status Label (Centered at Top) -->
+  <div class="mb-2 lg:mb-8 flex items-center justify-center w-full px-1 transition-all duration-500 delay-200 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none hidden'}">
+    <div class="flex items-center gap-2 px-3.5 lg:px-4 py-1.5 lg:py-2 rounded-full bg-white/5 border border-white/10 shadow-lg backdrop-blur-md">
       <div class="w-2 h-2 rounded-full {pill.dot} {pill.pulse ? 'animate-pulse' : ''}"></div>
       <span class="text-sm font-medium {pill.text}">{pill.label}</span>
     </div>
-
-    <!-- Minimalist 2D / 3D Segmented Switch -->
-    <div class="flex items-center p-0.5 rounded-full bg-zinc-900/80 border border-white/10 shadow-inner">
-      <button
-        onclick={() => { viewMode = '2d'; localStorage.setItem(ORB_MODE_KEY, '2d'); }}
-        class="px-2.5 py-1 rounded-full text-[10px] font-mono font-medium transition-all duration-200 {viewMode === '2d' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_8px_rgba(103,232,249,0.3)]' : 'text-zinc-500 hover:text-zinc-300'}"
-      >
-        2D
-      </button>
-      <button
-        onclick={() => { viewMode = '3d'; localStorage.setItem(ORB_MODE_KEY, '3d'); }}
-        class="px-2.5 py-1 rounded-full text-[10px] font-mono font-medium transition-all duration-200 {viewMode === '3d' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_8px_rgba(103,232,249,0.3)]' : 'text-zinc-500 hover:text-zinc-300'}"
-      >
-        3D
-      </button>
-    </div>
   </div>
 
-  <!-- Orb Container (2D CSS Orb vs 3D Spectro Particle Field) -->
-  <div class="relative mb-1 lg:mb-8 flex items-center justify-center min-h-[220px]">
+  <!-- Orb Container (Swipeable 2D CSS Orb vs 3D Spectro Particle Field) -->
+  <div 
+    class="relative mb-1 lg:mb-6 flex items-center justify-center min-h-[240px] sm:min-h-[280px] touch-pan-y transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform {session.hasStarted ? 'scale-75 sm:scale-85 lg:scale-100' : 'scale-110 sm:scale-125 lg:scale-135'}"
+    ontouchstart={handleTouchStart}
+    ontouchend={handleTouchEnd}
+  >
     {#if viewMode === '3d'}
       <ParticleOrb />
     {:else}
