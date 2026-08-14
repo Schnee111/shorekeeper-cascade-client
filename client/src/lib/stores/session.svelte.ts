@@ -55,7 +55,8 @@ class SessionStore {
     if (this.connecting) return 'connecting';
     conversation.segmentsVersion; // dependency — tracks the non-reactive segmentsMap
     if (conversation.agentSpeaking || conversation.hasLiveAgentSegment()) return 'speaking';
-    if (conversation.awaitingReply || tools.active) return 'processing';
+    // When turn is active, keep orb in steady 'processing' state without rapid flickering
+    if (conversation.turnInProgress || conversation.awaitingReply || tools.active) return 'processing';
     return 'listening';
   }
 
