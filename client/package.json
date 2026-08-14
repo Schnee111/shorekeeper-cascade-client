@@ -10,9 +10,11 @@
     "test": "node --test tests/*.test.ts"
   },
   "dependencies": {
+    "@types/marked": "^5.0.2",
     "@types/three": "^0.185.4",
     "livekit-client": "^2.21.0",
     "lucide-svelte": "^0.475.0",
+    "marked": "^18.0.9",
     "openwakeword-web": "^0.1.0",
     "svelte": "^5.0.0",
     "three": "^0.185.1"

@@ -3,6 +3,7 @@
   smart scroll (allows manual scroll up, shows quick bottom button, locks to bottom when user is at bottom).
 -->
 <script lang="ts">
+  import MarkdownText from './MarkdownText.svelte';
   import ToolProgress from './ToolProgress.svelte';
   import { conversation } from '../lib/stores/conversation.svelte';
   import { session } from '../lib/stores/session.svelte';
@@ -78,7 +79,7 @@
         {#if msg.role === 'user'}
           <div class="{sameGroup ? 'mt-3' : 'mt-6'} flex justify-end">
             <div class="max-w-[80%] message-user rounded-2xl px-3 py-2 lg:px-4 lg:py-3">
-              <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{msg.text}</p>
+              <MarkdownText text={msg.text} />
               {#if msg.time}
                 <span class="block text-[10px] text-zinc-400/70 font-mono text-right mt-1.5">{msg.time}</span>
               {/if}
@@ -88,7 +89,7 @@
           <!-- Agent replies: CLEAN text, no bubble (ChatGPT style). -->
           <div class="{sameGroup ? 'mt-3' : (msg.tools?.length ? 'mt-3' : (i === 0 ? 'mt-1' : 'mt-6'))} flex justify-start">
             <div class="max-w-[85%]">
-              <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{msg.text}</p>
+              <MarkdownText text={msg.text} />
               {#if msg.time && isLastInGroup}
                 <span class="block text-[10px] text-zinc-500 font-mono mt-1.5">{msg.time}</span>
               {/if}
@@ -107,7 +108,7 @@
     {#each conversation.liveAgentBubbles as bubble, bi}
       <div class="{bi === 0 && tools.calls.length === 0 ? (conversation.messages.length > 0 ? 'mt-6' : 'mt-1') : 'mt-3'} flex justify-start">
         <div class="max-w-[85%]">
-          <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{bubble.text}{#if conversation.agentSpeaking && bi === conversation.liveAgentBubbles.length - 1 && !bubble.final}<span class="inline-block w-1.5 h-4 bg-cyan-400/90 ml-1 rounded-full animate-pulse align-middle shadow-[0_0_8px_rgba(103,232,249,0.8)]"></span>{/if}</p>
+          <MarkdownText text={bubble.text} />
         </div>
       </div>
     {/each}
