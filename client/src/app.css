@@ -20,11 +20,11 @@
 
 /* 1. Design tokens ------------------------------------------------------- */
 :root {
-  --bg-deep: #050508;
-  --bg-surface: #0a0b10;
-  --bg-elevated: #12131a;
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-medium: rgba(255, 255, 255, 0.1);
+  --bg-deep: #080a12;
+  --bg-surface: #0e111a;
+  --bg-elevated: #161a26;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.12);
   --text-primary: #fafafa;
   --text-secondary: #a1a1aa;
   --text-muted: #52525b;
@@ -63,9 +63,9 @@ body {
   z-index: 0;
   transform: translateZ(0);
   background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(103, 232, 249, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(96, 165, 250, 0.05) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 30% at 20% 60%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
+    radial-gradient(ellipse 90% 60% at 50% -20%, rgba(103, 232, 249, 0.16) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 85% 85%, rgba(96, 165, 250, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 65% 45% at 15% 65%, rgba(139, 92, 246, 0.1) 0%, transparent 60%);
 }
 
 .noise-overlay {
