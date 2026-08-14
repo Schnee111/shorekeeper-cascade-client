@@ -132,10 +132,13 @@ class SessionStore {
       this.connecting = false;
     }
   }
+  hasStarted = $state(false);
 
+  /** Toggle active live session on/off. */
   async toggleSession(): Promise<void> {
+    if (!this.hasStarted) this.hasStarted = true;
     if (this.mode === 'off' || this.mode === 'standby') {
-      // Tap orb = primary path (plan §2). Stop wake word first if armed.
+      await this.startActive();
       if (this.stopWake) {
         await this.stopWake();
         this.stopWake = null;
@@ -193,6 +196,7 @@ class SessionStore {
   }
 
   async toggleWake(): Promise<void> {
+    if (!this.hasStarted) this.hasStarted = true;
     if (this.mode === 'standby') {
       if (this.stopWake) {
         await this.stopWake();

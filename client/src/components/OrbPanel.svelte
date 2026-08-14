@@ -46,7 +46,7 @@
   );
 </script>
 
-<div class="lg:w-[400px] shrink-0 glass-card p-4 lg:p-8 flex flex-col items-center justify-center overflow-hidden transition-all duration-300 ease-out">
+<div class="lg:w-[400px] shrink-0 glass-card p-4 lg:p-8 flex flex-col items-center justify-center overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'relative border border-white/10' : 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border-0 bg-transparent shadow-none backdrop-blur-none z-30 scale-110 lg:scale-125'}">
 
   <!-- Status Label & Seamless 2D/3D Mode Toggle -->
   <div class="mb-2 lg:mb-8 flex items-center justify-between w-full px-1">

@@ -17,17 +17,17 @@
   const roomDot = $derived(session.mode === 'active' ? 'connected' : session.mode === 'standby' ? 'pending' : 'disconnected');
 </script>
 
-<header class="relative z-30 px-4 sm:px-6 py-3 lg:py-5 flex items-center justify-between fade-in-up stagger-1">
-  <!-- Left: Brand Block -->
-  <div class="flex items-center gap-4 min-w-[140px]">
-    <div>
-      <h1 class="text-base lg:text-lg font-semibold tracking-tight text-white">Shorekeeper</h1>
-      <p class="text-[10px] lg:text-xs text-zinc-500 font-mono tracking-wide">JARVIS v2.0</p>
+<header class="relative z-30 px-4 sm:px-6 py-3 lg:py-5 flex items-center justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
+  <!-- Left: Brand Block (Animates from center to left on session start) -->
+  <div class="flex items-center gap-4 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'translate-x-0 opacity-100' : 'fixed left-1/2 -translate-x-1/2 top-8 z-40 text-center pointer-events-none'}">
+    <div class="{session.hasStarted ? 'text-left' : 'text-center'}">
+      <h1 class="font-semibold tracking-tight text-white transition-all duration-700 {session.hasStarted ? 'text-base lg:text-lg' : 'text-xl sm:text-2xl lg:text-3xl'}">Shorekeeper</h1>
+      <p class="text-zinc-500 font-mono tracking-wide transition-all duration-700 {session.hasStarted ? 'text-[10px] lg:text-xs mt-0' : 'text-xs sm:text-sm mt-1'}">JARVIS v2.0</p>
     </div>
   </div>
 
-  <!-- Center: Model Menu Pill (Centered at top of screen) -->
-  <div class="absolute left-1/2 -translate-x-1/2 flex items-center justify-center">
+  <!-- Center: Model Menu Pill (Fades in on start) -->
+  <div class="absolute left-1/2 -translate-x-1/2 flex items-center justify-center transition-all duration-500 delay-150 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}">
     <ModelMenu
       options={session.modelOptions}
       selected={session.selectedModel}
@@ -37,8 +37,8 @@
     />
   </div>
 
-  <!-- Right: Voice Menu Pill + Status Indicators -->
-  <div class="flex items-center gap-2 sm:gap-3 min-w-[140px] justify-end">
+  <!-- Right: Voice Menu Pill + Status Indicators (Fades in on start) -->
+  <div class="flex items-center gap-2 sm:gap-3 min-w-[140px] justify-end transition-all duration-500 delay-150 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}">
     <VoiceMenu
       options={session.voiceOptions}
       selected={session.selectedVoice}

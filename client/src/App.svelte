@@ -34,8 +34,8 @@
     <!-- Left: Orb & Controls -->
     <OrbPanel />
 
-    <!-- Right: Conversation & Logs -->
-    <div class="flex-1 min-h-0 flex flex-col gap-3 lg:gap-6 min-w-0 fade-in-up stagger-3">
+    <!-- Right: Conversation & Logs (Fades & slides in smoothly when session starts) -->
+    <div class="flex-1 min-h-0 flex flex-col gap-3 lg:gap-6 min-w-0 transition-all duration-700 delay-100 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'opacity-100 translate-x-0 pointer-events-auto' : 'opacity-0 translate-x-8 pointer-events-none hidden lg:flex'}">
       <Conversation />
       <StatusLog />
     </div>
