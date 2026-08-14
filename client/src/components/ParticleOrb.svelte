@@ -152,19 +152,19 @@
         const ny = iy / len;
         const nz = iz / len;
 
-        // Wave noise + Audio displacement (amplified for high visual responsiveness)
-        const wave = Math.sin(clock * 3 + ix * 0.05 + iy * 0.05) * Math.cos(clock * 2 + iz * 0.05);
-        let displacement = wave * 2;
+        // Wave noise + Audio displacement (balanced organic & fluid responsiveness)
+        const wave = Math.sin(clock * 2 + ix * 0.04 + iy * 0.04) * Math.cos(clock * 1.5 + iz * 0.04);
+        let displacement = wave * 2.5;
 
         if (session.mode !== 'off') {
-          // Dynamic Audio Reactivity Boost
+          // Smooth Audio Reactivity
           const audioBoost = Math.max(amp, audio.mid, audio.bass, audio.treble);
-          displacement += audioBoost * 55 * Math.sin(clock * 12 + i * 0.1);
+          displacement += audioBoost * 18 * Math.sin(clock * 5 + i * 0.05);
 
           if (session.status === 'speaking') {
-            displacement += (audio.mid * 40 + audio.treble * 30) * Math.sin(clock * 16 + idx * 0.2);
+            displacement += (audio.mid * 15 + audio.treble * 10) * Math.sin(clock * 6 + idx * 0.1);
           } else if (session.status === 'listening') {
-            displacement += (audio.bass * 45 + amp * 30) * Math.cos(clock * 14 + idx * 0.2);
+            displacement += (audio.bass * 16 + amp * 10) * Math.cos(clock * 5 + idx * 0.1);
           }
         }
 
