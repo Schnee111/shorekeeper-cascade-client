@@ -31,6 +31,21 @@ class ConversationStore {
     this.agentProcessing = state === 'start';
     if (state === 'start') {
       this.awaitingReply = true;
+      // Proactively create the assistant streaming placeholder right away (zero layout jump)
+      const last = this.messages[this.messages.length - 1];
+      if (!last || last.role !== 'assistant' || last.status !== 'streaming') {
+        const toolsSnapshot = tools.takeSnapshot();
+        this.messages.push({
+          id: ++this.messageIdCounter,
+          role: 'assistant',
+          text: '',
+          time: getTime(),
+          status: 'streaming',
+          language: this.liveAgentLanguage,
+          group: this.turnGroupCounter,
+          tools: toolsSnapshot.length ? toolsSnapshot : undefined,
+        });
+      }
     } else if (state === 'complete') {
       this.awaitingReply = false;
       this.armSealWatcher();

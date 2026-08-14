@@ -91,7 +91,21 @@
           <!-- Agent replies: SINGLE STORE IN-PLACE RENDERING -->
           <div class="{sameGroup ? 'mt-2' : (msg.tools?.length ? 'mt-3' : (i === 0 ? 'mt-1' : 'mt-6'))} flex justify-start w-full">
             <div class="max-w-[85%] w-full">
-              <SmoothMarkdown text={msg.text} isStreaming={msg.status === 'streaming'} />
+              {#if msg.status === 'streaming' && !msg.text}
+                <!-- Zero-shift inline processing indicator BEFORE first token -->
+                <div class="flex items-center gap-1.5 text-zinc-500 py-1">
+                  <div class="flex gap-0.5">
+                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" style="animation-delay: 300ms"></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" style="animation-delay: 600ms"></div>
+                  </div>
+                  <span class="text-[10px] font-mono tracking-wide opacity-70">
+                    {tools.active ? 'working' : 'thinking'}
+                  </span>
+                </div>
+              {:else}
+                <SmoothMarkdown text={msg.text} isStreaming={msg.status === 'streaming'} />
+              {/if}
               {#if isLastInGroup && msg.time && msg.status !== 'streaming'}
                 <span in:fade={{ duration: 250 }} class="block text-[10px] text-zinc-500 font-mono mt-1">
                   {msg.time}
@@ -107,27 +121,6 @@
     {#if tools.calls.length > 0 && (!conversation.messages.length || conversation.messages[conversation.messages.length - 1].role !== 'assistant')}
       <div class="{conversation.messages.length > 0 ? 'mt-6' : 'mt-1'} flex justify-start w-full">
         <ToolProgress rows={tools.calls} groupKey="live" />
-      </div>
-    {/if}
-    
-    <!-- Pre-TTFT processing indicator (replaces timestamp before speech arrives) -->
-    {#if conversation.turnInProgress}
-      <div class="{tools.calls.length === 0 ? (conversation.messages.length > 0 ? 'mt-4' : 'mt-1') : ''} flex justify-start w-full">
-        <div class="max-w-[85%]">
-          <div class="flex items-center gap-1.5 text-zinc-500 mt-1">
-            <div class="flex gap-0.5">
-              <div class="w-1 h-1 rounded-full bg-current animate-pulse"></div>
-              <div class="w-1 h-1 rounded-full bg-current animate-pulse" style="animation-delay: 300ms"></div>
-              <div class="w-1 h-1 rounded-full bg-current animate-pulse" style="animation-delay: 600ms"></div>
-            </div>
-            <span class="text-[10px] font-mono tracking-wide opacity-70">
-              {tools.active ? 'working' : 'processing'}
-              {#if conversation.turnElapsedSeconds > 2}
-                <span class="opacity-50">· {conversation.turnElapsedSeconds}s</span>
-              {/if}
-            </span>
-          </div>
-        </div>
       </div>
     {/if}
   </div>
