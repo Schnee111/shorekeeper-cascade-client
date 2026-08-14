@@ -18,13 +18,13 @@ import { session } from './session.svelte';
 class ConversationStore {
   readonly messages = $state<Message[]>([]);
 
-  /** Live agent bubbles — one per transcription segment (the bridge flushes
-   *  each sentence as a distinct segment), upserted by key while streaming. */
-  readonly liveAgentBubbles = $state<LiveBubble[]>([]);
+  private messageIdCounter = 0;
 
   /** Turn still in progress — true from TTFT/turn start until complete seal. */
   get turnInProgress(): boolean {
-    return this.awaitingReply || this.agentProcessing || this.liveAgentBubbles.length > 0 || this.hasLiveAgentSegment() || tools.active;
+    const lastMsg = this.messages[this.messages.length - 1];
+    const isStreaming = lastMsg && lastMsg.role === 'assistant' && lastMsg.status === 'streaming';
+    return (this.awaitingReply || this.agentProcessing || tools.active) && !isStreaming;
   }
 
   setTurnState(state: 'start' | 'complete'): void {
@@ -61,19 +61,20 @@ class ConversationStore {
 
   /** Joined copy — drives placeholder visibility + auto-scroll effects. */
   get liveAgentText(): string {
-    return this.liveAgentBubbles.map((b) => b.text).join(' ').trim();
+    const last = this.messages[this.messages.length - 1];
+    if (last && last.role === 'assistant' && last.status === 'streaming') {
+      return last.text;
+    }
+    return '';
   }
 
   private liveAgentLanguage = 'id';
-  // Timestamp captured at FIRST TOKEN, not seal time — the sealed bubble's
-  // clock reflects when the reply started.
   private liveAgentStartTime = '';
   private turnGroupCounter = 0;
   private sealTimer: ReturnType<typeof setTimeout> | null = null;
   private transcriptHoldTimer: ReturnType<typeof setTimeout> | null = null;
 
-  /** Segment accumulation: Map key = owner + segmentId. Agent segments are
-   *  mirrored into liveAgentBubbles; the map dedupes user interim updates. */
+  /** Segment accumulation: Map key = owner + segmentId. */
   private segmentsMap = new Map<string, LiveSegment>();
 
   /** The caption bar shows only the CURRENT sentence/line of the agent's reply —
@@ -107,48 +108,32 @@ class ConversationStore {
         const prev = this.segmentsMap.get(key);
         if (prev && prev.text === text && prev.final === seg.final) continue; // anti-flicker
         this.segmentsMap.set(key, { text, language: seg.language, final: seg.final, fromAgent: true });
-        this.awaitingReply = !seg.final; // Keep turn alive / awaiting while stream is not fully finalized
+        this.awaitingReply = !seg.final;
+
         if (text) {
           session.markStarted();
-          // Stamp the reply clock at FIRST TOKEN (lock it for the entire turn).
           if (!this.liveAgentStartTime) this.liveAgentStartTime = getTime();
-          
-          // Agent Resume / Prefix Merge across both liveAgentBubbles and sealed messages:
-          // Check 1: In liveAgentBubbles
-          const existing = this.liveAgentBubbles.find((b) => b.key === key);
-          if (existing) {
-            existing.text = text;
-            existing.final = seg.final;
-          } else {
-            const lastBubble = this.liveAgentBubbles[this.liveAgentBubbles.length - 1];
-            // Check 2: In last sealed message (if liveAgentBubbles was cleared during premature seal)
-            const lastSealed = this.messages[this.messages.length - 1];
 
-            if (
-              lastBubble &&
-              (text.toLowerCase().startsWith(lastBubble.text.toLowerCase().replace(/[.,!?]+\s*$/, '')) ||
-                lastBubble.text.toLowerCase().startsWith(text.toLowerCase().replace(/[.,!?]+\s*$/, '')))
-            ) {
-              if (text.length >= lastBubble.text.length) {
-                lastBubble.key = key;
-                lastBubble.text = text;
-                lastBubble.final = seg.final;
-              }
-            } else if (
-              lastSealed &&
-              lastSealed.role === 'assistant' &&
-              (text.toLowerCase().startsWith(lastSealed.text.toLowerCase().replace(/[.,!?]+\s*$/, '')) ||
-                lastSealed.text.toLowerCase().startsWith(text.toLowerCase().replace(/[.,!?]+\s*$/, '')))
-            ) {
-              // Un-seal the prematurely sealed assistant message back into streaming
-              if (text.length >= lastSealed.text.length) {
-                this.messages.pop(); // remove duplicate from history
-                this.liveAgentBubbles.push({ key, text, final: seg.final, time: getTime() });
-              }
-            } else {
-              this.liveAgentBubbles.push({ key, text, final: seg.final, time: getTime() });
-            }
+          // IN-PLACE SINGLE STORE MUTATION (Vercel AI SDK pattern)
+          const last = this.messages[this.messages.length - 1];
+          if (last && last.role === 'assistant' && last.status === 'streaming') {
+            last.text = text; // Mutate in place! No DOM destroy/remount
+            last.time = this.liveAgentStartTime;
+          } else {
+            // Snapshot tool progress if any
+            const toolsSnapshot = tools.takeSnapshot();
+            this.messages.push({
+              id: ++this.messageIdCounter,
+              role: 'assistant',
+              text,
+              time: this.liveAgentStartTime,
+              status: 'streaming',
+              language: seg.language || 'id',
+              group: this.turnGroupCounter,
+              tools: toolsSnapshot.length ? toolsSnapshot : undefined,
+            });
           }
+
           this.liveAgentLanguage = seg.language || 'id';
           this.subtitle = this.lastSentence(text);
         }
@@ -156,20 +141,13 @@ class ConversationStore {
         continue;
       }
 
-      // User segment: the previous agent reply is definitely over — seal it
-      // into history right now (before the new user message lands).
+      // User segment: previous turn is over — seal it in-place
       this.sealAgentBubble();
 
       if (seg.final) {
         this.segmentsMap.delete(key);
         if (!text) continue;
 
-        // Redirect merge: when the user keeps speaking past a premature
-        // end-of-turn commit, the bridge re-submits the FULL accumulated
-        // transcript (gateway status 'redirected'). Without this, the chat
-        // shows the partial bubble ("Tes.") AND the full bubble ("Tes. Live
-        // TTS-nya doang tapi"). If the last message is a user message that is
-        // a leading prefix of the new text, fold it into the new one.
         const prev = this.messages[this.messages.length - 1];
         if (
           prev &&
@@ -177,29 +155,32 @@ class ConversationStore {
           prev.text.length < text.length &&
           text.toLowerCase().startsWith(prev.text.toLowerCase().replace(/[.,!?]+\s*$/, ''))
         ) {
-          prev.text = text; // in-place — Svelte 5 array item mutation is reactive
+          prev.text = text; // in-place user speech merge
           if (!prev.time) prev.time = getTime();
           prev.language = seg.language;
         } else {
-          this.messages.push({ role: 'user', text, time: getTime(), language: seg.language });
+          this.messages.push({
+            id: ++this.messageIdCounter,
+            role: 'user',
+            text,
+            time: getTime(),
+            status: 'done',
+            language: seg.language,
+          });
         }
 
-        // Keep the last interim text on the bar so it doesn't blink out the
-        // moment the turn commits; a timer clears it after a hold period.
         this.transcript = text;
         if (this.transcriptHoldTimer) clearTimeout(this.transcriptHoldTimer);
         this.transcriptHoldTimer = setTimeout(() => {
           this.transcript = '';
           this.transcriptHoldTimer = null;
         }, TRANSCRIPT_HOLD_MS);
-        this.awaitingReply = true; // final user transcript → wait for agent
+        this.awaitingReply = true;
       } else {
         const prev = this.segmentsMap.get(key);
-        if (prev && prev.text === seg.text) continue; // anti-flicker
+        if (prev && prev.text === seg.text) continue;
         this.segmentsMap.set(key, { text: seg.text, language: seg.language, final: false, fromAgent });
         if (!text) continue;
-        // New speech arriving — cancel any pending hold-clear so the bar
-        // reflects the fresh interim text instead of an old held string.
         if (this.transcriptHoldTimer) {
           clearTimeout(this.transcriptHoldTimer);
           this.transcriptHoldTimer = null;
@@ -214,47 +195,32 @@ class ConversationStore {
     this.agentSpeaking = speaking;
     if (speaking) session.markStarted();
     if (!speaking) this.armSealWatcher();
-    this.segmentsVersion++; // nudge observers even if nothing else changed
+    this.segmentsVersion++;
   }
 
-  /** Seal ~1.5s after the last activity once the agent stops speaking. */
   private armSealWatcher(): void {
     if (this.sealTimer) clearTimeout(this.sealTimer);
     this.sealTimer = setTimeout(() => {
-      const allFinal = this.liveAgentBubbles.length > 0 && this.liveAgentBubbles.every((b) => b.final);
+      const allFinal = !this.hasLiveAgentSegment();
       if (allFinal && !this.agentSpeaking) this.sealAgentBubble();
     }, SEAL_DELAY_MS);
   }
 
-  /** Commit the live agent reply into sealed history. */
+  /** Commit the live agent reply into sealed history (simply flip status='done'). */
   sealAgentBubble(): void {
     if (this.sealTimer) {
       clearTimeout(this.sealTimer);
       this.sealTimer = null;
     }
-    const bubbles = this.liveAgentBubbles.filter((b) => b.text);
-    if (bubbles.length === 0) return;
-    const group = this.turnGroupCounter;
-    this.turnGroupCounter += 1;
-    // Snapshot the tool log so it persists in history (Gemini/Claude style).
-    const toolsSnapshot = tools.takeSnapshot();
-    const startTime = this.liveAgentStartTime || getTime();
-    this.messages.push(
-      ...bubbles.map((b, i) => ({
-        role: 'assistant' as const,
-        text: b.text,
-        time: startTime, // Unified single timestamp per turn
-        language: this.liveAgentLanguage,
-        group,
-        // attach the tool log to the FIRST sealed segment of the turn only
-        tools: i === 0 && toolsSnapshot.length ? toolsSnapshot : undefined,
-      }))
-    );
-    this.liveAgentBubbles.length = 0;
+    const last = this.messages[this.messages.length - 1];
+    if (last && last.role === 'assistant' && last.status === 'streaming') {
+      last.status = 'done'; // Flip status in-place! ZERO DOM swap!
+      this.turnGroupCounter++;
+    }
     this.liveAgentStartTime = '';
     this.subtitle = '';
-    this.segmentsMap.clear(); // agent segments already rendered — drop the map copy
-    tools.reset(); // the snapshot above already lives in history
+    this.segmentsMap.clear();
+    tools.reset();
     this.segmentsVersion++;
   }
 
@@ -268,7 +234,7 @@ class ConversationStore {
       this.transcriptHoldTimer = null;
     }
     this.segmentsMap.clear();
-    this.liveAgentBubbles.length = 0;
+    this.messages.length = 0;
     this.liveAgentStartTime = '';
     this.subtitle = '';
     this.transcript = '';

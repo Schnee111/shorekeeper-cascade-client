@@ -59,11 +59,14 @@ export interface ToolCallInfo {
 }
 
 /** Sealed conversation message. `group` ties segments of one agent turn;
- *  `tools` carries the permanent tool-progress snapshot for that turn. */
+ *  `tools` carries the permanent tool-progress snapshot for that turn.
+ *  `status` drives in-place live streaming vs completed rendering (Vercel AI SDK style). */
 export interface Message {
+  id: number;
   role: 'user' | 'assistant';
   text: string;
   time: string;
+  status?: 'streaming' | 'done';
   language?: string;
   group?: number;
   tools?: ToolCallInfo[];

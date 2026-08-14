@@ -12,7 +12,7 @@
   const parsedHtml = $derived(text ? (marked.parse(text) as string) : '');
 </script>
 
-<div class="markdown-content text-xs lg:text-sm text-zinc-200 leading-relaxed space-y-2">
+<div class="markdown-content text-xs text-zinc-200 leading-relaxed space-y-2">
   {@html parsedHtml}
 </div>
 

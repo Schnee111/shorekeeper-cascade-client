@@ -5,7 +5,7 @@
 <script lang="ts">
   import MarkdownText from './MarkdownText.svelte';
   import ToolProgress from './ToolProgress.svelte';
-  import StreamingMarkdown from '../lib/streaming/StreamingMarkdown.svelte';
+  import StreamingText from '../lib/streaming/StreamingText.svelte';
   import { conversation } from '../lib/stores/conversation.svelte';
   import { session } from '../lib/stores/session.svelte';
   import { tools } from '../lib/stores/tools.svelte';
@@ -67,7 +67,7 @@
         </p>
       </div>
     {:else}
-      {#each conversation.messages as msg, i}
+      {#each conversation.messages as msg, i (msg.id)}
         {@const sameGroup = i > 0 && msg.group !== undefined && conversation.messages[i - 1].group === msg.group}
         {@const isLastInGroup = msg.role === 'assistant' && (i === conversation.messages.length - 1 || conversation.messages[i + 1]?.group !== msg.group)}
         
@@ -87,11 +87,18 @@
             </div>
           </div>
         {:else}
-          <!-- Agent replies: CLEAN text, with natural spacing between paragraphs/turns -->
+          <!-- Agent replies: SINGLE STORE IN-PLACE RENDERING -->
           <div class="{sameGroup ? 'mt-2' : (msg.tools?.length ? 'mt-3' : (i === 0 ? 'mt-1' : 'mt-6'))} flex justify-start">
             <div class="max-w-[85%]">
-              <StreamingMarkdown text={msg.text} caret={false} />
-              {#if msg.time && isLastInGroup}
+              <div class="text-xs text-zinc-200 leading-relaxed message-text">
+                <StreamingText 
+                  text={msg.text} 
+                  isStreaming={msg.status === 'streaming'} 
+                  caret={msg.status === 'streaming'} 
+                  anim="jv-word-glow" 
+                />
+              </div>
+              {#if msg.time && isLastInGroup && msg.status !== 'streaming'}
                 <span class="block text-[10px] text-zinc-500 font-mono mt-1.5">{msg.time}</span>
               {/if}
             </div>
@@ -100,48 +107,30 @@
       {/each}
     {/if}
 
-    <!-- Live turn: PERMANENT tool rows + clean reply text. -->
-    {#if tools.calls.length > 0}
+    <!-- Live turn tools (while active before assistant msg created) -->
+    {#if tools.calls.length > 0 && (!conversation.messages.length || conversation.messages[conversation.messages.length - 1].role !== 'assistant')}
       <div class="{conversation.messages.length > 0 ? 'mt-6' : 'mt-1'} flex justify-start">
         <ToolProgress rows={tools.calls} groupKey="live" />
       </div>
     {/if}
     
-    {#if conversation.liveAgentBubbles.length > 0}
-      <div class="{tools.calls.length === 0 ? (conversation.messages.length > 0 ? 'mt-6' : 'mt-1') : 'mt-3'} flex justify-start">
-        <div class="max-w-[85%] space-y-2">
-          {#each conversation.liveAgentBubbles as bubble, bi}
-            <div>
-              <StreamingMarkdown text={bubble.text} caret={!bubble.final} anim="jv-word-glow" />
-            </div>
-          {/each}
-        </div>
-      </div>
-    {/if}
-    
-    <!-- Timestamp area — shows indicator while processing, timestamp when done -->
-    {#if conversation.liveAgentBubbles.length > 0 || conversation.turnInProgress}
-      <div class="{conversation.liveAgentBubbles.length === 0 && tools.calls.length === 0 ? (conversation.messages.length > 0 ? 'mt-6' : 'mt-1') : ''} flex justify-start">
+    <!-- Pre-TTFT processing indicator (replaces timestamp before speech arrives) -->
+    {#if conversation.turnInProgress}
+      <div class="{tools.calls.length === 0 ? (conversation.messages.length > 0 ? 'mt-6' : 'mt-1') : ''} flex justify-start">
         <div class="max-w-[85%]">
-          {#if conversation.turnInProgress}
-            <!-- Processing indicator — replaces timestamp -->
-            <div class="flex items-center gap-1.5 text-zinc-500 mt-1.5">
-              <div class="flex gap-0.5">
-                <div class="w-1 h-1 rounded-full bg-current animate-pulse"></div>
-                <div class="w-1 h-1 rounded-full bg-current animate-pulse" style="animation-delay: 300ms"></div>
-                <div class="w-1 h-1 rounded-full bg-current animate-pulse" style="animation-delay: 600ms"></div>
-              </div>
-              <span class="text-[10px] font-mono tracking-wide opacity-70">
-                {tools.active ? 'working' : 'processing'}
-                {#if conversation.turnElapsedSeconds > 2}
-                  <span class="opacity-50">· {conversation.turnElapsedSeconds}s</span>
-                {/if}
-              </span>
+          <div class="flex items-center gap-1.5 text-zinc-500 mt-1.5">
+            <div class="flex gap-0.5">
+              <div class="w-1 h-1 rounded-full bg-current animate-pulse"></div>
+              <div class="w-1 h-1 rounded-full bg-current animate-pulse" style="animation-delay: 300ms"></div>
+              <div class="w-1 h-1 rounded-full bg-current animate-pulse" style="animation-delay: 600ms"></div>
             </div>
-          {:else if conversation.liveAgentStartTime}
-            <!-- Final timestamp — appears when turn complete -->
-            <span class="block text-[10px] text-zinc-500 font-mono mt-1.5">{conversation.liveAgentStartTime}</span>
-          {/if}
+            <span class="text-[10px] font-mono tracking-wide opacity-70">
+              {tools.active ? 'working' : 'processing'}
+              {#if conversation.turnElapsedSeconds > 2}
+                <span class="opacity-50">· {conversation.turnElapsedSeconds}s</span>
+              {/if}
+            </span>
+          </div>
         </div>
       </div>
     {/if}
