@@ -48,14 +48,14 @@
         hasMounted = true;
         titleEl.style.transform = centerTransform;
       } else {
-        // Disconnect Session: Smooth Web Animation back to Screen Center
+        // Disconnect Session: Smooth Web Animation back to Screen Center (synced easing with orb transition)
         const currentTransform = titleEl.style.transform || 'translate(0px, 0px) scale(1)';
         titleEl.animate([
           { transform: currentTransform },
           { transform: centerTransform }
         ], {
-          duration: 1000,
-          easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+          duration: 1050,
+          easing: 'cubic-bezier(0.25, 1, 0.4, 1)',
           fill: 'forwards'
         });
         titleEl.style.transform = centerTransform;
@@ -69,8 +69,8 @@
         { transform: currentTransform },
         { transform: 'translate(0px, 0px) scale(1)' }
       ], {
-        duration: 1000,
-        easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+        duration: 1050,
+        easing: 'cubic-bezier(0.25, 1, 0.4, 1)',
         fill: 'forwards'
       });
       titleEl.style.transform = 'translate(0px, 0px) scale(1)';
