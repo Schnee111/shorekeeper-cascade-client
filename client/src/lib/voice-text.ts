@@ -104,15 +104,13 @@ export function cleanVoiceText(input: string): string {
   s = s.replace(EMAIL_RE, 'alamat email');
 
   // 5. Line-level markdown: headings, bullets, quotes, hr, table pipes.
+  // Note: We PRESERVE bullets (- / * / 1.) and newlines so list markdown renders properly in UI!
   s = s.replace(HR_RE, '');
   s = s.replace(HEADING_RE, '');
-  s = s.replace(BULLET_RE, '');
   s = s.replace(QUOTE_RE, '');
-  s = s.replace(TABLE_PIPE_RE, ' ');
 
-  // 6. Emphasis leftovers.
-  s = s.replace(EMPHASIS_RE, '');
-
+  // 6. Emphasis leftovers (keep * and _ for bold/italic in MarkdownText).
+  
   // 7. Emoji, zero-width, control chars (keep \n).
   s = s.replace(EMOJI_RE, '');
   s = s.replace(ZERO_WIDTH_RE, '');
@@ -121,10 +119,8 @@ export function cleanVoiceText(input: string): string {
   // 8. Normalize punctuation.
   s = s.replace(REPEAT_PUNCT_RE, '$1');
 
-  // 9. Whitespace: newlines → space (voice text is read linearly by TTS),
-  // collapse runs, trim. Newlines must become SPACES, not vanish, or
-  // consecutive sentences run together: "Schnee.Semua sistem".
-  s = s.replace(/\n/g, ' ').replace(/[ \t]{2,}/g, ' ').trim();
+  // 9. Trim excess horizontal whitespace, preserve linebreaks.
+  s = s.replace(/[ \t]{2,}/g, ' ').trim();
 
   return s;
 }

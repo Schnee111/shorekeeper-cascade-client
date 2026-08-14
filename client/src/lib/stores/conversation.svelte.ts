@@ -76,18 +76,21 @@ class ConversationStore {
    *  mirrored into liveAgentBubbles; the map dedupes user interim updates. */
   private segmentsMap = new Map<string, LiveSegment>();
 
-  /** The caption bar shows only the CURRENT sentence of the agent's reply —
-   *  full replies would overflow the fixed slot. Splits on .!? + whitespace
-   *  or newlines; a trailing boundary keeps the just-finished sentence. */
+  /** The caption bar shows only the CURRENT sentence/line of the agent's reply —
+   *  clean and stripped of markdown bullets for smooth subtitle reading. */
   lastSentence(text: string): string {
     const trimmed = text.trim();
     if (!trimmed) return '';
     const parts = trimmed.split(/([.!?][\s\n]+|\n+)/);
     for (let i = parts.length - 1; i >= 0; i--) {
-      const p = parts[i].trim();
-      if (p && !/^[.!?]+$/.test(p)) return p;
+      let p = parts[i].trim();
+      if (p && !/^[.!?]+$/.test(p)) {
+        // Strip markdown list bullets and bolding for clean subtitle display
+        p = p.replace(/^[-*+]\s+/, '').replace(/^\d+[.)]\s+/, '').replace(/[*_`]/g, '');
+        return p;
+      }
     }
-    return trimmed;
+    return trimmed.replace(/^[-*+]\s+/, '').replace(/[*_`]/g, '');
   }
 
   hasLiveAgentSegment(): boolean {

@@ -5,6 +5,7 @@
 <script lang="ts">
   import MarkdownText from './MarkdownText.svelte';
   import ToolProgress from './ToolProgress.svelte';
+  import StreamingText from '../lib/streaming/StreamingText.svelte';
   import { conversation } from '../lib/stores/conversation.svelte';
   import { session } from '../lib/stores/session.svelte';
   import { tools } from '../lib/stores/tools.svelte';
@@ -110,8 +111,17 @@
       <div class="{tools.calls.length === 0 ? (conversation.messages.length > 0 ? 'mt-6' : 'mt-1') : 'mt-3'} flex justify-start">
         <div class="max-w-[85%] space-y-2">
           {#each conversation.liveAgentBubbles as bubble, bi}
+            {@const isLastBubble = bi === conversation.liveAgentBubbles.length - 1}
             <div>
-              <MarkdownText text={bubble.text} />
+              {#if isLastBubble && !bubble.final}
+                <!-- Live streaming text: GPU token-by-token reveal -->
+                <div class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">
+                  <StreamingText text={bubble.text} anim="jv-word-glow" />
+                </div>
+              {:else}
+                <!-- Static rendered markdown for completed bubbles -->
+                <MarkdownText text={bubble.text} />
+              {/if}
             </div>
           {/each}
         </div>

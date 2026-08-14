@@ -1,0 +1,74 @@
+/*! streaming/keyframes.css — hardware-friendly entry animations for
+ *  streaming text reveal (Shorekeeper JARVIS).
+ *
+ *  PERFORMANCE RULES (mobile 60/120fps):
+ *   - Animate ONLY `opacity` + `transform` + (short) `filter: blur()`.
+ *     These are the only properties the compositor can promote to the GPU
+ *     without layout/reflow or paint on the main thread.
+ *   - `transform: translateY` instead of `top/bottom/margin` — avoids layout.
+ *   - `filter: blur()` is GPU-accelerated but NOT free: keep radius small
+ *     (<=4px) and duration short (<400ms). Never blur a huge block — the
+ *     streaming components cap concurrency so only a handful of words are
+ *     animating at once.
+ *   - `:hover`-free, `will-change` set inline ONLY on active spans and
+ *     removed when animation ends (see StreamingText.svelte) — permanent
+ *     will-change leaks GPU memory on mobile Safari.
+ *   - Respect `prefers-reduced-motion`.
+ */
+
+/* ---- Word entry: Apple Intelligence / ChatGPT-style blur-fade + rise ---- */
+@keyframes jv-word-in {
+  0%   { opacity: 0; transform: translateY(0.35em); filter: blur(3px); }
+  60%  { opacity: 1; filter: blur(0px); }
+  100% { opacity: 1; transform: translateY(0);    filter: blur(0px); }
+}
+
+/* ---- Incoming-word highlight glow (subtle pulse on the newest token) ----
+ * Uses text-shadow (cheap, paint-only) instead of an extra masked layer so
+ * the active token visually "lights up" while arriving. Fades to quiet. */
+@keyframes jv-word-glow {
+  0%   { opacity: 0; transform: translateY(0.2em); filter: blur(2px);
+         text-shadow: 0 0 10px currentColor; }
+  45%  { opacity: 1; filter: blur(0); text-shadow: 0 0 4px currentColor; }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0);
+         text-shadow: transparent 0 0 0, transparent 0 0 0; }
+}
+
+/* ---- Cursor caret while streaming (soft breathing) ---- */
+@keyframes jv-caret {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.15; }
+}
+
+/* ---- Static text — no animation; fast path for sealed bubbles ---- */
+.jv-static {
+  display: inline;
+  opacity: 1;
+  filter: none;
+}
+
+/* Token span base — inline-block so `transform`/`filter` apply without
+ * breaking inline flow; `white-space: pre` keeps spacing byte-accurate. */
+.jv-token {
+  display: inline-block;
+  white-space: pre;
+  /* Fill from the @keyframe; overridden per-token via inline style
+     (animation-name/delay/duration). */
+  will-change: transform, filter;
+}
+
+/* Reduced-motion: show everything instantly, drop shimmer/blur. */
+@media (prefers-reduced-motion: reduce) {
+  .jv-token {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+    filter: none;
+    will-change: auto;
+  }
+  .jv-caret { animation: none !important; opacity: 1; }
+}
+
+/* Opt-out escape hatch for integrators (e.g. audio visualizer widgets that
+ * should never animate). Utility class — not used by default. */
+.motion-off { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
