@@ -37,7 +37,7 @@
   );
 </script>
 
-<div class="lg:w-[400px] shrink-0 glass-card p-4 lg:p-8 flex flex-col items-center justify-center transition-all duration-300 ease-out">
+<div class="lg:w-[400px] shrink-0 glass-card p-4 lg:p-8 flex flex-col items-center justify-center overflow-hidden transition-all duration-300 ease-out">
 
   <!-- Status Label -->
   <div class="mb-2 lg:mb-8 flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 rounded-full bg-white/5 border border-white/10">
@@ -70,7 +70,7 @@
   <p class="text-xs lg:text-sm text-zinc-500 text-center">{hint}</p>
 
   <!-- Wake word arm/disarm (secondary path) — smooth height transition -->
-  <div class="overflow-hidden transition-all duration-300 ease-out flex items-center justify-center {session.mode === 'off' || session.mode === 'standby' ? 'h-9 opacity-100 mt-2 lg:mt-4' : 'h-0 opacity-0 mt-0'}">
+  <div class="overflow-hidden transition-all duration-300 ease-out flex items-center justify-center {session.mode === 'off' || session.mode === 'standby' ? 'max-h-9 opacity-100 mt-2 lg:mt-4' : 'max-h-0 opacity-0 mt-0'}">
     {#if session.mode === 'off' || session.mode === 'standby'}
       <button
         onclick={() => session.toggleWake()}
