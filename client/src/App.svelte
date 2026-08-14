@@ -30,8 +30,8 @@
   <!-- Main Workspace Layout -->
   <div class="relative z-10 flex-1 min-h-0 flex flex-col lg:flex-row items-stretch gap-3 lg:gap-6 px-4 lg:px-6 pb-4 lg:pb-6 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
 
-    <!-- Left Column: Orb Hero (Smoothly shifts layout without abrupt position teleporting) -->
-    <div class="flex flex-col items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'lg:w-[380px] shrink-0 translate-y-0 scale-100' : 'flex-1 translate-y-12 scale-110 lg:scale-125'}">
+    <!-- Left Column: Orb Hero (Anchored in flex layout with smooth scale & translate) -->
+    <div class="flex flex-col items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'lg:w-[380px] shrink-0' : 'flex-1'}">
       <OrbPanel />
     </div>
 
