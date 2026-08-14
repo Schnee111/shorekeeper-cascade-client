@@ -20,6 +20,8 @@
   });
 
   // Pure Web Animations API (FLIP Pattern) for Single-Source Title Transition
+  let hasMounted = false;
+
   $effect(() => {
     const titleEl = document.getElementById('main-brand-title');
     if (!titleEl) return;
@@ -41,12 +43,13 @@
     titleEl.style.transformOrigin = 'center center';
 
     if (!session.hasStarted) {
-      // LANDING STATE: If initial load (no prior animation), set style directly to avoid initial load flicker
-      const currentTransform = titleEl.style.transform;
-      if (!currentTransform || currentTransform === 'translate(0px, 0px) scale(1)') {
+      if (!hasMounted) {
+        // Initial Page Load: Set transform directly without animation to avoid initial load flicker
+        hasMounted = true;
         titleEl.style.transform = centerTransform;
       } else {
-        // Disconnect transition: animate back smoothly
+        // Disconnect Session: Smooth Web Animation back to Screen Center
+        const currentTransform = titleEl.style.transform || 'translate(0px, 0px) scale(1)';
         titleEl.animate([
           { transform: currentTransform },
           { transform: centerTransform }
@@ -60,6 +63,7 @@
       titleEl.style.textAlign = 'center';
     } else {
       // ACTIVE WORKSPACE STATE: Smooth Web Animation back to Header Left (0, 0)
+      hasMounted = true;
       const currentTransform = titleEl.style.transform || centerTransform;
       titleEl.animate([
         { transform: currentTransform },
