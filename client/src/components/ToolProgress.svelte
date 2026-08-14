@@ -11,7 +11,7 @@
 
   let { rows, groupKey }: { rows: ToolCallInfo[]; groupKey: number | string } = $props();
 
-  const expanded = $derived(tools.expanded.has(groupKey));
+  const expanded = $derived(tools.isExpanded(groupKey));
   const running = $derived(rows.filter((r) => !r.done));
   const doneCount = $derived(rows.filter((r) => r.done).length);
 </script>
@@ -24,9 +24,12 @@
       <span class="tool-done-dot">✓</span>
     {/if}
     <span class="tool-progress-text">
-      {running.length > 0
-        ? running.at(-1)?.label + '…'
-        : 'Used ' + rows.length + (rows.length > 1 ? ' tools' : ' tool')}
+      {#if running.length > 0}
+        {@const last = running.at(-1)}
+        {last?.label}{#if last?.detail} <span class="text-zinc-500 font-mono text-[10px]">{last.detail}</span>{/if}…
+      {:else}
+        Used {rows.length} {rows.length > 1 ? 'tools' : 'tool'}
+      {/if}
     </span>
     <span class="tool-progress-count">{doneCount}/{rows.length}</span>
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tool-progress-chevron {expanded ? 'rotate-180' : ''}">
@@ -42,9 +45,13 @@
           {:else}
             <span class="tool-chip-spinner"></span>
           {/if}
-          <span class="text-zinc-400">{call.label}</span>
-          <span class="text-zinc-600">({call.name})</span>
-          <span class="text-zinc-700 ml-auto">{call.time}</span>
+          <span class="text-zinc-300 font-medium">{call.label}</span>
+          {#if call.detail}
+            <span class="text-cyan-400/90 font-mono text-[10px] bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">{call.detail}</span>
+          {:else}
+            <span class="text-zinc-500 font-mono text-[10px]">({call.name})</span>
+          {/if}
+          <span class="text-zinc-600 ml-auto font-mono text-[10px]">{call.time}</span>
         </div>
       {/each}
     </div>

@@ -1,7 +1,6 @@
 <!--
   Conversation.svelte — sealed history + live turn rendering with
-  auto-scroll-to-newest. ChatGPT-style: user bubbles right, agent replies
-  clean text (no bubble), permanent tool-progress rows per turn.
+  smart scroll (allows manual scroll up, shows quick bottom button, locks to bottom when user is at bottom).
 -->
 <script lang="ts">
   import ToolProgress from './ToolProgress.svelte';
@@ -10,23 +9,37 @@
   import { tools } from '../lib/stores/tools.svelte';
 
   let conversationEl: HTMLDivElement | undefined = $state();
+  let userScrolledUp = $state(false);
 
-  // Auto-scroll to the newest content: sealed history, the live agent text
-  // growing, or tool rows appearing.
+  function handleScroll() {
+    const el = conversationEl;
+    if (!el) return;
+    // Check if user is scrolled up (more than 40px away from bottom)
+    const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    userScrolledUp = distanceToBottom > 40;
+  }
+
+  function scrollToBottom() {
+    const el = conversationEl;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    userScrolledUp = false;
+  }
+
+  // Auto-scroll ONLY if user hasn't manually scrolled up
   $effect(() => {
     conversation.messages.length; // dependency
     conversation.liveAgentText;   // dependency
-    tools.calls.length; // dependency — progress rows scroll into view
+    tools.calls.length;           // dependency
     const el = conversationEl;
-    if (!el) return;
-    // Defer to the next frame so the DOM reflects the new content first.
+    if (!el || userScrolledUp) return;
     requestAnimationFrame(() => {
       el.scrollTop = el.scrollHeight;
     });
   });
 </script>
 
-<div class="flex-1 min-h-0 lg:min-h-[300px] glass-card p-4 lg:p-6 flex flex-col">
+<div class="relative flex-1 min-h-0 lg:min-h-[300px] glass-card p-4 lg:p-6 flex flex-col">
   <div class="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
     <h3 class="text-sm font-medium text-zinc-300 flex items-center gap-2">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-zinc-500">
@@ -37,7 +50,11 @@
     <span class="text-xs text-zinc-600 font-mono">{conversation.messages.length} messages</span>
   </div>
 
-  <div bind:this={conversationEl} class="flex-1 overflow-y-auto custom-scrollbar pr-2 pt-1">
+  <div 
+    bind:this={conversationEl} 
+    onscroll={handleScroll}
+    class="flex-1 overflow-y-auto custom-scrollbar pr-2 pt-1"
+  >
     <!-- Placeholder only when there is truly nothing to show. -->
     {#if conversation.messages.length === 0 && !conversation.liveAgentText && tools.calls.length === 0}
       <div class="h-full flex items-center justify-center">
@@ -50,40 +67,70 @@
     {:else}
       {#each conversation.messages as msg, i}
         {@const sameGroup = i > 0 && msg.group !== undefined && conversation.messages[i - 1].group === msg.group}
-        <!-- History tool-progress rows (PERMANENT — Gemini/Claude style).
-             Attached to the first assistant segment of the turn. -->
+        {@const isLastInGroup = msg.role === 'assistant' && (i === conversation.messages.length - 1 || conversation.messages[i + 1]?.group !== msg.group)}
+        
+        <!-- History tool-progress rows (PERMANENT — Gemini/Claude style). -->
         {#if msg.tools?.length}
-          <div class="{sameGroup ? 'mt-1.5' : 'mt-5'} flex justify-start">
+          <div class="{sameGroup ? 'mt-3' : 'mt-6'} flex justify-start">
             <ToolProgress rows={msg.tools} groupKey={msg.group ?? i} />
           </div>
         {/if}
         {#if msg.role === 'user'}
-          <div class="{sameGroup ? 'mt-1.5' : 'mt-5'} flex justify-end">
+          <div class="{sameGroup ? 'mt-3' : 'mt-6'} flex justify-end">
             <div class="max-w-[80%] message-user rounded-2xl px-3 py-2 lg:px-4 lg:py-3">
               <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{msg.text}</p>
+              {#if msg.time}
+                <span class="block text-[10px] text-zinc-400/70 font-mono text-right mt-1.5">{msg.time}</span>
+              {/if}
             </div>
           </div>
         {:else}
-          <!-- Agent replies: CLEAN text, no bubble (ChatGPT style).
-               Consecutive segments of the same turn (opening sentence +
-               final result) stay separate paragraphs with a small gap. -->
-          <div class="{sameGroup ? 'mt-1.5' : (msg.tools?.length ? 'mt-1.5' : 'mt-5')} flex justify-start">
-            <p class="max-w-[85%] text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{msg.text}</p>
+          <!-- Agent replies: CLEAN text, no bubble (ChatGPT style). -->
+          <div class="{sameGroup ? 'mt-3' : (msg.tools?.length ? 'mt-3' : (i === 0 ? 'mt-1' : 'mt-6'))} flex justify-start">
+            <div class="max-w-[85%]">
+              <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{msg.text}</p>
+              {#if msg.time && isLastInGroup}
+                <span class="block text-[10px] text-zinc-500 font-mono mt-1.5">{msg.time}</span>
+              {/if}
+            </div>
           </div>
         {/if}
       {/each}
     {/if}
-    <!-- Live turn: PERMANENT tool rows (spinner while running, check when
-         done) + clean reply text. -->
+
+    <!-- Live turn: PERMANENT tool rows + clean reply text. -->
     {#if tools.calls.length > 0}
-      <div class="{conversation.messages.length > 0 || conversation.liveAgentText ? 'mt-1.5' : 'mt-1'} flex justify-start">
+      <div class="{conversation.messages.length > 0 ? 'mt-6' : 'mt-1'} flex justify-start">
         <ToolProgress rows={tools.calls} groupKey="live" />
       </div>
     {/if}
     {#each conversation.liveAgentBubbles as bubble, bi}
-      <div class="{bi === 0 && tools.calls.length === 0 && conversation.messages.length === 0 ? 'mt-1' : 'mt-1.5'} flex justify-start">
-        <p class="max-w-[85%] text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{bubble.text}{#if conversation.agentSpeaking && bi === conversation.liveAgentBubbles.length - 1 && !bubble.final}<span class="inline-block w-1.5 h-4 bg-violet-400/80 ml-1 animate-pulse align-middle"></span>{/if}</p>
+      <div class="{bi === 0 && tools.calls.length === 0 ? (conversation.messages.length > 0 ? 'mt-6' : 'mt-1') : 'mt-3'} flex justify-start">
+        <div class="max-w-[85%]">
+          <p class="text-xs lg:text-sm text-zinc-200 leading-relaxed message-text">{bubble.text}{#if conversation.agentSpeaking && bi === conversation.liveAgentBubbles.length - 1 && !bubble.final}<span class="inline-block w-1.5 h-4 bg-cyan-400/90 ml-1 rounded-full animate-pulse align-middle shadow-[0_0_8px_rgba(103,232,249,0.8)]"></span>{/if}</p>
+        </div>
       </div>
     {/each}
+    {#if conversation.liveAgentBubbles.length > 0 && conversation.liveAgentStartTime}
+      <div class="flex justify-start">
+        <div class="max-w-[85%]">
+          <span class="block text-[10px] text-zinc-500 font-mono mt-1.5">{conversation.liveAgentStartTime}</span>
+        </div>
+      </div>
+    {/if}
   </div>
+
+  <!-- Quick scroll to bottom button (WhatsApp / Telegram style) -->
+  {#if userScrolledUp}
+    <button
+      onclick={scrollToBottom}
+      class="absolute bottom-6 right-6 z-20 p-2.5 rounded-full bg-zinc-800/90 border border-white/10 text-cyan-400 shadow-xl backdrop-blur-md hover:bg-zinc-700/90 transition-all flex items-center gap-1.5 text-xs font-medium"
+      title="Scroll to bottom"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 5v14M19 12l-7 7-7-7"/>
+      </svg>
+      <span>Newest</span>
+    </button>
+  {/if}
 </div>

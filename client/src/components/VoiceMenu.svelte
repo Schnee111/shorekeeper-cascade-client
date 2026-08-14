@@ -1,6 +1,5 @@
 <!--
-  VoiceMenu.svelte — glass dropdown for switching the agent's Fish Audio voice.
-  Switching mid-session reconnects the room (handled by session.pickVoice).
+  VoiceMenu.svelte — dropdown selector for choosing the agent's Fish Audio voice.
 -->
 <script lang="ts">
   import type { VoiceOption } from '../lib/types';
@@ -22,7 +21,6 @@
   let open = $state(false);
   let menuEl: HTMLElement | undefined = $state();
 
-  // Close the dropdown on outside click / Escape.
   $effect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
@@ -62,7 +60,7 @@
         <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
         <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>
       </svg>
-      <span class="text-xs lg:text-sm text-zinc-200 font-medium">{currentLabel}</span>
+      <span class="text-xs lg:text-sm text-zinc-200 font-medium truncate max-w-[90px] sm:max-w-[140px]">{currentLabel}</span>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-500 transition-transform duration-200 {open ? 'rotate-180' : ''}" aria-hidden="true">
         <polyline points="6 9 12 15 18 9"/>
       </svg>
@@ -70,28 +68,37 @@
   </button>
 
   {#if open}
-    <div class="voice-menu" role="listbox">
-      {#each options as voice}
-        <button
-          type="button"
-          role="option"
-          aria-selected={voice.id === selected}
-          class="voice-option {voice.id === selected ? 'active' : ''}"
-          onclick={() => pick(voice.id)}
-        >
-          <span class="flex items-center gap-2 min-w-0">
-            <span class="text-xs lg:text-sm text-zinc-100 font-medium">{voice.label}</span>
-            {#if voice.desc}
-              <span class="text-[10px] text-zinc-500 font-mono truncate">{voice.desc}</span>
+    <div 
+      class="absolute right-0 top-[calc(100%+8px)] z-50 w-56 max-h-80 overflow-y-auto rounded-2xl bg-zinc-950/95 border border-white/10 p-2 shadow-2xl backdrop-blur-3xl"
+      role="listbox"
+    >
+      <div class="px-3 py-1.5 border-b border-white/5 flex items-center justify-between">
+        <span class="text-[10px] uppercase font-mono text-cyan-400/90 font-semibold tracking-wider">Select Voice</span>
+        <span class="text-[10px] text-zinc-500 font-mono">{options.length}</span>
+      </div>
+      <div class="py-1 flex flex-col gap-0.5">
+        {#each options as voice}
+          <button
+            type="button"
+            role="option"
+            aria-selected={voice.id === selected}
+            class="voice-option {voice.id === selected ? 'active' : ''} p-2 rounded-xl transition-colors duration-150"
+            onclick={() => pick(voice.id)}
+          >
+            <span class="flex items-center justify-between min-w-0 flex-1 text-left">
+              <span class="text-xs text-zinc-100 font-medium">{voice.label}</span>
+              {#if voice.desc}
+                <span class="text-[10px] text-zinc-400/80 font-mono truncate ml-2">{voice.desc}</span>
+              {/if}
+            </span>
+            {#if voice.id === selected}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400 shrink-0 ml-2" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
             {/if}
-          </span>
-          {#if voice.id === selected}
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-300 shrink-0" aria-hidden="true">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          {/if}
-        </button>
-      {/each}
+          </button>
+        {/each}
+      </div>
     </div>
   {/if}
 </div>
