@@ -8,7 +8,7 @@
  */
 import { startLivekitVoice, type LivekitHandle, type LkState } from '../livekit-voice';
 import { startWakeWord } from '../wakeword';
-import { FALLBACK_VOICES, VOICES_ENDPOINT, VOICE_STORAGE_KEY } from '../config';
+import { FALLBACK_VOICES, MODEL_OPTIONS, VOICES_ENDPOINT, VOICE_STORAGE_KEY, MODEL_STORAGE_KEY, type ModelOption } from '../config';
 import type { LkConnState, Mode, Status, VoiceOption } from '../types';
 import { conversation } from './conversation.svelte';
 import { logs } from './logs.svelte';
@@ -32,8 +32,19 @@ class SessionStore {
       : 'gura'
   );
 
+  readonly modelOptions: ModelOption[] = MODEL_OPTIONS;
+  selectedModel = $state(
+    typeof localStorage !== 'undefined'
+      ? localStorage.getItem(MODEL_STORAGE_KEY) || ''
+      : ''
+  );
+
   get currentVoiceLabel(): string {
     return this.voiceOptions.find((v) => v.id === this.selectedVoice)?.label ?? this.selectedVoice;
+  }
+
+  get currentModelLabel(): string {
+    return this.modelOptions.find((m) => m.id === this.selectedModel)?.label ?? 'Gemini 3.6 Flash High';
   }
 
   /** Perceptual pipeline status — orb color, status pill, hint text, caption
@@ -108,6 +119,7 @@ class SessionStore {
         onLog: (m) => logs.add('info', m),
         onToolActivity: (ev) => tools.handle(ev),
         voice: this.selectedVoice,
+        model: this.selectedModel,
       });
       logs.add('success', `Session ${this.lkHandle.roomName} — listening`);
     } catch (e) {
@@ -191,6 +203,28 @@ class SessionStore {
       logs.add('info', 'Voice wake disarmed');
     } else if (this.mode === 'off') {
       await this.armWakeWord();
+    }
+  }
+
+  async pickModel(id: string): Promise<void> {
+    if (id === this.selectedModel || this.voiceSwitching) return;
+    this.selectedModel = id;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(MODEL_STORAGE_KEY, id);
+    }
+    logs.add('info', `Model switched to: ${this.currentModelLabel}`);
+
+    if (this.mode === 'active') {
+      this.voiceSwitching = true;
+      logs.add('info', 'Reconnecting session for new model...');
+      try {
+        await this.disconnectLivekit();
+        await this.connectLivekit();
+      } catch (err: any) {
+        logs.add('error', `Failed to reconnect: ${err.message || err}`);
+      } finally {
+        this.voiceSwitching = false;
+      }
     }
   }
 

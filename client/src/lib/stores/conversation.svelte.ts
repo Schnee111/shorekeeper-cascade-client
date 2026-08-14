@@ -81,14 +81,32 @@ class ConversationStore {
         if (text) {
           // Stamp the reply clock at FIRST TOKEN.
           if (!this.liveAgentStartTime) this.liveAgentStartTime = getTime();
-          // Mirror into the bubble list — upsert by key so streaming updates
-          // replace in place (no duplicates).
+          
+          // Agent Resume / Prefix Merge:
+          // When LiveKit resumes after a false interruption, it sends a new segment ID (`seg.id`).
+          // Check if existing liveAgentBubbles or the last bubble has a prefix of `text`
+          // or if `text` is a prefix/overlap of an existing bubble.
           const existing = this.liveAgentBubbles.find((b) => b.key === key);
           if (existing) {
             existing.text = text;
             existing.final = seg.final;
           } else {
-            this.liveAgentBubbles.push({ key, text, final: seg.final });
+            // Check if this new segment's text overlaps or extends the previous agent bubble
+            const lastBubble = this.liveAgentBubbles[this.liveAgentBubbles.length - 1];
+            if (
+              lastBubble &&
+              (text.toLowerCase().startsWith(lastBubble.text.toLowerCase().replace(/[.,!?]+\s*$/, '')) ||
+               lastBubble.text.toLowerCase().startsWith(text.toLowerCase().replace(/[.,!?]+\s*$/, '')))
+            ) {
+              // Fold into the longer text to eliminate duplicate streaming bubbles on resume
+              if (text.length >= lastBubble.text.length) {
+                lastBubble.key = key;
+                lastBubble.text = text;
+                lastBubble.final = seg.final;
+              }
+            } else {
+              this.liveAgentBubbles.push({ key, text, final: seg.final, time: getTime() });
+            }
           }
           this.liveAgentLanguage = seg.language || 'id';
           this.subtitle = this.lastSentence(text);
@@ -178,11 +196,12 @@ class ConversationStore {
     this.turnGroupCounter += 1;
     // Snapshot the tool log so it persists in history (Gemini/Claude style).
     const toolsSnapshot = tools.takeSnapshot();
+    const startTime = this.liveAgentStartTime || getTime();
     this.messages.push(
       ...bubbles.map((b, i) => ({
         role: 'assistant' as const,
         text: b.text,
-        time: this.liveAgentStartTime || getTime(), // first-token time, not seal time
+        time: startTime, // ALL bubbles in this turn share the EXACT SAME start time stamp
         language: this.liveAgentLanguage,
         group,
         // attach the tool log to the FIRST sealed segment of the turn only
