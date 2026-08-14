@@ -54,10 +54,11 @@ body {
 /* 3. Background layers --------------------------------------------------- */
 .bg-mesh {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
-  height: 100dvh;
+  min-height: 100%;
   pointer-events: none;
   z-index: 0;
   transform: translateZ(0);
@@ -69,10 +70,11 @@ body {
 
 .noise-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
-  height: 100dvh;
+  min-height: 100%;
   pointer-events: none;
   z-index: 100;
   opacity: 0.015;
