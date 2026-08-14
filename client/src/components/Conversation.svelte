@@ -88,19 +88,12 @@
             </div>
           </div>
         {:else}
-          <!-- Agent replies: SINGLE STORE IN-PLACE RENDERING WITH FULL MARKDOWN SUPPORT -->
+          <!-- Agent replies: SINGLE STORE IN-PLACE RENDERING -->
           <div class="{sameGroup ? 'mt-2' : (msg.tools?.length ? 'mt-3' : (i === 0 ? 'mt-1' : 'mt-6'))} flex justify-start w-full">
             <div class="max-w-[85%] w-full">
-              <div class="text-xs text-zinc-200 leading-relaxed message-text">
-                <StreamingMarkdown 
-                  text={msg.text} 
-                  caret={false} 
-                  anim="jv-word-glow" 
-                />
-              </div>
+              <MarkdownText text={msg.text} />
               {#if isLastInGroup && msg.time && msg.status !== 'streaming'}
-                <!-- Clean, gentle fade-in timestamp ONLY when turn is completely finished -->
-                <span in:fade={{ duration: 300 }} class="block text-[10px] text-zinc-500 font-mono mt-1.5">
+                <span in:fade={{ duration: 250 }} class="block text-[10px] text-zinc-500 font-mono mt-1">
                   {msg.time}
                 </span>
               {/if}
@@ -119,9 +112,9 @@
     
     <!-- Pre-TTFT processing indicator (replaces timestamp before speech arrives) -->
     {#if conversation.turnInProgress}
-      <div class="{tools.calls.length === 0 ? (conversation.messages.length > 0 ? 'mt-6' : 'mt-1') : ''} flex justify-start">
+      <div class="{tools.calls.length === 0 ? (conversation.messages.length > 0 ? 'mt-4' : 'mt-1') : ''} flex justify-start w-full">
         <div class="max-w-[85%]">
-          <div class="flex items-center gap-1.5 text-zinc-500 mt-1.5">
+          <div class="flex items-center gap-1.5 text-zinc-500 mt-1">
             <div class="flex gap-0.5">
               <div class="w-1 h-1 rounded-full bg-current animate-pulse"></div>
               <div class="w-1 h-1 rounded-full bg-current animate-pulse" style="animation-delay: 300ms"></div>
