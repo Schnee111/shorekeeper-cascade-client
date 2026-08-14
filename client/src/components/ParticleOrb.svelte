@@ -22,7 +22,8 @@
   let initialPositions: Float32Array;
   let particleColors: Float32Array;
   let randomOffsets: Float32Array; // Random seed per particle for non-linear displacement
-  const PARTICLE_COUNT = 6500;
+  // Adaptive mobile/desktop particle budget (4,200 for smooth 60fps mobile GPU safety, 4.8k max)
+  const PARTICLE_COUNT = typeof window !== 'undefined' && window.innerWidth < 768 ? 4200 : 4800;
 
   // Spectro Palette (RGB normalized 0-1)
   const COLOR_CYAN = new THREE.Color('#67e8f9');
@@ -107,13 +108,13 @@
     const texture = new THREE.CanvasTexture(canvas);
 
     material = new THREE.PointsMaterial({
-      size: 2.2,
+      size: 2.4,
       vertexColors: true,
       map: texture,
       transparent: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      opacity: 0.92,
+      opacity: 0.9,
     });
 
     particlesMesh = new THREE.Points(geometry, material);
