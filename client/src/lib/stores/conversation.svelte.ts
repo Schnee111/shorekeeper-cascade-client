@@ -20,13 +20,12 @@ class ConversationStore {
 
   private messageIdCounter = 0;
 
-  /** Turn still in progress — true from user speech/turn start until final answer completes. */
+  /** Turn still in progress — true while waiting for LLM or running tools (turns off once speaking begins). */
   get turnInProgress(): boolean {
     const lastMsg = this.messages[this.messages.length - 1];
-    const isDone = lastMsg && lastMsg.status === 'done';
-    // True if awaiting reply, processing on bridge, tools currently executing,
-    // or if the assistant message is still actively in 'streaming' status.
-    return this.awaitingReply || this.agentProcessing || tools.active || (this.messages.length > 0 && !isDone && lastMsg?.role === 'assistant');
+    const isAssistantSpeaking = lastMsg && lastMsg.role === 'assistant' && lastMsg.status === 'streaming' && !!lastMsg.text;
+    // Show thinking/working ONLY when awaiting first token or during silent tool gaps before text flows
+    return (this.awaitingReply || this.agentProcessing || tools.active) && !isAssistantSpeaking;
   }
 
   setTurnState(state: 'start' | 'complete'): void {
