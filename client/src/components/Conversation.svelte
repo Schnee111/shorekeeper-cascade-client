@@ -113,8 +113,8 @@
       </div>
     {/if}
 
-    <!-- Turn progress: Thinking / Working indicator during silence / turn processing -->
-    {#if conversation.turnInProgress}
+    <!-- Turn progress: Pure Thinking indicator during LLM latency (hidden when a tool card is already visible) -->
+    {#if conversation.turnInProgress && !tools.active}
       <div class="mt-2 flex justify-start w-full">
         <div class="max-w-[85%]">
           <div class="flex items-center gap-1.5 text-zinc-500 py-0.5">
@@ -124,7 +124,7 @@
               <div class="w-1 h-1 rounded-full bg-cyan-400/80 animate-pulse" style="animation-delay: 600ms"></div>
             </div>
             <span class="text-[10px] font-mono tracking-wide opacity-70">
-              {tools.active ? 'working' : 'thinking'}
+              thinking
               {#if conversation.turnElapsedSeconds > 2}
                 <span class="opacity-50">· {conversation.turnElapsedSeconds}s</span>
               {/if}
