@@ -114,18 +114,28 @@ class ConversationStore {
           session.markStarted();
           if (!this.liveAgentStartTime) this.liveAgentStartTime = getTime();
 
-          // IN-PLACE SINGLE STORE MUTATION (Vercel AI SDK pattern)
+          // IN-PLACE MULTI-SEGMENT ACCUMULATION (ChatGPT / LiveKit SOTA Pattern)
+          // LiveKit flushes each sentence as a distinct segment (seg.id).
+          // We combine all active agent segments of this turn into one cohesive text flow.
+          const fullTurnText = [...this.segmentsMap.values()]
+            .filter((s) => s.fromAgent && s.text)
+            .map((s) => s.text)
+            .join(' ')
+            .trim();
+
           const last = this.messages[this.messages.length - 1];
           if (last && last.role === 'assistant' && last.status === 'streaming') {
-            last.text = text; // Mutate in place! No DOM destroy/remount
+            last.text = fullTurnText; // Accumulate full turn text without erasing previous sentences!
             last.time = this.liveAgentStartTime;
+            if (!last.tools && tools.calls.length > 0) {
+              last.tools = tools.takeSnapshot();
+            }
           } else {
-            // Snapshot tool progress if any
             const toolsSnapshot = tools.takeSnapshot();
             this.messages.push({
               id: ++this.messageIdCounter,
               role: 'assistant',
-              text,
+              text: fullTurnText,
               time: this.liveAgentStartTime,
               status: 'streaming',
               language: seg.language || 'id',

@@ -74,12 +74,12 @@
         
         <!-- History tool-progress rows (PERMANENT — Gemini/Claude style). -->
         {#if msg.tools?.length}
-          <div class="{sameGroup ? 'mt-3' : 'mt-6'} flex justify-start">
+          <div class="{sameGroup ? 'mt-3' : 'mt-6'} flex justify-start w-full">
             <ToolProgress rows={msg.tools} groupKey={msg.group ?? i} />
           </div>
         {/if}
         {#if msg.role === 'user'}
-          <div class="{sameGroup ? 'mt-3' : 'mt-6'} flex justify-end">
+          <div class="{sameGroup ? 'mt-3' : 'mt-6'} flex justify-end w-full">
             <div class="max-w-[80%] message-user rounded-2xl px-3 py-2 lg:px-4 lg:py-3">
               <MarkdownText text={msg.text} />
               {#if msg.time}
@@ -89,8 +89,8 @@
           </div>
         {:else}
           <!-- Agent replies: SINGLE STORE IN-PLACE RENDERING -->
-          <div class="{sameGroup ? 'mt-2' : (msg.tools?.length ? 'mt-3' : (i === 0 ? 'mt-1' : 'mt-6'))} flex justify-start">
-            <div class="max-w-[85%]">
+          <div class="{sameGroup ? 'mt-2' : (msg.tools?.length ? 'mt-3' : (i === 0 ? 'mt-1' : 'mt-6'))} flex justify-start w-full">
+            <div class="max-w-[85%] w-full">
               <div class="text-xs text-zinc-200 leading-relaxed message-text">
                 <StreamingText 
                   text={msg.text} 
@@ -99,26 +99,11 @@
                   anim="jv-word-glow" 
                 />
               </div>
-              {#if isLastInGroup}
-                <!-- Reserved height slot for timestamp/status to guarantee ZERO layout shift -->
-                <div class="min-h-[16px] mt-1.5 flex items-center">
-                  {#if msg.status === 'streaming'}
-                    <!-- Subtle pulsing indicator while streaming -->
-                    <div transition:fade={{ duration: 250 }} class="flex items-center gap-1.5 text-zinc-500/80">
-                      <div class="flex gap-0.5">
-                        <div class="w-1 h-1 rounded-full bg-cyan-400/60 animate-pulse"></div>
-                        <div class="w-1 h-1 rounded-full bg-cyan-400/60 animate-pulse" style="animation-delay: 300ms"></div>
-                        <div class="w-1 h-1 rounded-full bg-cyan-400/60 animate-pulse" style="animation-delay: 600ms"></div>
-                      </div>
-                      <span class="text-[9px] font-mono tracking-wider opacity-60">speaking</span>
-                    </div>
-                  {:else if msg.time}
-                    <!-- Smooth fade-in timestamp when completed -->
-                    <span transition:fade={{ duration: 350 }} class="block text-[10px] text-zinc-500 font-mono">
-                      {msg.time}
-                    </span>
-                  {/if}
-                </div>
+              {#if isLastInGroup && msg.time && msg.status !== 'streaming'}
+                <!-- Clean, gentle fade-in timestamp ONLY when turn is completely finished -->
+                <span in:fade={{ duration: 300 }} class="block text-[10px] text-zinc-500 font-mono mt-1.5">
+                  {msg.time}
+                </span>
               {/if}
             </div>
           </div>
@@ -128,7 +113,7 @@
 
     <!-- Live turn tools (while active before assistant msg created) -->
     {#if tools.calls.length > 0 && (!conversation.messages.length || conversation.messages[conversation.messages.length - 1].role !== 'assistant')}
-      <div class="{conversation.messages.length > 0 ? 'mt-6' : 'mt-1'} flex justify-start">
+      <div class="{conversation.messages.length > 0 ? 'mt-6' : 'mt-1'} flex justify-start w-full">
         <ToolProgress rows={tools.calls} groupKey="live" />
       </div>
     {/if}
