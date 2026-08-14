@@ -20,32 +20,17 @@ class ConversationStore {
 
   private messageIdCounter = 0;
 
-  /** Turn still in progress — true from TTFT/turn start until complete seal. */
+  /** Turn still in progress — true from user speech/turn start until final answer completes. */
   get turnInProgress(): boolean {
     const lastMsg = this.messages[this.messages.length - 1];
-    const isStreaming = lastMsg && lastMsg.role === 'assistant' && lastMsg.status === 'streaming';
-    return (this.awaitingReply || this.agentProcessing || tools.active) && !isStreaming;
+    const isDone = lastMsg && lastMsg.status === 'done';
+    return (this.awaitingReply || this.agentProcessing || tools.active || !isDone) && (this.messages.length > 0 && lastMsg?.role === 'assistant' ? lastMsg.status === 'streaming' : this.awaitingReply);
   }
 
   setTurnState(state: 'start' | 'complete'): void {
     this.agentProcessing = state === 'start';
     if (state === 'start') {
       this.awaitingReply = true;
-      // Proactively create the assistant streaming placeholder right away (zero layout jump)
-      const last = this.messages[this.messages.length - 1];
-      if (!last || last.role !== 'assistant' || last.status !== 'streaming') {
-        const toolsSnapshot = tools.takeSnapshot();
-        this.messages.push({
-          id: ++this.messageIdCounter,
-          role: 'assistant',
-          text: '',
-          time: getTime(),
-          status: 'streaming',
-          language: this.liveAgentLanguage,
-          group: this.turnGroupCounter,
-          tools: toolsSnapshot.length ? toolsSnapshot : undefined,
-        });
-      }
     } else if (state === 'complete') {
       this.awaitingReply = false;
       this.armSealWatcher();
