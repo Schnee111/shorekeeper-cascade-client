@@ -103,8 +103,8 @@
       {/each}
     {/if}
 
-    <!-- Live turn tools (ACTIVE DURING TOOL EXECUTION BEFORE/DURING STREAM) -->
-    {#if tools.calls.length > 0 && (!conversation.messages.length || conversation.messages[conversation.messages.length - 1].role !== 'assistant' || conversation.messages[conversation.messages.length - 1].status === 'streaming')}
+    <!-- Live turn tools (EXACTLY 1 LIVE INSTANCE WHILE EXECUTING, BEFORE SEALING TO HISTORY) -->
+    {#if tools.calls.length > 0}
       <div class="{conversation.messages.length > 0 ? 'mt-3' : 'mt-1'} flex justify-start w-full">
         <ToolProgress rows={tools.calls} groupKey="live" />
       </div>

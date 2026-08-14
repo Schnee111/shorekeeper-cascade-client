@@ -129,11 +129,7 @@ class ConversationStore {
           if (last && last.role === 'assistant' && last.status === 'streaming') {
             last.text = fullTurnText; // Accumulate full turn text without erasing previous sentences!
             last.time = this.liveAgentStartTime;
-            if (!last.tools && tools.calls.length > 0) {
-              last.tools = tools.takeSnapshot();
-            }
           } else {
-            const toolsSnapshot = tools.takeSnapshot();
             this.messages.push({
               id: ++this.messageIdCounter,
               role: 'assistant',
@@ -142,7 +138,6 @@ class ConversationStore {
               status: 'streaming',
               language: seg.language || 'id',
               group: this.turnGroupCounter,
-              tools: toolsSnapshot.length ? toolsSnapshot : undefined,
             });
           }
 
@@ -226,13 +221,17 @@ class ConversationStore {
     }
     const last = this.messages[this.messages.length - 1];
     if (last && last.role === 'assistant' && last.status === 'streaming') {
+      // Seal tool snapshot permanently into the completed message
+      if (tools.calls.length > 0) {
+        last.tools = tools.takeSnapshot();
+      }
       last.status = 'done'; // Flip status in-place! ZERO DOM swap!
       this.turnGroupCounter++;
     }
     this.liveAgentStartTime = '';
     this.subtitle = '';
     this.segmentsMap.clear();
-    tools.reset();
+    tools.reset(); // clear live tool calls now that they are sealed into history
     this.segmentsVersion++;
   }
 
