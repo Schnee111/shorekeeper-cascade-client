@@ -69,8 +69,8 @@
   <!-- Hint Text -->
   <p class="text-xs lg:text-sm text-zinc-500 text-center">{hint}</p>
 
-  <!-- Wake word arm/disarm (secondary path) — fixed layout slot to prevent height shift -->
-  <div class="h-9 mt-2 lg:mt-4 flex items-center justify-center">
+  <!-- Wake word arm/disarm (secondary path) — smooth height transition -->
+  <div class="overflow-hidden transition-all duration-300 ease-out flex items-center justify-center {session.mode === 'off' || session.mode === 'standby' ? 'h-9 opacity-100 mt-2 lg:mt-4' : 'h-0 opacity-0 mt-0'}">
     {#if session.mode === 'off' || session.mode === 'standby'}
       <button
         onclick={() => session.toggleWake()}
