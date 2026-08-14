@@ -63,3 +63,4 @@ server/dist/
 venv/
 __pycache__/
 .hermes/
+.worktrees/
