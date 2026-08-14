@@ -59,12 +59,13 @@ class AudioAnalyser {
       }
 
       if (!this.sourceMap.has(el)) {
-        // Use AudioContext.createMediaStreamSource on HTMLMediaElement's srcObject (WebRTC LiveKit Stream)
-        // to bypass CORS and WebAudio HTMLMediaElement routing locks in Chrome!
         const mediaStream = (el as HTMLAudioElement).srcObject as MediaStream;
         if (mediaStream && mediaStream instanceof MediaStream) {
           const source = this.ctx.createMediaStreamSource(mediaStream);
           source.connect(this.analyser);
+          // Pass audio through to WebAudio destination (standard media channel)
+          // so screen recorders and OS mixer treat it as recordable media audio!
+          this.analyser.connect(this.ctx.destination);
           this.sourceMap.set(el, source);
           this.activeSource = source;
         } else {
