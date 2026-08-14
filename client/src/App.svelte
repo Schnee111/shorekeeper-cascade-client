@@ -24,43 +24,52 @@
     const titleEl = document.getElementById('main-brand-title');
     if (!titleEl) return;
 
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const rect = titleEl.getBoundingClientRect();
+
+    // Center coordinates
+    const elementCenterX = rect.left + rect.width / 2;
+    const elementCenterY = rect.top + rect.height / 2;
+    const targetCenterX = viewportWidth / 2;
+    const targetCenterY = viewportHeight * 0.16; // 16% from top
+
+    const deltaX = targetCenterX - elementCenterX;
+    const deltaY = targetCenterY - elementCenterY;
+    const centerTransform = `translate(${deltaX}px, ${deltaY}px) scale(1.65)`;
+
+    titleEl.style.transformOrigin = 'center center';
+
     if (!session.hasStarted) {
-      // LANDING STATE: Smooth Web Animation back to Screen Center
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const rect = titleEl.getBoundingClientRect();
-
-      // Unscaled center of title element in header
-      const elementCenterX = rect.left + rect.width / 2;
-      const elementCenterY = rect.top + rect.height / 2;
-
-      // Target screen center coordinates
-      const targetCenterX = viewportWidth / 2;
-      const targetCenterY = viewportHeight * 0.16; // 16% from top
-
-      const deltaX = targetCenterX - elementCenterX;
-      const deltaY = targetCenterY - elementCenterY;
-
-      titleEl.style.transformOrigin = 'center center';
-      titleEl.animate([
-        { transform: titleEl.style.transform || 'translate(0px, 0px) scale(1)' },
-        { transform: `translate(${deltaX}px, ${deltaY}px) scale(1.65)` }
-      ], {
-        duration: 800,
-        easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
-        fill: 'forwards'
-      });
+      // LANDING STATE: If initial load (no prior animation), set style directly to avoid initial load flicker
+      const currentTransform = titleEl.style.transform;
+      if (!currentTransform || currentTransform === 'translate(0px, 0px) scale(1)') {
+        titleEl.style.transform = centerTransform;
+      } else {
+        // Disconnect transition: animate back smoothly
+        titleEl.animate([
+          { transform: currentTransform },
+          { transform: centerTransform }
+        ], {
+          duration: 800,
+          easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+          fill: 'forwards'
+        });
+        titleEl.style.transform = centerTransform;
+      }
       titleEl.style.textAlign = 'center';
     } else {
       // ACTIVE WORKSPACE STATE: Smooth Web Animation back to Header Left (0, 0)
+      const currentTransform = titleEl.style.transform || centerTransform;
       titleEl.animate([
-        { transform: titleEl.style.transform || 'translate(0px, 0px) scale(1.65)' },
+        { transform: currentTransform },
         { transform: 'translate(0px, 0px) scale(1)' }
       ], {
         duration: 800,
         easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
         fill: 'forwards'
       });
+      titleEl.style.transform = 'translate(0px, 0px) scale(1)';
       titleEl.style.textAlign = 'left';
     }
   });
