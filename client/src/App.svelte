@@ -25,12 +25,12 @@
     if (!titleEl) return;
 
     if (!session.hasStarted) {
-      // LANDING STATE: Calculate exact center of current screen using origin-center math
+      // LANDING STATE: Smooth Web Animation back to Screen Center
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       const rect = titleEl.getBoundingClientRect();
 
-      // Unscaled center of title element
+      // Unscaled center of title element in header
       const elementCenterX = rect.left + rect.width / 2;
       const elementCenterY = rect.top + rect.height / 2;
 
@@ -42,12 +42,19 @@
       const deltaY = targetCenterY - elementCenterY;
 
       titleEl.style.transformOrigin = 'center center';
-      titleEl.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.65)`;
+      titleEl.animate([
+        { transform: titleEl.style.transform || 'translate(0px, 0px) scale(1)' },
+        { transform: `translate(${deltaX}px, ${deltaY}px) scale(1.65)` }
+      ], {
+        duration: 800,
+        easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+        fill: 'forwards'
+      });
       titleEl.style.textAlign = 'center';
     } else {
       // ACTIVE WORKSPACE STATE: Smooth Web Animation back to Header Left (0, 0)
       titleEl.animate([
-        { transform: titleEl.style.transform },
+        { transform: titleEl.style.transform || 'translate(0px, 0px) scale(1.65)' },
         { transform: 'translate(0px, 0px) scale(1)' }
       ], {
         duration: 800,
