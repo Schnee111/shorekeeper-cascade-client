@@ -20,7 +20,7 @@
   });
 </script>
 
-<main class="h-screen relative overflow-hidden flex flex-col">
+<main class="h-screen h-[100dvh] relative overflow-hidden flex flex-col">
   <!-- Background -->
   <div class="bg-mesh"></div>
   <div class="noise-overlay"></div>
@@ -35,7 +35,7 @@
     <OrbPanel />
 
     <!-- Right: Conversation & Logs -->
-    <div class="flex-1 min-h-0 flex flex-col gap-3 lg:gap-6 min-w-0 fade-in-up stagger-3">
+    <div class="flex-1 min-h-0 flex flex-col gap-3 lg:gap-6 min-w-0">
       <Conversation />
       <StatusLog />
     </div>
