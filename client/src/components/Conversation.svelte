@@ -72,12 +72,6 @@
         {@const sameGroup = i > 0 && msg.group !== undefined && conversation.messages[i - 1].group === msg.group}
         {@const isLastInGroup = msg.role === 'assistant' && (i === conversation.messages.length - 1 || conversation.messages[i + 1]?.group !== msg.group)}
         
-        <!-- History tool-progress rows (PERMANENT — Gemini/Claude style). -->
-        {#if msg.tools?.length}
-          <div class="{sameGroup ? 'mt-3' : 'mt-6'} flex justify-start w-full">
-            <ToolProgress rows={msg.tools} groupKey={msg.group ?? i} />
-          </div>
-        {/if}
         {#if msg.role === 'user'}
           <div class="{sameGroup ? 'mt-3' : 'mt-6'} flex justify-end w-full">
             <div class="max-w-[80%] message-user rounded-2xl px-3 py-2 lg:px-4 lg:py-3">
@@ -88,8 +82,16 @@
             </div>
           </div>
         {:else}
-          <!-- Agent replies: SINGLE STORE IN-PLACE RENDERING -->
-          <div class="{sameGroup ? 'mt-2' : (msg.tools?.length ? 'mt-3' : (i === 0 ? 'mt-1' : 'mt-6'))} flex justify-start w-full">
+          <!-- Agent replies: Tool calls ALWAYS stay anchored ABOVE the reply text (ChatGPT/Claude/Gemini) -->
+          {@const activeTools = msg.tools?.length ? msg.tools : (msg.status === 'streaming' && tools.calls.length ? tools.calls : undefined)}
+          
+          {#if activeTools?.length}
+            <div class="{sameGroup ? 'mt-3' : 'mt-6'} flex justify-start w-full">
+              <ToolProgress rows={activeTools} groupKey={msg.group ?? (msg.status === 'streaming' ? 'live' : i)} />
+            </div>
+          {/if}
+
+          <div class="{sameGroup ? 'mt-2' : (activeTools?.length ? 'mt-3' : (i === 0 ? 'mt-1' : 'mt-6'))} flex justify-start w-full">
             <div class="max-w-[85%] w-full">
               <SmoothMarkdown text={msg.text} isStreaming={msg.status === 'streaming'} />
               {#if isLastInGroup && msg.time && msg.status !== 'streaming'}
@@ -103,16 +105,16 @@
       {/each}
     {/if}
 
-    <!-- Live turn tools (EXACTLY 1 LIVE INSTANCE WHILE EXECUTING, BEFORE SEALING TO HISTORY) -->
-    {#if tools.calls.length > 0}
-      <div class="{conversation.messages.length > 0 ? 'mt-3' : 'mt-1'} flex justify-start w-full">
+    <!-- Live tools when user just asked something but assistant msg is not yet created -->
+    {#if tools.calls.length > 0 && (!conversation.messages.length || conversation.messages[conversation.messages.length - 1].role !== 'assistant')}
+      <div class="{conversation.messages.length > 0 ? 'mt-6' : 'mt-1'} flex justify-start w-full">
         <ToolProgress rows={tools.calls} groupKey="live" />
       </div>
     {/if}
 
-    <!-- Bottom Minimalist Turn Progress Indicator (active during dead-air / LLM thinking before final answer) -->
+    <!-- Turn progress: Thinking / Working indicator during silence / turn processing -->
     {#if conversation.turnInProgress}
-      <div class="{tools.calls.length === 0 ? (conversation.messages.length > 0 ? 'mt-3' : 'mt-1') : 'mt-2'} flex justify-start w-full">
+      <div class="mt-2 flex justify-start w-full">
         <div class="max-w-[85%]">
           <div class="flex items-center gap-1.5 text-zinc-500 py-0.5">
             <div class="flex gap-0.5">
