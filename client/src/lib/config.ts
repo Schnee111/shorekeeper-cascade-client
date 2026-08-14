@@ -23,9 +23,15 @@ export const MODEL_STORAGE_KEY = 'jarvis-model';
 
 /** Static voice registry — used only if the /voices endpoint fails. */
 export const FALLBACK_VOICES: VoiceOption[] = [
-  { id: 'gura', label: 'Gura', desc: 'Energetic · EN', default: true },
-  { id: 'gura2', label: 'Gura (alt)', desc: 'Alt clone · EN', default: false },
-  { id: 'zeta', label: 'Zeta', desc: 'Calm · ID/EN', default: false },
+  { id: 'zeta', label: 'Zeta', desc: 'Calm · ID/EN', default: true },
+  { id: 'gura', label: 'Gura', desc: 'Energetic · EN', default: false },
+  { id: 'id1', label: 'Indo Voice 1', desc: 'ID · 5ac6fb71', default: false },
+  { id: 'id2', label: 'Indo Voice 2', desc: 'ID · 03931f05', default: false },
+  { id: 'id3', label: 'Indo Voice 3', desc: 'ID · b8d76dc6', default: false },
+  { id: 'id4', label: 'Indo Voice 4', desc: 'ID · 6e0772af', default: false },
+  { id: 'id5', label: 'Indo Voice 5', desc: 'ID · 08e53aec', default: false },
+  { id: 'id6', label: 'Indo Voice 6', desc: 'ID · 6a27b7eb', default: false },
+  { id: 'id7', label: 'Indo Voice 7', desc: 'ID · da2c0df5', default: false },
 ];
 
 export interface ModelOption {
