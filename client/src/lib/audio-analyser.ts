@@ -18,16 +18,21 @@ class AudioAnalyser {
   private sourceMap = new WeakMap<HTMLMediaElement | MediaStream, MediaElementAudioSourceNode | MediaStreamAudioSourceNode>();
   private activeSource: MediaElementAudioSourceNode | MediaStreamAudioSourceNode | null = null;
 
-  init(): void {
-    if (this.ctx) return;
+  init(): AudioContext | null {
+    if (this.ctx) return this.ctx;
     const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextClass) return;
+    if (!AudioContextClass) return null;
 
     this.ctx = new AudioContextClass();
     this.analyser = this.ctx.createAnalyser();
     this.analyser.fftSize = 128;
     this.analyser.smoothingTimeConstant = 0.8;
     this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+    return this.ctx;
+  }
+
+  getAudioContext(): AudioContext | null {
+    return this.init();
   }
 
   attachMediaStream(stream: MediaStream): void {
