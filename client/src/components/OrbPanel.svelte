@@ -48,22 +48,29 @@
 
 <div class="lg:w-[400px] shrink-0 glass-card p-4 lg:p-8 flex flex-col items-center justify-center overflow-hidden transition-all duration-300 ease-out">
 
-  <!-- Status Label & 2D/3D Mode Toggle -->
-  <div class="mb-2 lg:mb-8 flex items-center justify-between w-full px-2">
+  <!-- Status Label & Seamless 2D/3D Mode Toggle -->
+  <div class="mb-2 lg:mb-8 flex items-center justify-between w-full px-1">
+    <!-- Status Badge -->
     <div class="flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 rounded-full bg-white/5 border border-white/10">
       <div class="w-2 h-2 rounded-full {pill.dot} {pill.pulse ? 'animate-pulse' : ''}"></div>
       <span class="text-sm font-medium {pill.text}">{pill.label}</span>
     </div>
 
-    <!-- 2D / 3D Mode Switcher -->
-    <button
-      onclick={toggleViewMode}
-      class="px-2.5 py-1 rounded-full text-[11px] font-mono transition-all border bg-white/5 border-white/10 text-zinc-400 hover:text-cyan-300 hover:border-cyan-500/30 flex items-center gap-1.5"
-      title="Toggle between 2D CSS Orb and 3D Spectro Particle Visualizer"
-    >
-      <span class="w-1.5 h-1.5 rounded-full {viewMode === '3d' ? 'bg-cyan-400 shadow-[0_0_6px_rgba(103,232,249,0.8)]' : 'bg-zinc-500'}"></span>
-      <span>{viewMode.toUpperCase()} Mode</span>
-    </button>
+    <!-- Minimalist 2D / 3D Segmented Switch -->
+    <div class="flex items-center p-0.5 rounded-full bg-zinc-900/80 border border-white/10 shadow-inner">
+      <button
+        onclick={() => { viewMode = '2d'; localStorage.setItem(ORB_MODE_KEY, '2d'); }}
+        class="px-2.5 py-1 rounded-full text-[10px] font-mono font-medium transition-all duration-200 {viewMode === '2d' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_8px_rgba(103,232,249,0.3)]' : 'text-zinc-500 hover:text-zinc-300'}"
+      >
+        2D
+      </button>
+      <button
+        onclick={() => { viewMode = '3d'; localStorage.setItem(ORB_MODE_KEY, '3d'); }}
+        class="px-2.5 py-1 rounded-full text-[10px] font-mono font-medium transition-all duration-200 {viewMode === '3d' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_8px_rgba(103,232,249,0.3)]' : 'text-zinc-500 hover:text-zinc-300'}"
+      >
+        3D
+      </button>
+    </div>
   </div>
 
   <!-- Orb Container (2D CSS Orb vs 3D Spectro Particle Field) -->
