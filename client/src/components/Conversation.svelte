@@ -3,6 +3,7 @@
   smart scroll (allows manual scroll up, shows quick bottom button, locks to bottom when user is at bottom).
 -->
 <script lang="ts">
+  import { fade } from 'svelte/transition';
   import MarkdownText from './MarkdownText.svelte';
   import ToolProgress from './ToolProgress.svelte';
   import StreamingText from '../lib/streaming/StreamingText.svelte';
@@ -98,8 +99,26 @@
                   anim="jv-word-glow" 
                 />
               </div>
-              {#if msg.time && isLastInGroup && msg.status !== 'streaming'}
-                <span class="block text-[10px] text-zinc-500 font-mono mt-1.5">{msg.time}</span>
+              {#if isLastInGroup}
+                <!-- Reserved height slot for timestamp/status to guarantee ZERO layout shift -->
+                <div class="min-h-[16px] mt-1.5 flex items-center">
+                  {#if msg.status === 'streaming'}
+                    <!-- Subtle pulsing indicator while streaming -->
+                    <div transition:fade={{ duration: 250 }} class="flex items-center gap-1.5 text-zinc-500/80">
+                      <div class="flex gap-0.5">
+                        <div class="w-1 h-1 rounded-full bg-cyan-400/60 animate-pulse"></div>
+                        <div class="w-1 h-1 rounded-full bg-cyan-400/60 animate-pulse" style="animation-delay: 300ms"></div>
+                        <div class="w-1 h-1 rounded-full bg-cyan-400/60 animate-pulse" style="animation-delay: 600ms"></div>
+                      </div>
+                      <span class="text-[9px] font-mono tracking-wider opacity-60">speaking</span>
+                    </div>
+                  {:else if msg.time}
+                    <!-- Smooth fade-in timestamp when completed -->
+                    <span transition:fade={{ duration: 350 }} class="block text-[10px] text-zinc-500 font-mono">
+                      {msg.time}
+                    </span>
+                  {/if}
+                </div>
               {/if}
             </div>
           </div>
