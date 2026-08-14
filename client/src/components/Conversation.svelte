@@ -83,11 +83,12 @@
           </div>
         {:else}
           <!-- Agent replies: Tool calls ALWAYS stay anchored ABOVE the reply text (ChatGPT/Claude/Gemini) -->
-          {@const activeTools = msg.tools?.length ? msg.tools : (msg.status === 'streaming' && tools.calls.length ? tools.calls : undefined)}
+          {@const isStreaming = msg.status === 'streaming'}
+          {@const activeTools = isStreaming ? (tools.calls.length ? tools.calls : msg.tools) : msg.tools}
           
           {#if activeTools?.length}
             <div class="{sameGroup ? 'mt-3' : 'mt-6'} flex justify-start w-full">
-              <ToolProgress rows={activeTools} groupKey={msg.group ?? (msg.status === 'streaming' ? 'live' : i)} />
+              <ToolProgress rows={activeTools} groupKey={msg.group ?? (isStreaming ? 'live' : i)} />
             </div>
           {/if}
 
