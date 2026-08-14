@@ -79,7 +79,7 @@ class ConversationStore {
         this.segmentsMap.set(key, { text, language: seg.language, final: seg.final, fromAgent: true });
         this.awaitingReply = false;
         if (text) {
-          // Stamp the reply clock at FIRST TOKEN.
+          // Stamp the reply clock at FIRST TOKEN (lock it for the entire turn).
           if (!this.liveAgentStartTime) this.liveAgentStartTime = getTime();
           
           // Agent Resume / Prefix Merge across both liveAgentBubbles and sealed messages:
@@ -112,10 +112,10 @@ class ConversationStore {
               // Un-seal the prematurely sealed assistant message back into streaming
               if (text.length >= lastSealed.text.length) {
                 this.messages.pop(); // remove duplicate from history
-                this.liveAgentBubbles.push({ key, text, final: seg.final, time: lastSealed.time || getTime() });
+                this.liveAgentBubbles.push({ key, text, final: seg.final, time: this.liveAgentStartTime });
               }
             } else {
-              this.liveAgentBubbles.push({ key, text, final: seg.final, time: getTime() });
+              this.liveAgentBubbles.push({ key, text, final: seg.final, time: this.liveAgentStartTime });
             }
           }
           this.liveAgentLanguage = seg.language || 'id';
