@@ -134,17 +134,17 @@
     {/if}
   </div>
 
-  <!-- Quick scroll to bottom button (WhatsApp / Telegram style) -->
+  <!-- Quick scroll to bottom floating button (Ultra-minimalist borderless pill) -->
   {#if userScrolledUp}
     <button
       onclick={scrollToBottom}
-      class="absolute bottom-6 right-6 z-20 p-2.5 rounded-full bg-zinc-800/90 border border-white/10 text-cyan-400 shadow-xl backdrop-blur-md hover:bg-zinc-700/90 transition-all flex items-center gap-1.5 text-xs font-medium"
+      class="absolute bottom-4 right-4 z-30 w-8 h-8 rounded-full bg-zinc-900/90 border border-white/10 text-cyan-400 shadow-lg backdrop-blur-md hover:bg-zinc-800/90 hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer"
       title="Scroll to bottom"
+      aria-label="Scroll to bottom"
     >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 5v14M19 12l-7 7-7-7"/>
       </svg>
-      <span>Newest</span>
     </button>
   {/if}
 </div>
