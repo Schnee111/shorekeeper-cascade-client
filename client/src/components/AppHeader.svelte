@@ -8,6 +8,19 @@
   import VoiceMenu from './VoiceMenu.svelte';
   import ModelMenu from './ModelMenu.svelte';
   import { session } from '../lib/stores/session.svelte';
+  import { sessionRecorder } from '../lib/recorder';
+
+  let isRecording = $state(false);
+
+  function toggleRecord(): void {
+    if (isRecording) {
+      sessionRecorder.stop('jarvis-voice');
+      isRecording = false;
+    } else {
+      const ok = sessionRecorder.start();
+      if (ok) isRecording = true;
+    }
+  }
 
   const lkDot = $derived(
     session.lkState === 'connected' ? 'connected'
@@ -42,6 +55,19 @@
 
   <!-- Right: Voice Menu Pill + Status Indicators (Fades in on start) -->
   <div class="flex items-center gap-2 sm:gap-3 min-w-[140px] justify-end transition-all duration-700 delay-300 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-90 pointer-events-none'}">
+    <!-- Session Audio Recorder Button (REC) -->
+    {#if session.hasStarted}
+      <button
+        onclick={toggleRecord}
+        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs font-mono transition-all duration-300 cursor-pointer {isRecording ? 'bg-rose-500/20 border-rose-500/50 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.4)] animate-pulse' : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10'}"
+        title={isRecording ? 'Stop & Download Recording' : 'Record Audio Session'}
+        aria-label="Record Audio Session"
+      >
+        <div class="w-2 h-2 rounded-full {isRecording ? 'bg-rose-500' : 'bg-zinc-500'}"></div>
+        <span class="text-[11px] font-semibold">{isRecording ? 'REC' : 'REC'}</span>
+      </button>
+    {/if}
+
     <VoiceMenu
       options={session.voiceOptions}
       selected={session.selectedVoice}

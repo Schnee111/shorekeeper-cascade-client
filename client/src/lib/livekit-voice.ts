@@ -24,6 +24,7 @@ import {
 } from 'livekit-client';
 import { IDENTITY, LIVEKIT_URL, TOKEN_ENDPOINT } from './config';
 import { audioAnalyser } from './audio-analyser';
+import { sessionRecorder } from './recorder';
 
 export { LIVEKIT_URL, IDENTITY };
 
@@ -130,6 +131,9 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
           opts.onLog('Agent audio track attached');
           // Attach AudioAnalyser for 3D Spectro Particle Visualizer
           audioAnalyser.attachMediaElement(el);
+          // Pipe agent audio stream to internal session recorder
+          const stream = (el as HTMLAudioElement).srcObject as MediaStream;
+          if (stream) sessionRecorder.addStream(stream);
         }
       }
     )
@@ -151,10 +155,11 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
     await local.setMicrophoneEnabled(true);
     opts.onLog('Microphone enabled');
 
-    // Connect user mic MediaStream to AudioAnalyser for 3D Spectro Particle Visualizer
+    // Connect user mic MediaStream to AudioAnalyser & SessionRecorder
     const micPublication = Array.from(local.audioTrackPublications.values())[0];
     if (micPublication && micPublication.track && micPublication.track.mediaStream) {
       audioAnalyser.attachMediaStream(micPublication.track.mediaStream);
+      sessionRecorder.addStream(micPublication.track.mediaStream);
     }
   } catch (err) {
     await room.disconnect();
@@ -162,6 +167,9 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
   }
 
   const stop = async (): Promise<void> => {
+    if (sessionRecorder.recording) {
+      sessionRecorder.stop();
+    }
     try {
       await room.localParticipant.setMicrophoneEnabled(false);
     } catch {
