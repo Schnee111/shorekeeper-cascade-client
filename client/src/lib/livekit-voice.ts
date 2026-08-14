@@ -37,7 +37,9 @@ export interface LivekitVoiceOptions {
   onStateChange: (state: LkState) => void;
   onLog: (message: string) => void;
   /** Tool activity events from the agent bridge (Gemini/Claude-style chip). */
-  onToolActivity?: (ev: { state: 'start' | 'complete'; name: string }) => void;
+  onToolActivity?: (ev: { state: 'start' | 'complete'; name: string; args?: Record<string, unknown> }) => void;
+  /** Turn state events from the bridge ('start' | 'complete'). */
+  onTurnState?: (state: 'start' | 'complete') => void;
   /** Fish Audio voice key (token_server registry); default "gura". */
   voice?: string;
   /** Hermes LLM model override (9Router model ID). */
@@ -103,6 +105,7 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
           type?: string;
           state?: string;
           name?: string;
+          args?: Record<string, unknown>;
         };
         if (data?.type === 'jarvis.tool' && (data.state === 'start' || data.state === 'complete')) {
           opts.onToolActivity({ state: data.state, name: data.name || '?', args: data.args });
@@ -122,11 +125,13 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
       (track: Track, _pub: RemoteTrackPublication, participant) => {
         if (track.kind === Track.Kind.Audio && participant.identity !== IDENTITY) {
           const el = track.attach();
+          // MUTE the HTMLAudioElement so it doesn't output via VoIP/In-Call stream!
+          el.muted = true;
           audioElements.push(el);
           document.body.appendChild(el);
-          opts.onLog('Agent audio track attached');
-          // Attach AudioAnalyser for 3D Spectro Particle Visualizer
-          audioAnalyser.attachMediaElement(el);
+          opts.onLog('Agent audio track attached (routed to Media Speaker)');
+          // Route exclusively to WebAudio Destination (Media Stream output + Screen Recorder capture)
+          audioAnalyser.attachMediaElement(el, true);
         }
       }
     )
