@@ -49,7 +49,7 @@ class AudioAnalyser {
     }
   }
 
-  attachMediaElement(el: HTMLMediaElement, routeToSpeaker = false): void {
+  attachMediaElement(el: HTMLMediaElement): void {
     try {
       this.init();
       if (!this.ctx || !this.analyser) return;
@@ -63,17 +63,11 @@ class AudioAnalyser {
         if (mediaStream && mediaStream instanceof MediaStream) {
           const source = this.ctx.createMediaStreamSource(mediaStream);
           source.connect(this.analyser);
-          if (routeToSpeaker) {
-            // Route through WebAudio destination so mobile browsers & screen recorders
-            // treat the audio as standard Media Sound (Loudspeaker / Media Volume).
-            this.analyser.connect(this.ctx.destination);
-          }
           this.sourceMap.set(el, source);
           this.activeSource = source;
         } else {
           const source = this.ctx.createMediaElementSource(el);
           source.connect(this.analyser);
-          this.analyser.connect(this.ctx.destination);
           this.sourceMap.set(el, source);
           this.activeSource = source;
         }

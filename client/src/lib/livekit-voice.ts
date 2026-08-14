@@ -125,13 +125,11 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
       (track: Track, _pub: RemoteTrackPublication, participant) => {
         if (track.kind === Track.Kind.Audio && participant.identity !== IDENTITY) {
           const el = track.attach();
-          // MUTE the HTMLAudioElement so it doesn't output via VoIP/In-Call stream!
-          el.muted = true;
           audioElements.push(el);
           document.body.appendChild(el);
-          opts.onLog('Agent audio track attached (routed to Media Speaker)');
-          // Route exclusively to WebAudio Destination (Media Stream output + Screen Recorder capture)
-          audioAnalyser.attachMediaElement(el, true);
+          opts.onLog('Agent audio track attached');
+          // Attach AudioAnalyser for 3D Spectro Particle Visualizer
+          audioAnalyser.attachMediaElement(el);
         }
       }
     )
