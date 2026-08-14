@@ -67,16 +67,6 @@
 
 <div class="w-full flex flex-col items-center justify-center p-0 border-0 bg-transparent shadow-none backdrop-blur-none">
 
-  <!-- Dynamic Landing Title: Centered above Orb on landing screen (Clean fade-out when session starts) -->
-  {#if !session.hasStarted}
-    <div
-      class="text-center flex flex-col items-center mb-6 sm:mb-8 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
-    >
-      <h1 class="font-semibold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white to-violet-200 text-3xl sm:text-4xl lg:text-5xl drop-shadow-[0_0_30px_rgba(103,232,249,0.6)] whitespace-nowrap">Shorekeeper</h1>
-      <p class="text-zinc-400/90 font-mono tracking-widest text-sm sm:text-base mt-2">JARVIS v2.0</p>
-    </div>
-  {/if}
-
   <!-- Status Label (Centered at Top) -->
   <div class="mb-2 lg:mb-8 flex items-center justify-center w-full px-1 transition-all duration-500 delay-200 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none hidden'}">
     <div class="flex items-center gap-2 px-3.5 lg:px-4 py-1.5 lg:py-2 rounded-full bg-white/5 border border-white/10 shadow-lg backdrop-blur-md">

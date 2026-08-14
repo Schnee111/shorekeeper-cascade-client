@@ -18,6 +18,45 @@
     logs.add('info', 'UI ready — LiveKit voice pipeline');
     void session.loadVoices();
   });
+
+  // Pure Web Animations API (FLIP Pattern) for Single-Source Title Transition
+  $effect(() => {
+    const titleEl = document.getElementById('main-brand-title');
+    if (!titleEl) return;
+
+    if (!session.hasStarted) {
+      // LANDING STATE: Calculate exact center of current screen using origin-center math
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const rect = titleEl.getBoundingClientRect();
+
+      // Unscaled center of title element
+      const elementCenterX = rect.left + rect.width / 2;
+      const elementCenterY = rect.top + rect.height / 2;
+
+      // Target screen center coordinates
+      const targetCenterX = viewportWidth / 2;
+      const targetCenterY = viewportHeight * 0.16; // 16% from top
+
+      const deltaX = targetCenterX - elementCenterX;
+      const deltaY = targetCenterY - elementCenterY;
+
+      titleEl.style.transformOrigin = 'center center';
+      titleEl.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.65)`;
+      titleEl.style.textAlign = 'center';
+    } else {
+      // ACTIVE WORKSPACE STATE: Smooth Web Animation back to Header Left (0, 0)
+      titleEl.animate([
+        { transform: titleEl.style.transform },
+        { transform: 'translate(0px, 0px) scale(1)' }
+      ], {
+        duration: 800,
+        easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+        fill: 'forwards'
+      });
+      titleEl.style.textAlign = 'left';
+    }
+  });
 </script>
 
 <main class="h-screen h-[100dvh] w-full relative overflow-hidden flex flex-col">
