@@ -17,9 +17,9 @@
   const roomDot = $derived(session.mode === 'active' ? 'connected' : session.mode === 'standby' ? 'pending' : 'disconnected');
 </script>
 
-<header class="relative z-30 px-4 sm:px-6 py-4 lg:py-6 flex items-center justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
-  <!-- Left / Center: Brand Title (Smoothly slides from dead center to top-left) -->
-  <div class="transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'translate-x-0 opacity-100' : 'fixed left-1/2 -translate-x-1/2 top-10 sm:top-14 z-40 text-center pointer-events-none'}">
+<header class="relative z-30 px-4 sm:px-6 py-4 lg:py-6 flex items-center justify-between">
+  <!-- Left / Center: Brand Title (Smooth GPU transform from center to top-left) -->
+  <div class="transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform {session.hasStarted ? 'translate-x-0 opacity-100' : 'fixed left-1/2 -translate-x-1/2 top-10 sm:top-14 z-40 text-center pointer-events-none'}">
     <div class="{session.hasStarted ? 'text-left' : 'text-center'}">
       <h1 class="font-semibold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white to-violet-200 transition-all duration-700 {session.hasStarted ? 'text-base lg:text-lg' : 'text-3xl sm:text-4xl lg:text-5xl drop-shadow-[0_0_25px_rgba(103,232,249,0.5)]'}">Shorekeeper</h1>
       <p class="text-zinc-400/90 font-mono tracking-widest transition-all duration-700 {session.hasStarted ? 'text-[10px] lg:text-xs mt-0' : 'text-sm sm:text-base mt-2'}">JARVIS v2.0</p>

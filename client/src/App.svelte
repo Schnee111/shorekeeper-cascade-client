@@ -30,13 +30,13 @@
   <!-- Main Workspace Layout -->
   <div class="relative z-10 flex-1 min-h-0 flex flex-col lg:flex-row items-stretch gap-3 lg:gap-6 px-4 lg:px-6 pb-4 lg:pb-6 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
 
-    <!-- Left Column: Orb Hero (Anchored in flex layout with smooth scale & translate) -->
-    <div class="flex flex-col items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'lg:w-[380px] shrink-0' : 'flex-1'}">
+    <!-- Left Column: Orb Hero (Anchored in flex layout with hardware transform) -->
+    <div class="flex flex-col items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform {session.hasStarted ? 'lg:w-[380px] shrink-0 scale-100' : 'flex-1 scale-110 sm:scale-125'}">
       <OrbPanel />
     </div>
 
-    <!-- Right Column: Conversation Chat & System Logs (Slides up smoothly from bottom) -->
-    <div class="flex-1 min-h-0 flex flex-col gap-3 lg:gap-6 min-w-0 transition-all duration-700 delay-150 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'opacity-100 translate-y-0 pointer-events-auto flex' : 'opacity-0 translate-y-16 pointer-events-none hidden'}">
+    <!-- Right Column: Conversation Chat & System Logs (Hardware opacity/transform GPU fade-in) -->
+    <div class="flex-1 min-h-0 flex flex-col gap-3 lg:gap-6 min-w-0 transition-all duration-500 delay-75 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform {session.hasStarted ? 'opacity-100 translate-y-0 pointer-events-auto flex' : 'opacity-0 translate-y-8 pointer-events-none hidden'}">
       <Conversation />
       <StatusLog />
     </div>
