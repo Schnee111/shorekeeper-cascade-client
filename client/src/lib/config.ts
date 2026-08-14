@@ -23,15 +23,28 @@ export const MODEL_STORAGE_KEY = 'jarvis-model';
 
 /** Static voice registry — used only if the /voices endpoint fails. */
 export const FALLBACK_VOICES: VoiceOption[] = [
-  { id: 'zeta', label: 'Zeta', desc: 'Calm · ID/EN', default: true },
+  { id: 'sarah', label: 'Sarah', desc: 'EN · Voice', default: true },
+  { id: 'zeta', label: 'Zeta', desc: 'Calm · ID/EN', default: false },
   { id: 'gura', label: 'Gura', desc: 'Energetic · EN', default: false },
-  { id: 'id1', label: 'Indo Voice 1', desc: 'ID · 5ac6fb71', default: false },
-  { id: 'id2', label: 'Indo Voice 2', desc: 'ID · 03931f05', default: false },
-  { id: 'id3', label: 'Indo Voice 3', desc: 'ID · b8d76dc6', default: false },
-  { id: 'id4', label: 'Indo Voice 4', desc: 'ID · 6e0772af', default: false },
-  { id: 'id5', label: 'Indo Voice 5', desc: 'ID · 08e53aec', default: false },
-  { id: 'id6', label: 'Indo Voice 6', desc: 'ID · 6a27b7eb', default: false },
-  { id: 'id7', label: 'Indo Voice 7', desc: 'ID · da2c0df5', default: false },
+  { id: 'adrian', label: 'Adrian', desc: 'EN · Male', default: false },
+  { id: 'hannah', label: 'Hannah', desc: 'EN · Female', default: false },
+  { id: 'raiden', label: 'Raiden', desc: 'EN · Female', default: false },
+  { id: 'megan', label: 'Megan', desc: 'EN · Female', default: false },
+  { id: 'natasha', label: 'Natasha', desc: 'EN · Female', default: false },
+  { id: 'tifa', label: 'Tifa', desc: 'EN · Female', default: false },
+  { id: 'emma', label: 'Emma', desc: 'EN · Female', default: false },
+  { id: 'furina', label: 'Furina', desc: 'EN · Female', default: false },
+  { id: 'luna', label: 'Luna', desc: 'EN · Female', default: false },
+  { id: 'jade', label: 'Jade', desc: 'EN · Female', default: false },
+  { id: 'nilou', label: 'Nilou', desc: 'EN · Female', default: false },
+  { id: 'marin', label: 'Marin', desc: 'EN · Female', default: false },
+  { id: 'reze', label: 'Reze', desc: 'EN · Female', default: false },
+  { id: 'makima', label: 'Makima', desc: 'EN · Female', default: false },
+  { id: 'arlecchino', label: 'Arlecchino', desc: 'EN · Female', default: false },
+  { id: 'yoimiya', label: 'Yoimiya', desc: 'EN · Female', default: false },
+  { id: 'jp1', label: 'JP Voice 1', desc: 'JP · Female', default: false },
+  { id: 'jp2', label: 'JP Voice 2', desc: 'JP · Female', default: false },
+  { id: 'ano', label: 'Ano', desc: 'JP · Female', default: false },
 ];
 
 export interface ModelOption {
