@@ -63,15 +63,13 @@ class AudioAnalyser {
         if (mediaStream && mediaStream instanceof MediaStream) {
           const source = this.ctx.createMediaStreamSource(mediaStream);
           source.connect(this.analyser);
-          // Pass audio through to WebAudio destination (standard media channel)
-          // so screen recorders and OS mixer treat it as recordable media audio!
-          this.analyser.connect(this.ctx.destination);
+          // Do NOT connect to ctx.destination here — HTMLMediaElement already plays audio.
+          // Connecting to destination causes double-audio / phasing echo.
           this.sourceMap.set(el, source);
           this.activeSource = source;
         } else {
           const source = this.ctx.createMediaElementSource(el);
           source.connect(this.analyser);
-          this.analyser.connect(this.ctx.destination);
           this.sourceMap.set(el, source);
           this.activeSource = source;
         }
