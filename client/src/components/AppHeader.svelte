@@ -19,10 +19,10 @@
 
 <header class="relative z-30 px-4 sm:px-6 py-4 lg:py-6 flex items-center justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
   <!-- Left / Center: Brand Title (Smoothly slides from dead center to top-left) -->
-  <div class="transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'translate-x-0 opacity-100' : 'fixed left-1/2 -translate-x-1/2 top-12 z-40 text-center pointer-events-none'}">
+  <div class="transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'translate-x-0 opacity-100' : 'fixed left-1/2 -translate-x-1/2 top-16 sm:top-20 z-40 text-center pointer-events-none'}">
     <div class="{session.hasStarted ? 'text-left' : 'text-center'}">
-      <h1 class="font-semibold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white to-violet-200 transition-all duration-700 {session.hasStarted ? 'text-base lg:text-lg' : 'text-2xl sm:text-3xl lg:text-4xl drop-shadow-[0_0_20px_rgba(103,232,249,0.4)]'}">Shorekeeper</h1>
-      <p class="text-zinc-400/90 font-mono tracking-widest transition-all duration-700 {session.hasStarted ? 'text-[10px] lg:text-xs mt-0' : 'text-xs sm:text-sm mt-1.5'}">JARVIS v2.0</p>
+      <h1 class="font-semibold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white to-violet-200 transition-all duration-700 {session.hasStarted ? 'text-base lg:text-lg' : 'text-3xl sm:text-4xl lg:text-5xl drop-shadow-[0_0_25px_rgba(103,232,249,0.5)]'}">Shorekeeper</h1>
+      <p class="text-zinc-400/90 font-mono tracking-widest transition-all duration-700 {session.hasStarted ? 'text-[10px] lg:text-xs mt-0' : 'text-sm sm:text-base mt-2'}">JARVIS v2.0</p>
     </div>
   </div>
 

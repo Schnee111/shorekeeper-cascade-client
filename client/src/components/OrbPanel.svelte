@@ -46,7 +46,7 @@
   );
 </script>
 
-<div class="w-full flex flex-col items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'glass-card p-4 lg:p-8 overflow-hidden' : 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border-0 bg-transparent shadow-none backdrop-blur-none z-30 scale-110 lg:scale-135'}">
+<div class="w-full flex flex-col items-center justify-center overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'glass-card p-4 lg:p-8 border border-white/10' : 'border-0 bg-transparent shadow-none backdrop-blur-none p-0'}">
 
   <!-- Status Label (Hidden on initial landing screen, fades in smoothly on start) -->
   <div class="mb-2 lg:mb-8 flex items-center justify-between w-full px-1 transition-all duration-500 delay-200 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none hidden'}">
