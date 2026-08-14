@@ -82,27 +82,37 @@ class ConversationStore {
           // Stamp the reply clock at FIRST TOKEN.
           if (!this.liveAgentStartTime) this.liveAgentStartTime = getTime();
           
-          // Agent Resume / Prefix Merge:
-          // When LiveKit resumes after a false interruption, it sends a new segment ID (`seg.id`).
-          // Check if existing liveAgentBubbles or the last bubble has a prefix of `text`
-          // or if `text` is a prefix/overlap of an existing bubble.
+          // Agent Resume / Prefix Merge across both liveAgentBubbles and sealed messages:
+          // Check 1: In liveAgentBubbles
           const existing = this.liveAgentBubbles.find((b) => b.key === key);
           if (existing) {
             existing.text = text;
             existing.final = seg.final;
           } else {
-            // Check if this new segment's text overlaps or extends the previous agent bubble
             const lastBubble = this.liveAgentBubbles[this.liveAgentBubbles.length - 1];
+            // Check 2: In last sealed message (if liveAgentBubbles was cleared during premature seal)
+            const lastSealed = this.messages[this.messages.length - 1];
+            
             if (
               lastBubble &&
               (text.toLowerCase().startsWith(lastBubble.text.toLowerCase().replace(/[.,!?]+\s*$/, '')) ||
                lastBubble.text.toLowerCase().startsWith(text.toLowerCase().replace(/[.,!?]+\s*$/, '')))
             ) {
-              // Fold into the longer text to eliminate duplicate streaming bubbles on resume
               if (text.length >= lastBubble.text.length) {
                 lastBubble.key = key;
                 lastBubble.text = text;
                 lastBubble.final = seg.final;
+              }
+            } else if (
+              lastSealed &&
+              lastSealed.role === 'assistant' &&
+              (text.toLowerCase().startsWith(lastSealed.text.toLowerCase().replace(/[.,!?]+\s*$/, '')) ||
+               lastSealed.text.toLowerCase().startsWith(text.toLowerCase().replace(/[.,!?]+\s*$/, '')))
+            ) {
+              // Un-seal the prematurely sealed assistant message back into streaming
+              if (text.length >= lastSealed.text.length) {
+                this.messages.pop(); // remove duplicate from history
+                this.liveAgentBubbles.push({ key, text, final: seg.final, time: lastSealed.time || getTime() });
               }
             } else {
               this.liveAgentBubbles.push({ key, text, final: seg.final, time: getTime() });
