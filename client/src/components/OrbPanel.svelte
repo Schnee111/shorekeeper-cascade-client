@@ -48,6 +48,14 @@
 
 <div class="w-full flex flex-col items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[background-color,border-color] {session.hasStarted ? 'glass-card p-4 lg:p-8 overflow-hidden border border-white/10' : 'border-0 bg-transparent shadow-none backdrop-blur-none p-0'}">
 
+  <!-- Dynamic Title for Initial Landing Screen -->
+  {#if !session.hasStarted}
+    <div class="mb-6 lg:mb-8 text-center flex flex-col items-center animate-fade-in">
+      <h1 class="font-semibold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white to-violet-200 text-3xl sm:text-4xl lg:text-5xl drop-shadow-[0_0_30px_rgba(103,232,249,0.6)]">Shorekeeper</h1>
+      <p class="text-zinc-400/90 font-mono tracking-widest text-sm sm:text-base mt-2">JARVIS v2.0</p>
+    </div>
+  {/if}
+
   <!-- Status Label (Hidden on initial landing screen, fades in smoothly on start) -->
   <div class="mb-2 lg:mb-8 flex items-center justify-between w-full px-1 transition-all duration-500 delay-200 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none hidden'}">
     <!-- Status Badge -->

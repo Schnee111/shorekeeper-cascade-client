@@ -36,9 +36,11 @@
     </div>
 
     <!-- Right Column: Conversation Chat & System Logs (Hardware opacity/transform GPU fade-in) -->
-    <div class="flex-1 min-h-0 flex flex-col gap-3 lg:gap-6 min-w-0 transition-all duration-500 delay-75 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform {session.hasStarted ? 'opacity-100 translate-y-0 pointer-events-auto flex' : 'opacity-0 translate-y-8 pointer-events-none hidden'}">
+  {#if session.hasStarted}
+    <div class="flex-1 min-h-0 flex flex-col gap-3 lg:gap-6 min-w-0 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] fade-in-up">
       <Conversation />
       <StatusLog />
     </div>
+  {/if}
   </div>
 </main>
