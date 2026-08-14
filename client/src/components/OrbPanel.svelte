@@ -46,10 +46,10 @@
   );
 </script>
 
-<div class="lg:w-[400px] shrink-0 glass-card p-4 lg:p-8 flex flex-col items-center justify-center overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'relative border border-white/10' : 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border-0 bg-transparent shadow-none backdrop-blur-none z-30 scale-110 lg:scale-125'}">
+<div class="w-full flex flex-col items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] {session.hasStarted ? 'glass-card p-4 lg:p-8 overflow-hidden' : 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border-0 bg-transparent shadow-none backdrop-blur-none z-30 scale-110 lg:scale-135'}">
 
-  <!-- Status Label & Seamless 2D/3D Mode Toggle -->
-  <div class="mb-2 lg:mb-8 flex items-center justify-between w-full px-1">
+  <!-- Status Label (Hidden on initial landing screen, fades in smoothly on start) -->
+  <div class="mb-2 lg:mb-8 flex items-center justify-between w-full px-1 transition-all duration-500 delay-200 {session.hasStarted ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none hidden'}">
     <!-- Status Badge -->
     <div class="flex items-center gap-2 px-3 lg:px-4 py-1.5 lg:py-2 rounded-full bg-white/5 border border-white/10">
       <div class="w-2 h-2 rounded-full {pill.dot} {pill.pulse ? 'animate-pulse' : ''}"></div>
@@ -101,7 +101,7 @@
   </div>
 
   <!-- Hint Text -->
-  <p class="text-xs lg:text-sm text-zinc-500 text-center">{hint}</p>
+  <p class="text-xs lg:text-sm text-center transition-all duration-700 {session.hasStarted ? 'text-zinc-500 font-normal mt-0' : 'text-cyan-200/90 font-medium tracking-wide mt-3 drop-shadow-[0_0_12px_rgba(103,232,249,0.5)]'}">{hint}</p>
 
   <!-- Wake word arm/disarm (secondary path) — smooth height transition -->
   <div class="overflow-hidden transition-all duration-300 ease-out flex items-center justify-center {session.mode === 'off' || session.mode === 'standby' ? 'max-h-9 opacity-100 mt-2 lg:mt-4' : 'max-h-0 opacity-0 mt-0'}">
