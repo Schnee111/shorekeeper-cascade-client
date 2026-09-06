@@ -31,6 +31,18 @@ Standard web voice interfaces suffer from three glaring flaws:
 
 ---
 
+## 🌌 The Shorekeeper Ecosystem
+
+The Shorekeeper voice intelligence project is architected across three independent, complementary open-source repositories:
+
+| Repository | Paradigm | Technology Stack | Primary Role |
+|---|---|---|---|
+| **[shorekeeper-cascade-client](https://github.com/Schnee111/shorekeeper-cascade-client)** (This Repo) | **Web Client** | Svelte 5 (Runes) · Three.js · Vite · PWA | Production Web HUD, token streaming, 3D Spectro Particle Orb |
+| **[shorekeeper-cascade-agent](https://github.com/Schnee111/shorekeeper-cascade-agent)** | **Cascade Pipeline** | LiveKit Python SDK · Groq Whisper · Hermes LLM · Fish Audio 48kHz | Modular STT-LLM-TTS voice pipeline, JWT token server |
+| **[shorekeeper-s2s](https://github.com/Schnee111/shorekeeper-s2s)** | **Native S2S Monorepo** | Gemini 3.1 Live · WebRTC · OMP Worker Mesh · SQLite WAL | Flagship end-to-end speech-to-speech autonomous engineering platform |
+
+---
+
 ## 🏛️ System Architecture
 
 ```text
