@@ -117,7 +117,17 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
       }
     })
     .on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
-      const agentSpeaking = speakers.some((s) => s.identity !== IDENTITY);
+      const agentSpeaker = speakers.find((s) => s.identity !== IDENTITY);
+      const userSpeaker = speakers.find((s) => s.identity === IDENTITY);
+      const activeSpeaker = agentSpeaker || userSpeaker;
+
+      if (activeSpeaker) {
+        audioAnalyser.setNativeAudioLevel(activeSpeaker.audioLevel);
+      } else {
+        audioAnalyser.setNativeAudioLevel(0);
+      }
+
+      const agentSpeaking = !!agentSpeaker;
       opts.onSpeakingChanged(agentSpeaking);
     })
     .on(
@@ -128,8 +138,9 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
           audioElements.push(el);
           document.body.appendChild(el);
           opts.onLog('Agent audio track attached');
-          // Attach AudioAnalyser for 3D Spectro Particle Visualizer
-          audioAnalyser.attachMediaElement(el);
+          // Note: We deliberately DO NOT attach WebAudio MediaStreamSource to el here (Issue #1).
+          // Playing pure WebRTC audio through the native HTMLAudioElement avoids Chromium's
+          // dual-sink buffer race condition, completely eliminating crackling and clicks.
         }
       }
     )
