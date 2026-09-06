@@ -43,6 +43,20 @@ The Shorekeeper voice intelligence project is architected across three independe
 
 ---
 
+## 🛠️ Technology Stack
+
+| Layer | Technologies & Frameworks | Description |
+|---|---|---|
+| **Frontend Framework** | Svelte 5 (Runes `$state`, `$derived`, `$effect`) | Next-gen reactive UI without virtual DOM overhead |
+| **Build & Tooling** | Vite 6 · TypeScript 5.7 · pnpm | Ultra-fast HMR and optimized static production bundling |
+| **Real-time Voice Carrier** | LiveKit Client SDK · WebRTC · RFC 6464 | Hardware-decoupled audio telemetry with 0ms visual latency |
+| **3D Graphics & Shaders** | Three.js · Custom Spectro Particle Shaders | Hardware-accelerated 60fps Spectro Orb visualization |
+| **Audio Worklet & DSP** | Web Audio API · AudioContext Decoupled Analyser | Zero-crackle waveform and audio-level analysis |
+| **Styling & Aesthetics** | Tailwind CSS 3.4 · WuWa Cosmic Palette | Void obsidian, Kuro Gold (`#c5a86a`), Spectro Mint (`#6ee7b7`) |
+| **Deployment & Hosting** | Nginx Alpine-Slim (<25MB) · GHCR · Docker Compose | Multi-stage containerized static preview & reverse proxy |
+
+---
+
 ## 🏛️ System Architecture
 
 ```text
