@@ -60,31 +60,31 @@ The Shorekeeper voice intelligence project is architected across three independe
 ## 🏛️ System Architecture
 
 ```text
-               ┌────────────────────────────────────────────────────────┐
-               │                  User Web Browser                      │
-               │                                                        │
-               │  [ User Mic ] ──▶ (AudioWorklet 16kHz PCM)             │
-               │                            │                           │
-               │                            ▼                           │
-               │                 [ LiveKit Room Engine ]                │
-               │                            ▲                           │
-               │                            │ (Opus 48kHz Audio Track)  │
-               │                            │                           │
-               │   ┌────────────────────────┴───────────────────────┐   │
-               │   │ Direct Audio Element (Native Hardware Playback)│   │
-               │   └────────────────────────────────────────────────┘   │
-               │                            │ (RFC 6464 Audio Levels)   │
-               │                            ▼                           │
-               │   ┌────────────────────────────────────────────────┐   │
-               │   │ Three.js Spectro Orb Visualizer (60 FPS)       │   │
-               │   └────────────────────────────────────────────────┘   │
-               └────────────────────────────┬───────────────────────────┘
-                                            │ WebRTC Room
-                                            ▼
-               ┌────────────────────────────────────────────────────────┐
-               │            shorekeeper-cascade-agent (VPS)             │
-               │  Groq Whisper large-v3 ➔ Hermes LLM ➔ Fish Audio 48kHz │
-               └────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│                  User Web Browser                      │
+│                                                        │
+│  [ User Mic ] ──▶ (AudioWorklet 16kHz PCM)             │
+│                            │                           │
+│                            ▼                           │
+│                 [ LiveKit Room Engine ]                │
+│                            ▲                           │
+│                            │ (Opus 48kHz Audio Track)  │
+│                            │                           │
+│   ┌────────────────────────┴───────────────────────┐   │
+│   │ Direct Audio Element (Native Hardware Playback)│   │
+│   └────────────────────────────────────────────────┘   │
+│                            │ (RFC 6464 Audio Levels)   │
+│                            ▼                           │
+│   ┌────────────────────────────────────────────────┐   │
+│   │ Three.js Spectro Orb Visualizer (60 FPS)       │   │
+│   └────────────────────────────────────────────────┘   │
+└────────────────────────────┬───────────────────────────┘
+                             │ WebRTC Room
+                             ▼
+┌────────────────────────────────────────────────────────┐
+│            shorekeeper-cascade-agent (VPS)             │
+│  Groq Whisper large-v3 ──▶ Hermes LLM ──▶ Fish Audio   │
+└────────────────────────────────────────────────────────┘
 ```
 
 ---
