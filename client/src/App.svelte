@@ -8,6 +8,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import AppHeader from './components/AppHeader.svelte';
+  import ReconnectBanner from './components/ReconnectBanner.svelte';
   import Conversation from './components/Conversation.svelte';
   import OrbPanel from './components/OrbPanel.svelte';
   import StatusLog from './components/StatusLog.svelte';
@@ -85,6 +86,7 @@
   <div class="noise-overlay"></div>
 
   <AppHeader />
+  <ReconnectBanner />
 
   <!-- Main Workspace Layout: Fixed layout frame so flex height NEVER changes -->
   <div class="relative z-10 flex-1 min-h-0 flex flex-col lg:flex-row items-stretch gap-3 lg:gap-6 px-4 lg:px-6 pb-4 lg:pb-6 overflow-hidden">

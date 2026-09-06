@@ -18,7 +18,7 @@ export type Status =
   | 'error';
 
 /** LiveKit room connection state (mirrors livekit-voice.ts LkState). */
-export type LkConnState = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
+export type LkConnState = 'connecting' | 'connected' | 'reconnecting' | 'reconnect_grace' | 'disconnected';
 
 export interface LogEntry {
   type: 'info' | 'warn' | 'error' | 'success';

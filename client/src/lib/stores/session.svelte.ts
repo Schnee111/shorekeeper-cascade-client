@@ -6,7 +6,7 @@
  * there is no imperative refreshStatus bookkeeping — Svelte reactivity
  * recomputes it whenever a dependency changes.
  */
-import { startLivekitVoice, type LivekitHandle, type LkState } from '../livekit-voice';
+import { startLivekitVoice, type LivekitHandle, type LkState, DisconnectReason } from '../livekit-voice';
 import { startWakeWord } from '../wakeword';
 import { FALLBACK_VOICES, MODEL_OPTIONS, VOICES_ENDPOINT, VOICE_STORAGE_KEY, MODEL_STORAGE_KEY, type ModelOption } from '../config';
 import type { LkConnState, Mode, Status, VoiceOption } from '../types';
@@ -18,6 +18,11 @@ class SessionStore {
   mode = $state<Mode>('off');
   lkState = $state<LkConnState>('disconnected');
   voiceSwitching = $state(false);
+
+  // Reconnect Grace Period state
+  reconnectGraceActive = $state(false);
+  graceCountdown = $state(15);
+  private graceInterval: ReturnType<typeof setInterval> | null = null;
 
   /** Status while mode === 'off' — persists errors (mic denied / connect
    *  failed) until the next attempt. */
@@ -84,11 +89,12 @@ class SessionStore {
     }
   }
 
-  private handleStateChange(state: LkState): void {
+  private handleStateChange(state: LkState, reason?: DisconnectReason): void {
     this.lkState = state;
     if (state === 'reconnecting') {
       logs.add('warn', 'Connection unstable — reconnecting...');
     } else if (state === 'connected') {
+      this.clearGraceTimer();
       logs.add('success', 'LiveKit connected');
       // Fallback transition: If agent voice TTS stalls or delays beyond 1.8s after connection,
       // reveal workspace automatically so the user is never stuck on initial screen.
@@ -97,17 +103,92 @@ class SessionStore {
           this.markStarted();
         }
       }, 1800);
-    } else if (state === 'disconnected' && this.mode === 'active') {
-      // Plan §6: ACTIVE ──disconnect──► OFF
-      logs.add('warn', 'Disconnected');
-      this.resetAll();
-      this.mode = 'off';
-      this.offState = 'idle';
+    } else if (state === 'disconnected') {
+      const isClientInitiated = reason === DisconnectReason.CLIENT_INITIATED;
+      if (this.mode === 'active' && !isClientInitiated) {
+        // Unexpected disconnect during active call -> Enter 15s Grace Period
+        this.startReconnectGrace();
+      } else {
+        // Intentional disconnect or timeout expiration
+        this.cleanupLivekit(false);
+      }
     }
   }
 
+  /** Starts the 15-second grace countdown banner before tearing down active session. */
+  private startReconnectGrace(): void {
+    if (this.reconnectGraceActive) return;
+    this.reconnectGraceActive = true;
+    this.graceCountdown = 15;
+    this.lkState = 'reconnect_grace';
+    logs.add('warn', 'Connection dropped unexpectedly. Holding session for 15s...');
+
+    // Seal any current in-flight utterance so text is saved to conversation
+    conversation.sealAgentBubble();
+
+    if (this.graceInterval) clearInterval(this.graceInterval);
+    this.graceInterval = setInterval(() => {
+      this.graceCountdown -= 1;
+      if (this.graceCountdown <= 0) {
+        this.clearGraceTimer();
+        logs.add('error', 'Reconnection window expired. Session paused.');
+        this.cleanupLivekit(false);
+      }
+    }, 1000);
+  }
+
+  private clearGraceTimer(): void {
+    if (this.graceInterval) {
+      clearInterval(this.graceInterval);
+      this.graceInterval = null;
+    }
+    this.reconnectGraceActive = false;
+  }
+
+  /** Manual or automated retry during grace period. */
+  async retryReconnect(): Promise<void> {
+    logs.add('info', 'Attempting immediate reconnect...');
+    this.clearGraceTimer();
+    try {
+      await this.connectLivekit();
+    } catch (err) {
+      logs.add('error', `Reconnect attempt failed: ${err instanceof Error ? err.message : String(err)}`);
+      this.startReconnectGrace();
+    }
+  }
+
+  /** Explicit user cancellation from the reconnect banner. */
+  cancelGraceAndEnd(): void {
+    this.clearGraceTimer();
+    this.cleanupLivekit(false);
+    logs.add('info', 'Session ended by user.');
+  }
+
+  /**
+   * Non-destructive teardown: releases WebRTC and audio handles, but
+   * NEVER erases conversation messages unless explicitly instructed.
+   */
+  private cleanupLivekit(clearHistory = false): void {
+    const handle = this.lkHandle;
+    this.lkHandle = null;
+    if (handle) void handle.stop();
+
+    conversation.sealAgentBubble();
+    conversation.resetTurnState();
+    tools.reset();
+
+    if (clearHistory) {
+      conversation.clearHistory();
+    }
+
+    this.mode = 'off';
+    this.offState = 'idle';
+    this.hasStarted = false;
+    this.lkState = 'disconnected';
+  }
+
   private resetAll(): void {
-    conversation.reset();
+    conversation.resetTurnState();
     tools.reset();
   }
 
@@ -170,16 +251,15 @@ class SessionStore {
   }
 
   async disconnectLivekit(): Promise<void> {
-    const handle = this.lkHandle;
-    this.lkHandle = null;
-    if (handle) await handle.stop();
-    // Seal any in-flight agent reply into history before the session ends.
-    conversation.sealAgentBubble();
-    this.resetAll();
-    this.mode = 'off';
-    this.offState = 'idle';
-    this.hasStarted = false;
+    this.clearGraceTimer();
+    this.cleanupLivekit(false);
     logs.add('info', 'Session ended');
+  }
+
+  /** Explicit action to clear chat history (e.g. from UI button). */
+  clearConversation(): void {
+    conversation.clearHistory();
+    logs.add('info', 'Conversation history cleared');
   }
 
   private async armWakeWord(): Promise<void> {
@@ -267,7 +347,7 @@ class SessionStore {
         this.lkHandle = null;
         await handle.stop();
         conversation.sealAgentBubble();
-        this.resetAll();
+        conversation.resetTurnState();
         await this.connectLivekit();
         logs.add('success', `Voice switched to ${label}`);
       } catch (err) {
