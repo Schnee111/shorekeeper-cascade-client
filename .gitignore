@@ -1,66 +1,57 @@
-# Dependencies
-node_modules/
-.pnp
-.pnp.js
 
-# Testing
-coverage/
-
-# Production
-build/
-dist/
-
-# Misc
-.DS_Store
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
-.pnpm-debug.log*
-
-# Editor
-.vscode/
-.idea/
-*.swp
-*.swo
 *~
-
-# OS
-Thumbs.db
-
+*.bin
+build/
 # Bun
 bun.lockb
-
-# Large files
-*.onnx
-*.bin
+.cache/
+client/dist/ort/
+client/public/ort/
+coverage/
+# Dependencies
+dist/
+# Editor
+.env
+.env.development.local
+.env.local
+.env.production.local
+.env.test.local
+.hermes/
+.idea/
+internal/
+graphify-out/
+.DS_Store
 kokoro_model/
 kokoro_samples/
 kokoro_test.wav
-test_kokoro*.py
-
+# Large files
+lerna-debug.log*
+# Local Kokoro scratch & test artifacts
+*.log
+# Logs
+node_modules/
+npm-debug.log*
+*.onnx
 # ONNX Runtime WASM files (too large for GitHub)
-client/dist/ort/
-client/public/ort/
-
+# OS
+.pnp
+.pnp.js
+.pnpm-debug.log*
+# Production
+__pycache__/
+# Python venvs
 # Server build output (can be rebuilt)
 server/dist/
-
+*.swo
+*.swp
 # Temporary files
-*.log
+# Testing
+test_kokoro*.py
+Thumbs.db
 *.tmp
-.cache/
-
-# Python venvs
 .venv/
 venv/
-__pycache__/
-.hermes/
+.vscode/
 .worktrees/
+yarn-debug.log*
+yarn-error.log*
