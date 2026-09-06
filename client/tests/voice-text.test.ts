@@ -6,22 +6,26 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanVoiceText } from '../src/lib/voice-text.ts';
 
-test('strips markdown headings and bullets', () => {
+test('strips markdown headings, preserves list bullets', () => {
   const input = '## Langkah\n- pertama buka file\n* kedua edit\n1. ketiga simpan';
   const out = cleanVoiceText(input);
   assert.ok(!out.includes('#'));
-  assert.ok(!out.includes('- pertama'));
+  // Bullets preserved intentionally so markdown lists render in the UI
+  // (commit e6da6dc7 "preserve markdown list bullets").
+  assert.match(out, /- pertama buka file/);
+  assert.match(out, /\* kedua edit/);
+  assert.match(out, /1\. ketiga simpan/);
   assert.match(out, /Langkah/);
   assert.match(out, /pertama buka file/);
   assert.match(out, /ketiga simpan/);
 });
 
-test('strips markdown table pipes', () => {
+test('preserves markdown table pipes for UI rendering', () => {
   const input = '| Nama | Nilai |\n|------|-------|\n| Budi | 90 |\n';
   const out = cleanVoiceText(input);
-  assert.ok(!out.includes('|'));
   assert.match(out, /Budi/);
   assert.match(out, /90/);
+  assert.match(out, /\| Nama \| Nilai \|/);
 });
 
 test('replaces code fences with placeholder, keeps inline code text', () => {
@@ -72,16 +76,16 @@ test('normalizes repeated punctuation', () => {
   assert.match(out, /Wah! Serius\? Baik!/);
 });
 
-test('newlines become spaces (voice text reads linearly)', () => {
+test('preserves line breaks (markdown paragraphs stay intact)', () => {
   const input = 'Baris satu.\n\n\n\nBaris dua.';
   const out = cleanVoiceText(input);
-  assert.equal(out, 'Baris satu. Baris dua.');
+  assert.equal(out, input);
 });
 
-test('strips control chars except newline', () => {
+test('strips control chars, preserves newline', () => {
   const input = 'A\u0000B\u0007C\nD';
   const out = cleanVoiceText(input);
-  assert.equal(out, 'ABC D');
+  assert.equal(out, 'ABC\nD');
 });
 
 test('plain conversational text passes through unchanged', () => {
@@ -94,12 +98,10 @@ test('empty and whitespace-only input', () => {
   assert.equal(cleanVoiceText('   \n\t  '), '');
 });
 
-test('emphasis markers stripped without losing words', () => {
+test('preserves emphasis markers for markdown rendering', () => {
   const input = 'Ini **penting** dan _catatan_ serta ~~coret~~.';
   const out = cleanVoiceText(input);
-  assert.match(out, /Ini penting dan catatan serta coret\./);
-  assert.ok(!out.includes('*'));
-  assert.ok(!out.includes('~'));
+  assert.equal(out, input);
 });
 
 test('long URL broken safely, word "link" once', () => {

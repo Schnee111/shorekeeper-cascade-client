@@ -15,6 +15,42 @@ import type { LiveBubble, LiveSegment, Message } from '../types';
 import { tools } from './tools.svelte';
 import { session } from './session.svelte';
 
+export function joinConversationSegments(segments: string[]): string {
+  let result = '';
+  for (let i = 0; i < segments.length; i++) {
+    let s = segments[i].trim();
+    if (!s) continue;
+
+    // Split inline bullet delimiters like ". - " or "! - " or "? - " that got glued into one segment
+    s = s.replace(/([.!?])\s+-\s+/g, '$1\n\n- ');
+    // Split trailing follow-up questions onto their own distinct paragraph
+    s = s.replace(/([.!?])\s+(Would you like|Do you want|Is there|Shall I|Let me know|Are there|What would you)\b/gi, '$1\n\n$2');
+
+    if (!result) {
+      result = s;
+      continue;
+    }
+    const isBullet = /^[-*+]\s+|^\d+[.)]\s+/.test(s);
+    const prevEndsWithColon = /:\s*$/.test(result);
+    const prevEndsWithNewline = /\n\s*$/.test(result);
+
+    if (isBullet) {
+      result += (prevEndsWithNewline ? '' : '\n\n') + s;
+    } else if (prevEndsWithColon) {
+      result += '\n\n' + s;
+    } else {
+      const prevWasBullet =
+        /(?:^|\n)[-*+]\s+[^\n]+$/.test(result) || /(?:^|\n)\d+[.)]\s+[^\n]+$/.test(result);
+      if (prevWasBullet) {
+        result += '\n\n' + s;
+      } else {
+        result += ' ' + s;
+      }
+    }
+  }
+  return result;
+}
+
 class ConversationStore {
   readonly messages = $state<Message[]>([]);
 
@@ -88,11 +124,11 @@ class ConversationStore {
       let p = parts[i].trim();
       if (p && !/^[.!?]+$/.test(p)) {
         // Strip markdown list bullets and bolding for clean subtitle display
-        p = p.replace(/^[-*+]\s+/, '').replace(/^\d+[.)]\s+/, '').replace(/[*_`]/g, '');
+        p = p.replace(/^[-*+]\s*/, '').replace(/^\d+[.)]\s*/, '').replace(/[*_`]/g, '');
         return p;
       }
     }
-    return trimmed.replace(/^[-*+]\s+/, '').replace(/[*_`]/g, '');
+    return trimmed.replace(/^[-*+]\s*/, '').replace(/[*_`]/g, '');
   }
 
   hasLiveAgentSegment(): boolean {
@@ -118,11 +154,11 @@ class ConversationStore {
           // IN-PLACE MULTI-SEGMENT ACCUMULATION (ChatGPT / LiveKit SOTA Pattern)
           // LiveKit flushes each sentence as a distinct segment (seg.id).
           // We combine all active agent segments of this turn into one cohesive text flow.
-          const fullTurnText = [...this.segmentsMap.values()]
-            .filter((s) => s.fromAgent && s.text)
-            .map((s) => s.text)
-            .join(' ')
-            .trim();
+          const fullTurnText = joinConversationSegments(
+            [...this.segmentsMap.values()]
+              .filter((s) => s.fromAgent && s.text)
+              .map((s) => s.text)
+          );
 
           const last = this.messages[this.messages.length - 1];
           if (last && last.role === 'assistant' && last.status === 'streaming') {
@@ -155,15 +191,33 @@ class ConversationStore {
         if (!text) continue;
 
         const prev = this.messages[this.messages.length - 1];
-        if (
-          prev &&
-          prev.role === 'user' &&
-          prev.text.length < text.length &&
-          text.toLowerCase().startsWith(prev.text.toLowerCase().replace(/[.,!?]+\s*$/, ''))
-        ) {
-          prev.text = text; // in-place user speech merge
-          if (!prev.time) prev.time = getTime();
-          prev.language = seg.language;
+        if (prev && prev.role === 'user') {
+          const cleanPrev = prev.text.toLowerCase().replace(/[.,!?\s]+$/, '');
+          const cleanCur = text.toLowerCase().replace(/[.,!?\s]+$/, '');
+          
+          // Anti-duplicate: if the new final transcript is identical to the previous user message, skip
+          if (cleanPrev === cleanCur) {
+            continue;
+          }
+
+          // In-place merge if current speech is an extension/continuation
+          if (
+            prev.text.length < text.length &&
+            text.toLowerCase().startsWith(cleanPrev)
+          ) {
+            prev.text = text;
+            if (!prev.time) prev.time = getTime();
+            prev.language = seg.language;
+          } else {
+            this.messages.push({
+              id: ++this.messageIdCounter,
+              role: 'user',
+              text,
+              time: getTime(),
+              status: 'done',
+              language: seg.language,
+            });
+          }
         } else {
           this.messages.push({
             id: ++this.messageIdCounter,
