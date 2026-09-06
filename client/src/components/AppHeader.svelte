@@ -25,7 +25,7 @@
       class="text-left origin-center transition-opacity duration-300"
     >
       <h1 class="font-semibold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white to-violet-200 text-base sm:text-lg lg:text-xl whitespace-nowrap drop-shadow-[0_0_20px_rgba(103,232,249,0.4)]">Shorekeeper</h1>
-      <p class="text-zinc-400/90 font-mono tracking-widest text-[10px] sm:text-xs">JARVIS v2.0</p>
+      <p class="text-zinc-400/90 font-mono tracking-widest text-[10px] sm:text-xs">CASCADE {typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'v1.0.0'}</p>
     </div>
   </div>
 
