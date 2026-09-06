@@ -15,6 +15,7 @@
     "livekit-client": "^2.21.0",
     "lucide-svelte": "^0.475.0",
     "marked": "^18.0.9",
+    "onnxruntime-web": "^1.21.0",
     "openwakeword-web": "^0.1.0",
     "svelte": "^5.0.0",
     "three": "^0.185.1"
