@@ -35,6 +35,10 @@
   position: relative;
   width: 200px;
   height: 200px;
+  /* Prevents flex parents (OrbPanel's column layout collapses to 0 width)
+     from squeezing the orb to core width — keeps ripple rings perfectly
+     circular (200×200), never a vertical oval. */
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
