@@ -14,6 +14,7 @@
 
 import {
   ConnectionState,
+  DisconnectReason,
   LocalParticipant,
   Room,
   RoomEvent,
@@ -25,7 +26,7 @@ import {
 import { IDENTITY, LIVEKIT_URL, TOKEN_ENDPOINT } from './config';
 import { audioAnalyser } from './audio-analyser';
 
-export { LIVEKIT_URL, IDENTITY };
+export { LIVEKIT_URL, IDENTITY, DisconnectReason };
 
 export type LkState = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
 
@@ -34,7 +35,7 @@ export interface LivekitVoiceOptions {
   onSegments: (segments: TranscriptionSegment[], fromAgent: boolean) => void;
   /** Agent entered/left the active-speakers list (drives orb "speaking"). */
   onSpeakingChanged: (speaking: boolean) => void;
-  onStateChange: (state: LkState) => void;
+  onStateChange: (state: LkState, reason?: DisconnectReason) => void;
   onLog: (message: string) => void;
   /** Tool activity events from the agent bridge (Gemini/Claude-style chip). */
   onToolActivity?: (ev: { state: 'start' | 'complete'; name: string; args?: Record<string, unknown> }) => void;
@@ -93,6 +94,8 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
     return participant.identity !== IDENTITY;
   };
 
+  let userInitiatedDisconnect = false;
+
   room
     .on(RoomEvent.TranscriptionReceived, (segments, participant) => {
       opts.onSegments(segments, isAgent(participant));
@@ -144,7 +147,10 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
         }
       }
     )
-    .on(RoomEvent.Disconnected, () => opts.onStateChange('disconnected'))
+    .on(RoomEvent.Disconnected, (reason?: DisconnectReason) => {
+      const effectiveReason = userInitiatedDisconnect ? DisconnectReason.CLIENT_INITIATED : reason;
+      opts.onStateChange('disconnected', effectiveReason);
+    })
     .on(RoomEvent.Reconnecting, () => opts.onStateChange('reconnecting'))
     .on(RoomEvent.Reconnected, () => opts.onStateChange('connected'));
 
@@ -173,6 +179,7 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
   }
 
   const stop = async (): Promise<void> => {
+    userInitiatedDisconnect = true;
     try {
       await room.localParticipant.setMicrophoneEnabled(false);
     } catch {
@@ -181,7 +188,7 @@ export async function startLivekitVoice(opts: LivekitVoiceOptions): Promise<Live
     await room.disconnect();
     for (const el of audioElements) el.remove();
     audioElements.length = 0;
-    opts.onStateChange('disconnected');
+    opts.onStateChange('disconnected', DisconnectReason.CLIENT_INITIATED);
   };
 
   return { room, roomName, stop };

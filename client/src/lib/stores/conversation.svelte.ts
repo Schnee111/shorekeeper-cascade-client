@@ -288,7 +288,11 @@ class ConversationStore {
     this.segmentsVersion++;
   }
 
-  reset(): void {
+  /**
+   * Resets interim streaming turn state (audio streams, captions, segment maps).
+   * Does NOT delete sealed conversation messages!
+   */
+  resetTurnState(): void {
     if (this.sealTimer) {
       clearTimeout(this.sealTimer);
       this.sealTimer = null;
@@ -298,13 +302,29 @@ class ConversationStore {
       this.transcriptHoldTimer = null;
     }
     this.segmentsMap.clear();
-    this.messages.length = 0;
     this.liveAgentStartTime = '';
     this.subtitle = '';
     this.transcript = '';
     this.awaitingReply = false;
+    this.agentProcessing = false;
     this.agentSpeaking = false;
     this.segmentsVersion++;
+  }
+
+  /**
+   * Destructive clear: ONLY called on explicit user action ("Clear History").
+   */
+  clearHistory(): void {
+    this.resetTurnState();
+    this.messages.length = 0;
+    this.turnGroupCounter = 0;
+    this.messageIdCounter = 0;
+    this.segmentsVersion++;
+  }
+
+  /** Backward compatibility method aliasing non-destructive turn reset. */
+  reset(): void {
+    this.resetTurnState();
   }
 }
 
