@@ -124,6 +124,8 @@
   <!-- Orb Container (Swipeable 2D CSS Orb vs 3D Spectro Particle Field) -->
   <div 
     class="relative mb-1 lg:mb-6 flex items-center justify-center min-h-[240px] sm:min-h-[280px] touch-pan-y transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform {session.hasStarted ? 'scale-90 sm:scale-100 lg:scale-115' : 'scale-110 sm:scale-125 lg:scale-135'}"
+    role="region"
+    aria-label="Orb visualizer container"
     ontouchstart={handleTouchStart}
     ontouchend={handleTouchEnd}
   >
@@ -159,7 +161,7 @@
         class="absolute inset-0 flex items-center justify-center will-change-transform {currentProgress >= 0.5 ? 'pointer-events-auto z-10' : 'pointer-events-none z-0'}"
         style="transform: scale({scale3d}); opacity: {opacity3d}; transform-origin: center center;"
       >
-        <ParticleOrb />
+        <ParticleOrb visible={viewMode === '3d' || currentProgress > 0.05} />
       </div>
     </div>
   </div>

@@ -1,7 +1,6 @@
 <!--
   ParticleOrb.svelte — Organic 3D Spectro Particle Sphere with Non-Linear Simplex-style Noise.
-  Idle: Organic 3D Orb with subtle organic morphing / "penyok" distortion.
-  Voice: Dynamic, non-linear multi-frequency wave morphing (randomized organic fluid displacement).
+  Memory hardened: Zero-leak CanvasTexture, WebGL context loss handling, and visibility-gated rAF.
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
@@ -9,20 +8,24 @@
   import { session } from '../lib/stores/session.svelte';
   import { audioAnalyser } from '../lib/audio-analyser';
 
+  let { visible = true } = $props<{ visible?: boolean }>();
+
   let containerEl: HTMLDivElement | undefined = $state();
   let animId: number | null = null;
+  let isDestroyed = false;
 
-  let scene: THREE.Scene;
-  let camera: THREE.PerspectiveCamera;
-  let renderer: THREE.WebGLRenderer;
-  let particlesMesh: THREE.Points;
-  let geometry: THREE.BufferGeometry;
-  let material: THREE.PointsMaterial;
+  let scene: THREE.Scene | null = null;
+  let camera: THREE.PerspectiveCamera | null = null;
+  let renderer: THREE.WebGLRenderer | null = null;
+  let particlesMesh: THREE.Points | null = null;
+  let geometry: THREE.BufferGeometry | null = null;
+  let material: THREE.PointsMaterial | null = null;
+  let particleTexture: THREE.CanvasTexture | null = null;
 
-  let initialPositions: Float32Array;
-  let particleColors: Float32Array;
-  let randomOffsets: Float32Array; // Random seed per particle for non-linear displacement
-  // Adaptive mobile/desktop particle budget (4,200 for smooth 60fps mobile GPU safety, 4.8k max)
+  let initialPositions: Float32Array | null = null;
+  let particleColors: Float32Array | null = null;
+  let randomOffsets: Float32Array | null = null;
+
   const PARTICLE_COUNT = typeof window !== 'undefined' && window.innerWidth < 768 ? 4200 : 4800;
 
   // Spectro Palette (RGB normalized 0-1)
@@ -33,103 +36,31 @@
   const COLOR_EMERALD = new THREE.Color('#34d399');
   const COLOR_OFF = new THREE.Color('#52525b');
 
-  onMount(() => {
-    if (!containerEl) return;
+  function startAnimationLoop(): void {
+    if (animId !== null || isDestroyed) return;
 
-    const width = 320;
-    const height = 320;
-
-    // 1. Scene setup
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.z = 240;
-
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    containerEl.appendChild(renderer.domElement);
-
-    // 2. Spherical Distribution with Randomized Offsets
-    geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(PARTICLE_COUNT * 3);
-    initialPositions = new Float32Array(PARTICLE_COUNT * 3);
-    particleColors = new Float32Array(PARTICLE_COUNT * 3);
-    randomOffsets = new Float32Array(PARTICLE_COUNT * 3);
-
-    const radius = 62;
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      const phi = Math.acos(-1 + (2 * i) / PARTICLE_COUNT);
-      const theta = Math.sqrt(PARTICLE_COUNT * Math.PI) * phi;
-
-      const x = radius * Math.cos(theta) * Math.sin(phi);
-      const y = radius * Math.sin(theta) * Math.sin(phi);
-      const z = radius * Math.cos(phi);
-
-      positions[i * 3] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
-
-      initialPositions[i * 3] = x;
-      initialPositions[i * 3 + 1] = y;
-      initialPositions[i * 3 + 2] = z;
-
-      // Unique random frequency phase offset per particle (for non-linear multi-frequency noise)
-      randomOffsets[i * 3] = Math.random() * Math.PI * 2;
-      randomOffsets[i * 3 + 1] = Math.random() * Math.PI * 2;
-      randomOffsets[i * 3 + 2] = Math.random() * Math.PI * 2;
-
-      // Spectro color blend
-      const mix = Math.random();
-      const col = mix < 0.5
-        ? COLOR_CYAN.clone().lerp(COLOR_BLUE, mix * 2)
-        : COLOR_BLUE.clone().lerp(COLOR_VIOLET, (mix - 0.5) * 2);
-
-      particleColors[i * 3] = col.r;
-      particleColors[i * 3 + 1] = col.g;
-      particleColors[i * 3 + 2] = col.b;
-    }
-
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
-
-    // Particle texture
-    const canvas = document.createElement('canvas');
-    canvas.width = 16;
-    canvas.height = 16;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      const grad = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
-      grad.addColorStop(0, 'rgba(255,255,255,1)');
-      grad.addColorStop(0.35, 'rgba(255,255,255,0.8)');
-      grad.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 16, 16);
-    }
-    const texture = new THREE.CanvasTexture(canvas);
-
-    material = new THREE.PointsMaterial({
-      size: 2.4,
-      vertexColors: true,
-      map: texture,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      opacity: 0.9,
-    });
-
-    particlesMesh = new THREE.Points(geometry, material);
-    scene.add(particlesMesh);
-
-    // 3. Animation Loop (Organic 3D Noise Morphing + Non-Linear Audio Reactivity)
     let clock = 0;
     const animate = () => {
+      if (isDestroyed) return;
+
+      // Gate execution: pause rAF calculations if not visible or tab hidden
+      if (!visible || (typeof document !== 'undefined' && document.hidden)) {
+        animId = null;
+        return;
+      }
+
       animId = requestAnimationFrame(animate);
       clock += 0.015;
 
+      if (!geometry || !particlesMesh || !renderer || !scene || !camera) return;
+
       const posAttr = geometry.attributes.position as THREE.BufferAttribute;
       const colAttr = geometry.attributes.color as THREE.BufferAttribute;
+      if (!posAttr || !colAttr) return;
+
       const posArray = posAttr.array as Float32Array;
       const colArray = colAttr.array as Float32Array;
+      if (!initialPositions || !randomOffsets) return;
 
       // Get real-time audio frequency data
       const audio = audioAnalyser.getFrequencyData();
@@ -171,14 +102,13 @@
           Math.sin(clock * 1.5 + ix * 0.04 + phaseX) *
           Math.cos(clock * 1.2 + iy * 0.04 + phaseY) *
           Math.sin(clock * 0.8 + iz * 0.04 + phaseZ);
-        
-        let displacement = idleNoise * 6.5; // Subtle organic surface "penyok" breathing
+
+        let displacement = idleNoise * 6.5;
 
         // 2. Dynamic Audio Reactivity (Non-linear multi-frequency wave morphing)
         if (session.mode !== 'off') {
           const audioPower = Math.max(amp, audio.mid, audio.bass, audio.treble);
 
-          // Non-linear organic spikes based on sound intonation
           const voiceNoise =
             Math.sin(clock * 4 + ix * 0.08 + phaseX) *
             Math.cos(clock * 5 + iy * 0.08 + phaseY) +
@@ -209,17 +139,187 @@
       renderer.render(scene, camera);
     };
 
-    animate();
+    animId = requestAnimationFrame(animate);
+  }
+
+  function stopAnimationLoop(): void {
+    if (animId !== null) {
+      cancelAnimationFrame(animId);
+      animId = null;
+    }
+  }
+
+  // React to visibility changes (2D/3D toggle or tab switching)
+  $effect(() => {
+    if (visible) {
+      startAnimationLoop();
+    } else {
+      stopAnimationLoop();
+    }
+  });
+
+  onMount(() => {
+    if (!containerEl) return;
+
+    const width = 320;
+    const height = 320;
+
+    // 1. Scene setup
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.z = 240;
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const handleContextLost = (e: Event) => {
+      e.preventDefault();
+      stopAnimationLoop();
+    };
+    renderer.domElement.addEventListener('webglcontextlost', handleContextLost, false);
+
+    containerEl.appendChild(renderer.domElement);
+
+    // 2. Spherical Distribution with Randomized Offsets
+    geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(PARTICLE_COUNT * 3);
+    initialPositions = new Float32Array(PARTICLE_COUNT * 3);
+    particleColors = new Float32Array(PARTICLE_COUNT * 3);
+    randomOffsets = new Float32Array(PARTICLE_COUNT * 3);
+
+    const radius = 62;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const phi = Math.acos(-1 + (2 * i) / PARTICLE_COUNT);
+      const theta = Math.sqrt(PARTICLE_COUNT * Math.PI) * phi;
+
+      const x = radius * Math.cos(theta) * Math.sin(phi);
+      const y = radius * Math.sin(theta) * Math.sin(phi);
+      const z = radius * Math.cos(phi);
+
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = z;
+
+      initialPositions[i * 3] = x;
+      initialPositions[i * 3 + 1] = y;
+      initialPositions[i * 3 + 2] = z;
+
+      randomOffsets[i * 3] = Math.random() * Math.PI * 2;
+      randomOffsets[i * 3 + 1] = Math.random() * Math.PI * 2;
+      randomOffsets[i * 3 + 2] = Math.random() * Math.PI * 2;
+
+      const mix = Math.random();
+      const col = mix < 0.5
+        ? COLOR_CYAN.clone().lerp(COLOR_BLUE, mix * 2)
+        : COLOR_BLUE.clone().lerp(COLOR_VIOLET, (mix - 0.5) * 2);
+
+      particleColors[i * 3] = col.r;
+      particleColors[i * 3 + 1] = col.g;
+      particleColors[i * 3 + 2] = col.b;
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+
+    // Particle texture generation
+    const canvas = document.createElement('canvas');
+    canvas.width = 16;
+    canvas.height = 16;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const grad = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+      grad.addColorStop(0, 'rgba(255,255,255,1)');
+      grad.addColorStop(0.35, 'rgba(255,255,255,0.8)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 16, 16);
+    }
+    particleTexture = new THREE.CanvasTexture(canvas);
+
+    material = new THREE.PointsMaterial({
+      size: 2.4,
+      vertexColors: true,
+      map: particleTexture,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      opacity: 0.9,
+    });
+
+    particlesMesh = new THREE.Points(geometry, material);
+    scene.add(particlesMesh);
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        stopAnimationLoop();
+      } else if (visible) {
+        startAnimationLoop();
+      }
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    if (visible) {
+      startAnimationLoop();
+    }
+
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
+      if (renderer?.domElement) {
+        renderer.domElement.removeEventListener('webglcontextlost', handleContextLost);
+      }
+    };
   });
 
   onDestroy(() => {
-    if (animId) cancelAnimationFrame(animId);
-    if (geometry) geometry.dispose();
-    if (material) material.dispose();
-    if (renderer) {
-      renderer.dispose();
-      renderer.domElement.remove();
+    isDestroyed = true;
+    stopAnimationLoop();
+
+    // 1. Remove Mesh from Scene
+    if (particlesMesh && scene) {
+      scene.remove(particlesMesh);
+      particlesMesh = null;
     }
+
+    // 2. Dispose Geometry and Clear Attributes
+    if (geometry) {
+      geometry.dispose();
+      geometry = null;
+    }
+    initialPositions = null;
+    particleColors = null;
+    randomOffsets = null;
+
+    // 3. Dispose Texture and Material
+    if (particleTexture) {
+      if (particleTexture.image instanceof HTMLCanvasElement) {
+        particleTexture.image.width = 0;
+        particleTexture.image.height = 0;
+      }
+      particleTexture.dispose();
+      particleTexture = null;
+    }
+    if (material) {
+      material.dispose();
+      material = null;
+    }
+
+    // 4. Force WebGL Context Loss & Dispose Renderer
+    if (renderer) {
+      renderer.forceContextLoss();
+      renderer.dispose();
+      if (renderer.domElement && renderer.domElement.parentNode) {
+        renderer.domElement.parentNode.removeChild(renderer.domElement);
+      }
+      renderer = null;
+    }
+
+    scene = null;
+    camera = null;
   });
 </script>
 
