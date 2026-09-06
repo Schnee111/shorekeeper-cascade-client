@@ -112,9 +112,17 @@ class SessionStore {
   }
 
   private async connectLivekit(): Promise<void> {
+    if (this.connecting) return; // Prevent double trigger / race condition
     // Must be called inside a user gesture (orb tap) or after sticky
     // activation (the tap that armed the wake word) — room.startAudio()
     // satisfies the autoplay policy.
+    if (this.lkHandle) {
+      const oldHandle = this.lkHandle;
+      this.lkHandle = null;
+      try {
+        await oldHandle.stop();
+      } catch {}
+    }
     this.offState = 'idle';
     this.mode = 'active';
     this.connecting = true;

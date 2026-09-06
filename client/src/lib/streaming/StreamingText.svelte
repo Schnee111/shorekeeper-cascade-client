@@ -45,20 +45,24 @@
     !isStreaming ? text : text.slice(0, settledChars)
   );
 
+  let prevText = '';
   $effect(() => {
     if (!isStreaming) {
       liveTokens = [];
       settledChars = text.length;
       shownChars = text.length;
+      prevText = text;
       return;
     }
 
-    // Text shrank or fully replaced (interim re-transcript): reset the whole buffer
-    if (shownChars > text.length) {
+    // Text was replaced/reset (new sentence not continuing previous text, or
+    // shrank): reset the whole buffer so we don't slice off the first character.
+    if (!text.startsWith(prevText) || shownChars > text.length) {
       shownChars = 0;
       settledChars = 0;
       liveTokens = [];
     }
+    prevText = text;
 
     const newSlice = text.slice(shownChars);
     if (!newSlice) return;
