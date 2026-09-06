@@ -1,0 +1,9 @@
+{
+  "packages": {
+    "client": {
+      "release-type": "node",
+      "package-name": "shorekeeper-cascade-client",
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}
