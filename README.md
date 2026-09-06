@@ -59,32 +59,17 @@ The Shorekeeper voice intelligence project is architected across three independe
 
 ## 🏛️ System Architecture
 
-```text
-┌────────────────────────────────────────────────────────┐
-│                  User Web Browser                      │
-│                                                        │
-│  [ User Mic ] ──▶ (AudioWorklet 16kHz PCM)             │
-│                            │                           │
-│                            ▼                           │
-│                 [ LiveKit Room Engine ]                │
-│                            ▲                           │
-│                            │ (Opus 48kHz Audio Track)  │
-│                            │                           │
-│   ┌────────────────────────┴───────────────────────┐   │
-│   │ Direct Audio Element (Native Hardware Playback)│   │
-│   └────────────────────────────────────────────────┘   │
-│                            │ (RFC 6464 Audio Levels)   │
-│                            ▼                           │
-│   ┌────────────────────────────────────────────────┐   │
-│   │ Three.js Spectro Orb Visualizer (60 FPS)       │   │
-│   └────────────────────────────────────────────────┘   │
-└────────────────────────────┬───────────────────────────┘
-                             │ WebRTC Room
-                             ▼
-┌────────────────────────────────────────────────────────┐
-│            shorekeeper-cascade-agent (VPS)             │
-│  Groq Whisper large-v3 ──▶ Hermes LLM ──▶ Fish Audio   │
-└────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Browser ["User Web Browser (Svelte 5 Client HUD)"]
+        direction TB
+        Mic["User Mic"] -->|"16kHz PCM"| Worklet["AudioWorklet DSP"]
+        Worklet -->|"AudioStream"| LiveKit["LiveKit Room Engine"]
+        LiveKit -->|"Opus 48kHz"| AudioElem["Direct Audio Element<br/>(Hardware Playback)"]
+        AudioElem -->|"RFC 6464 Levels"| Orb["Three.js Spectro Orb<br/>(60 FPS Visualizer)"]
+    end
+
+    LiveKit <-->|"WebRTC Room<br/>(Sub-second Duplex)"| Agent["shorekeeper-cascade-agent (VPS)<br/>Groq Whisper ➔ Hermes LLM ➔ Fish Audio"]
 ```
 
 ---
