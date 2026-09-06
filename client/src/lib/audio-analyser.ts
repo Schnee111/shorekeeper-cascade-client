@@ -17,6 +17,7 @@ class AudioAnalyser {
   private dataArray: Uint8Array | null = null;
   private sourceMap = new WeakMap<HTMLMediaElement | MediaStream, MediaElementAudioSourceNode | MediaStreamAudioSourceNode>();
   private activeSource: MediaElementAudioSourceNode | MediaStreamAudioSourceNode | null = null;
+  private nativeLevel = 0;
 
   init(): AudioContext | null {
     if (this.ctx) return this.ctx;
@@ -82,7 +83,23 @@ class AudioAnalyser {
     }
   }
 
+  setNativeAudioLevel(level: number): void {
+    this.nativeLevel = Math.max(0, Math.min(1, level));
+  }
+
   getFrequencyData(): AudioFrequencyData {
+    // If we have native WebRTC RTP audio level (RFC 6464), use it to drive the visualizer
+    // directly, avoiding dual-sink contention or WebAudio buffer jitter.
+    if (this.nativeLevel > 0.001) {
+      const amp = this.nativeLevel;
+      return {
+        amplitude: amp,
+        bass: amp * 1.2,
+        mid: amp * 0.9,
+        treble: amp * 0.7,
+      };
+    }
+
     if (!this.analyser || !this.dataArray) {
       return { amplitude: 0, bass: 0, mid: 0, treble: 0 };
     }
