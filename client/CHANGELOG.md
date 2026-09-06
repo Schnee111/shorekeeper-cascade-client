@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.1](https://github.com/Schnee111/shorekeeper-cascade-client/compare/shorekeeper-cascade-client-v2.2.0...shorekeeper-cascade-client-v2.2.1) (2026-09-06)
+
+
+### Bug Fixes
+
+* **session:** preserve conversation transcript on network disconnect and add 15s reconnect banner ([#6](https://github.com/Schnee111/shorekeeper-cascade-client/issues/6)) ([1715514](https://github.com/Schnee111/shorekeeper-cascade-client/commit/17155140d0caa5ca0b85677f1ad0d3bc18826bbd))
+* **three:** handle webglcontextlost, dispose CanvasTexture and shader materials on teardown ([#7](https://github.com/Schnee111/shorekeeper-cascade-client/issues/7)) ([0cc9dfc](https://github.com/Schnee111/shorekeeper-cascade-client/commit/0cc9dfce99be4b3e7b9ab1f66ee0c1d01f3ad18b))
+
 ## [2.2.0](https://github.com/Schnee111/shorekeeper-cascade-client/compare/shorekeeper-cascade-client-v2.1.0...shorekeeper-cascade-client-v2.2.0) (2026-09-06)
 
 
