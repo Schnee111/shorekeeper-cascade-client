@@ -1,0 +1,21 @@
+# Shorekeeper Cascade Client — Production Docker Compose
+services:
+  cascade-client:
+    image: ${CLIENT_IMAGE:-ghcr.io/schnee111/shorekeeper-cascade-client:latest}
+    container_name: shorekeeper-cascade-client
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5174:80"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
+        reservations:
+          cpus: '0.05'
+          memory: 16M
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"

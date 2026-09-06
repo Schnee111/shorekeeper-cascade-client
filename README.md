@@ -6,6 +6,7 @@
 
 [![Release](https://img.shields.io/github/v/release/Schnee111/shorekeeper-cascade-client?style=flat-square&color=c5a86a)](https://github.com/Schnee111/shorekeeper-cascade-client/releases)
 [![CI/CD](https://img.shields.io/github/actions/workflow/status/Schnee111/shorekeeper-cascade-client/ci.yml?branch=main&style=flat-square&label=CI%20Pipeline)](https://github.com/Schnee111/shorekeeper-cascade-client/actions)
+[![Docker](https://img.shields.io/badge/Container-ghcr.io-2496ed?style=flat-square&logo=docker)](https://github.com/Schnee111/shorekeeper-cascade-client/pkgs/container/shorekeeper-cascade-client)
 [![License](https://img.shields.io/badge/License-MIT-6ee7b7?style=flat-square)](LICENSE)
 [![Svelte](https://img.shields.io/badge/Svelte-5.0%20Runes-ff3e00?style=flat-square)](https://svelte.dev)
 [![LiveKit](https://img.shields.io/badge/WebRTC-LiveKit%20Cloud-002b36?style=flat-square)](https://livekit.io)
