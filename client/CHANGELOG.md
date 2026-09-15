@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.2.2](https://github.com/Schnee111/shorekeeper-cascade-client/compare/shorekeeper-cascade-client-v2.2.1...shorekeeper-cascade-client-v2.2.2) (2026-09-15)
+
+
+### Bug Fixes
+
+* **ci:** remove extraneous pnpm-workspace.yaml causing frozen-lockfile failure ([4cf9990](https://github.com/Schnee111/shorekeeper-cascade-client/commit/4cf9990702da78f78b2011e417b4ccc5beaa6d05))
+* **client:** preserve list linebreaks ([#14](https://github.com/Schnee111/shorekeeper-cascade-client/issues/14)) and optimize particle orb with GPU shader ([#15](https://github.com/Schnee111/shorekeeper-cascade-client/issues/15)) ([94b29aa](https://github.com/Schnee111/shorekeeper-cascade-client/commit/94b29aa20723d781d851160a51117c418bafb350))
+* **client:** preserve list linebreaks ([#14](https://github.com/Schnee111/shorekeeper-cascade-client/issues/14)) and optimize particle orb with GPU shader ([#15](https://github.com/Schnee111/shorekeeper-cascade-client/issues/15)) ([75cbe9d](https://github.com/Schnee111/shorekeeper-cascade-client/commit/75cbe9d6788c4a58a1291d5a6c4b8d33c8c88787))
+
 ## [2.2.1](https://github.com/Schnee111/shorekeeper-cascade-client/compare/shorekeeper-cascade-client-v2.2.0...shorekeeper-cascade-client-v2.2.1) (2026-09-06)
 
 
