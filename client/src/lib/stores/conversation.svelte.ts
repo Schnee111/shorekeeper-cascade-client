@@ -21,8 +21,8 @@ export function joinConversationSegments(segments: string[]): string {
     let s = segments[i].trim();
     if (!s) continue;
 
-    // Split inline bullet delimiters like ". - " or "! - " or "? - " that got glued into one segment
-    s = s.replace(/([.!?])\s+-\s+/g, '$1\n\n- ');
+    // Split inline bullet delimiters like ". - " or "! - " or ": - " or "; - " that got glued into one segment
+    s = s.replace(/([.!?:;])\s+([-*+]|\d{1,3}[.)])\s+/g, '$1\n\n$2 ');
     // Split trailing follow-up questions onto their own distinct paragraph
     s = s.replace(/([.!?])\s+(Would you like|Do you want|Is there|Shall I|Let me know|Are there|What would you)\b/gi, '$1\n\n$2');
 
@@ -33,19 +33,21 @@ export function joinConversationSegments(segments: string[]): string {
     const isBullet = /^[-*+]\s+|^\d+[.)]\s+/.test(s);
     const prevEndsWithColon = /:\s*$/.test(result);
     const prevEndsWithNewline = /\n\s*$/.test(result);
+    const prevWasBullet =
+      /(?:^|\n)[-*+]\s+[^\n]+$/.test(result) || /(?:^|\n)\d+[.)]\s+[^\n]+$/.test(result);
 
     if (isBullet) {
-      result += (prevEndsWithNewline ? '' : '\n\n') + s;
+      if (prevWasBullet) {
+        result += '\n' + s;
+      } else {
+        result += (prevEndsWithNewline ? '' : '\n\n') + s;
+      }
     } else if (prevEndsWithColon) {
       result += '\n\n' + s;
+    } else if (prevWasBullet) {
+      result += '\n\n' + s;
     } else {
-      const prevWasBullet =
-        /(?:^|\n)[-*+]\s+[^\n]+$/.test(result) || /(?:^|\n)\d+[.)]\s+[^\n]+$/.test(result);
-      if (prevWasBullet) {
-        result += '\n\n' + s;
-      } else {
-        result += ' ' + s;
-      }
+      result += ' ' + s;
     }
   }
   return result;
