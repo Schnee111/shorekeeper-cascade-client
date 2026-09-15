@@ -1,6 +1,7 @@
 <!--
-  ParticleOrb.svelte — Organic 3D Spectro Particle Sphere with Non-Linear Simplex-style Noise.
-  Memory hardened: Zero-leak CanvasTexture, WebGL context loss handling, and visibility-gated rAF.
+  ParticleOrb.svelte — Organic 3D Spectro Particle Sphere with GPU-Accelerated Shader.
+  High performance: GPU vertex shader noise displacement, zero per-frame CPU iteration,
+  zero memory leak CanvasTexture disposal, WebGL context loss handling, and visibility-gated rAF.
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
@@ -19,12 +20,10 @@
   let renderer: THREE.WebGLRenderer | null = null;
   let particlesMesh: THREE.Points | null = null;
   let geometry: THREE.BufferGeometry | null = null;
-  let material: THREE.PointsMaterial | null = null;
+  let material: THREE.ShaderMaterial | null = null;
   let particleTexture: THREE.CanvasTexture | null = null;
 
-  let initialPositions: Float32Array | null = null;
-  let particleColors: Float32Array | null = null;
-  let randomOffsets: Float32Array | null = null;
+  const currentColor = new THREE.Color('#67e8f9');
 
   const PARTICLE_COUNT = typeof window !== 'undefined' && window.innerWidth < 768 ? 4200 : 4800;
 
@@ -35,6 +34,72 @@
   const COLOR_AMBER = new THREE.Color('#fbbf24');
   const COLOR_EMERALD = new THREE.Color('#34d399');
   const COLOR_OFF = new THREE.Color('#52525b');
+
+  const vertexShader = `
+    attribute vec3 aRandomOffset;
+    attribute vec3 aBaseColor;
+
+    uniform float uClock;
+    uniform float uAudioPower;
+    uniform float uBass;
+    uniform float uMid;
+    uniform float uTreble;
+    uniform float uAmp;
+    uniform int uStatus; // 0=off, 1=default, 2=listening, 3=speaking, 4=processing
+    uniform vec3 uTargetColor;
+    uniform float uPointSize;
+
+    varying vec3 vColor;
+
+    void main() {
+      vec3 ix = position;
+      vec3 norm = normalize(ix);
+
+      // 1. Organic Idle Morphing (3D noise harmonics)
+      float idleNoise =
+        sin(uClock * 1.5 + ix.x * 0.04 + aRandomOffset.x) *
+        cos(uClock * 1.2 + ix.y * 0.04 + aRandomOffset.y) *
+        sin(uClock * 0.8 + ix.z * 0.04 + aRandomOffset.z);
+
+      float displacement = idleNoise * 6.5;
+
+      // 2. Dynamic Audio Reactivity
+      if (uStatus != 0) {
+        float voiceNoise =
+          sin(uClock * 4.0 + ix.x * 0.08 + aRandomOffset.x) *
+          cos(uClock * 5.0 + ix.y * 0.08 + aRandomOffset.y) +
+          sin(uClock * 3.5 + ix.z * 0.08 + aRandomOffset.z);
+
+        if (uStatus == 3) { // speaking
+          displacement += voiceNoise * (uMid * 10.0 + uTreble * 8.0 + uAudioPower * 5.0);
+        } else if (uStatus == 2) { // listening
+          displacement += voiceNoise * (uBass * 9.0 + uAmp * 6.0);
+        } else {
+          displacement += idleNoise * uAudioPower * 6.0;
+        }
+      }
+
+      vec3 newPos = ix + norm * displacement;
+      vec4 mvPosition = modelViewMatrix * vec4(newPos, 1.0);
+      gl_PointSize = uPointSize * (240.0 / -mvPosition.z);
+      gl_Position = projectionMatrix * mvPosition;
+
+      // Smooth color blend towards current target color
+      vColor = mix(aBaseColor, uTargetColor, 0.7);
+    }
+  `;
+
+  const fragmentShader = `
+    uniform sampler2D uTexture;
+    uniform float uOpacity;
+    varying vec3 vColor;
+
+    void main() {
+      vec4 tex = texture2D(uTexture, gl_PointCoord);
+      if (tex.a < 0.05) discard;
+      gl_FragColor = vec4(vColor, tex.a * uOpacity);
+    }
+  `;
 
   function startAnimationLoop(): void {
     if (animId !== null || isDestroyed) return;
@@ -52,21 +117,13 @@
       animId = requestAnimationFrame(animate);
       clock += 0.015;
 
-      if (!geometry || !particlesMesh || !renderer || !scene || !camera) return;
-
-      const posAttr = geometry.attributes.position as THREE.BufferAttribute;
-      const colAttr = geometry.attributes.color as THREE.BufferAttribute;
-      if (!posAttr || !colAttr) return;
-
-      const posArray = posAttr.array as Float32Array;
-      const colArray = colAttr.array as Float32Array;
-      if (!initialPositions || !randomOffsets) return;
+      if (!material || !particlesMesh || !renderer || !scene || !camera) return;
 
       // Get real-time audio frequency data
       const audio = audioAnalyser.getFrequencyData();
       const amp = audio.amplitude;
 
-      // Rotation
+      // Mesh Rotation
       let rotSpeed = 0.003;
       if (session.status === 'processing') rotSpeed = 0.02;
       else if (session.status === 'speaking') rotSpeed = 0.006;
@@ -74,67 +131,35 @@
       particlesMesh.rotation.y += rotSpeed;
       particlesMesh.rotation.x += rotSpeed * 0.4;
 
-      // State color targets
+      // State color targets & status ID
       let targetColor = COLOR_CYAN;
-      if (session.mode === 'off') targetColor = COLOR_OFF;
-      else if (session.status === 'listening') targetColor = COLOR_EMERALD;
-      else if (session.status === 'speaking') targetColor = COLOR_VIOLET;
-      else if (session.status === 'processing') targetColor = COLOR_AMBER;
-
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const idx = i * 3;
-        const ix = initialPositions[idx];
-        const iy = initialPositions[idx + 1];
-        const iz = initialPositions[idx + 2];
-
-        const phaseX = randomOffsets[idx];
-        const phaseY = randomOffsets[idx + 1];
-        const phaseZ = randomOffsets[idx + 2];
-
-        // Normal direction from center
-        const len = Math.sqrt(ix * ix + iy * iy + iz * iz);
-        const nx = ix / len;
-        const ny = iy / len;
-        const nz = iz / len;
-
-        // 1. Organic Idle "Penyok" / Morphing (Non-linear 3D noise harmonics)
-        const idleNoise =
-          Math.sin(clock * 1.5 + ix * 0.04 + phaseX) *
-          Math.cos(clock * 1.2 + iy * 0.04 + phaseY) *
-          Math.sin(clock * 0.8 + iz * 0.04 + phaseZ);
-
-        let displacement = idleNoise * 6.5;
-
-        // 2. Dynamic Audio Reactivity (Non-linear multi-frequency wave morphing)
-        if (session.mode !== 'off') {
-          const audioPower = Math.max(amp, audio.mid, audio.bass, audio.treble);
-
-          const voiceNoise =
-            Math.sin(clock * 4 + ix * 0.08 + phaseX) *
-            Math.cos(clock * 5 + iy * 0.08 + phaseY) +
-            Math.sin(clock * 3.5 + iz * 0.08 + phaseZ);
-
-          if (session.status === 'speaking') {
-            displacement += voiceNoise * (audio.mid * 10 + audio.treble * 8 + audioPower * 5);
-          } else if (session.status === 'listening') {
-            displacement += voiceNoise * (audio.bass * 9 + amp * 6);
-          } else {
-            displacement += idleNoise * audioPower * 6;
-          }
-        }
-
-        posArray[idx] = ix + nx * displacement;
-        posArray[idx + 1] = iy + ny * displacement;
-        posArray[idx + 2] = iz + nz * displacement;
-
-        // Smooth color interpolation
-        colArray[idx] += (targetColor.r - colArray[idx]) * 0.05;
-        colArray[idx + 1] += (targetColor.g - colArray[idx + 1]) * 0.05;
-        colArray[idx + 2] += (targetColor.b - colArray[idx + 2]) * 0.05;
+      let statusId = 1;
+      if (session.mode === 'off') {
+        targetColor = COLOR_OFF;
+        statusId = 0;
+      } else if (session.status === 'listening') {
+        targetColor = COLOR_EMERALD;
+        statusId = 2;
+      } else if (session.status === 'speaking') {
+        targetColor = COLOR_VIOLET;
+        statusId = 3;
+      } else if (session.status === 'processing') {
+        targetColor = COLOR_AMBER;
+        statusId = 4;
       }
 
-      posAttr.needsUpdate = true;
-      colAttr.needsUpdate = true;
+      currentColor.lerp(targetColor, 0.05);
+
+      // Fast GPU Uniform updates (zero CPU buffer loops)
+      const u = material.uniforms;
+      u.uClock.value = clock;
+      u.uTargetColor.value.copy(currentColor);
+      u.uStatus.value = statusId;
+      u.uAudioPower.value = Math.max(amp, audio.mid, audio.bass, audio.treble);
+      u.uBass.value = audio.bass;
+      u.uMid.value = audio.mid;
+      u.uTreble.value = audio.treble;
+      u.uAmp.value = amp;
 
       renderer.render(scene, camera);
     };
@@ -171,7 +196,8 @@
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const pixelRatio = Math.min(window.devicePixelRatio, 2);
+    renderer.setPixelRatio(pixelRatio);
 
     const handleContextLost = (e: Event) => {
       e.preventDefault();
@@ -184,9 +210,8 @@
     // 2. Spherical Distribution with Randomized Offsets
     geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(PARTICLE_COUNT * 3);
-    initialPositions = new Float32Array(PARTICLE_COUNT * 3);
-    particleColors = new Float32Array(PARTICLE_COUNT * 3);
-    randomOffsets = new Float32Array(PARTICLE_COUNT * 3);
+    const particleColors = new Float32Array(PARTICLE_COUNT * 3);
+    const randomOffsets = new Float32Array(PARTICLE_COUNT * 3);
 
     const radius = 62;
     for (let i = 0; i < PARTICLE_COUNT; i++) {
@@ -200,10 +225,6 @@
       positions[i * 3] = x;
       positions[i * 3 + 1] = y;
       positions[i * 3 + 2] = z;
-
-      initialPositions[i * 3] = x;
-      initialPositions[i * 3 + 1] = y;
-      initialPositions[i * 3 + 2] = z;
 
       randomOffsets[i * 3] = Math.random() * Math.PI * 2;
       randomOffsets[i * 3 + 1] = Math.random() * Math.PI * 2;
@@ -220,7 +241,8 @@
     }
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+    geometry.setAttribute('aRandomOffset', new THREE.BufferAttribute(randomOffsets, 3));
+    geometry.setAttribute('aBaseColor', new THREE.BufferAttribute(particleColors, 3));
 
     // Particle texture generation
     const canvas = document.createElement('canvas');
@@ -237,14 +259,25 @@
     }
     particleTexture = new THREE.CanvasTexture(canvas);
 
-    material = new THREE.PointsMaterial({
-      size: 2.4,
-      vertexColors: true,
-      map: particleTexture,
+    material = new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms: {
+        uClock: { value: 0 },
+        uTargetColor: { value: new THREE.Color('#67e8f9') },
+        uStatus: { value: 1 },
+        uAudioPower: { value: 0 },
+        uBass: { value: 0 },
+        uMid: { value: 0 },
+        uTreble: { value: 0 },
+        uAmp: { value: 0 },
+        uPointSize: { value: 2.4 * pixelRatio },
+        uTexture: { value: particleTexture },
+        uOpacity: { value: 0.9 },
+      },
       transparent: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      opacity: 0.9,
     });
 
     particlesMesh = new THREE.Points(geometry, material);
@@ -259,10 +292,6 @@
     };
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', handleVisibilityChange);
-    }
-
-    if (visible) {
-      startAnimationLoop();
     }
 
     return () => {
@@ -290,9 +319,6 @@
       geometry.dispose();
       geometry = null;
     }
-    initialPositions = null;
-    particleColors = null;
-    randomOffsets = null;
 
     // 3. Dispose Texture and Material
     if (particleTexture) {
