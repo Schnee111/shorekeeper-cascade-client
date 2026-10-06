@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.3](https://github.com/Schnee111/shorekeeper-cascade-client/compare/shorekeeper-cascade-client-v2.2.2...shorekeeper-cascade-client-v2.2.3) (2026-10-06)
+
+
+### Bug Fixes
+
+* **client:** escape raw HTML entities in marked renderer to prevent XSS ([4bbe893](https://github.com/Schnee111/shorekeeper-cascade-client/commit/4bbe8937a3f5e9adf5ccf64eefff8744cabafb2c))
+* **client:** escape raw HTML entities in marked renderer to prevent XSS ([8afb2b8](https://github.com/Schnee111/shorekeeper-cascade-client/commit/8afb2b8b4a412bd653199a8ba73299316c883b01)), closes [#18](https://github.com/Schnee111/shorekeeper-cascade-client/issues/18)
+
 ## [2.2.2](https://github.com/Schnee111/shorekeeper-cascade-client/compare/shorekeeper-cascade-client-v2.2.1...shorekeeper-cascade-client-v2.2.2) (2026-09-15)
 
 
