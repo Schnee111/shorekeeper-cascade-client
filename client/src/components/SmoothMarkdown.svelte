@@ -11,7 +11,7 @@
   4. Ultra-light DOM: Single HTML render tree (60-120fps smooth scrolling).
 -->
 <script lang="ts">
-  import { marked } from 'marked';
+  import { Marked } from 'marked';
   import { onDestroy } from 'svelte';
 
   let { 
@@ -22,9 +22,23 @@
     isStreaming?: boolean 
   } = $props();
 
-  marked.setOptions({
+  const markedInstance = new Marked({
     gfm: true,
     breaks: true,
+  });
+
+  // Escape raw HTML tags to prevent XSS while preserving standard markdown syntax
+  markedInstance.use({
+    renderer: {
+      html(token) {
+        const raw = typeof token === 'string' ? token : token.text;
+        return raw
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+    }
   });
 
   let displayedChars = $state(0);
@@ -84,7 +98,7 @@
   );
 
   const parsedHtml = $derived(
-    visibleText ? (marked.parse(visibleText) as string) : ''
+    visibleText ? (markedInstance.parse(visibleText) as string) : ''
   );
 </script>
 
