@@ -1,15 +1,28 @@
 <script lang="ts">
-  import { marked } from 'marked';
+  import { Marked } from 'marked';
 
   let { text = '' }: { text: string } = $props();
 
-  // Configure marked for clean inline/block markdown
-  marked.setOptions({
+  const markedInstance = new Marked({
     gfm: true,
     breaks: true
   });
 
-  const parsedHtml = $derived(text ? (marked.parse(text) as string) : '');
+  // Escape raw HTML tags to prevent XSS while preserving standard markdown syntax
+  markedInstance.use({
+    renderer: {
+      html(token) {
+        const raw = typeof token === 'string' ? token : token.text;
+        return raw
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+    }
+  });
+
+  const parsedHtml = $derived(text ? (markedInstance.parse(text) as string) : '');
 </script>
 
 <div class="markdown-content text-xs text-zinc-200 leading-relaxed">
