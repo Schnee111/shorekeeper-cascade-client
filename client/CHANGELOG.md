@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.4](https://github.com/Schnee111/shorekeeper-cascade-client/compare/shorekeeper-cascade-client-v2.2.3...shorekeeper-cascade-client-v2.2.4) (2026-10-11)
+
+
+### Bug Fixes
+
+* **client:** remove retired gemini-3.7 picker options ([d0c8e14](https://github.com/Schnee111/shorekeeper-cascade-client/commit/d0c8e140c69a551b2cd62952dd4024eba7e8d97c))
+* **client:** remove retired gemini-3.7 picker options ([3e5e7c8](https://github.com/Schnee111/shorekeeper-cascade-client/commit/3e5e7c854a87fb999a31802e47576ba9d82c0b21)), closes [#21](https://github.com/Schnee111/shorekeeper-cascade-client/issues/21)
+
 ## [2.2.3](https://github.com/Schnee111/shorekeeper-cascade-client/compare/shorekeeper-cascade-client-v2.2.2...shorekeeper-cascade-client-v2.2.3) (2026-10-06)
 
 
